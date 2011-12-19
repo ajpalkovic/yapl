@@ -33,7 +33,7 @@ var Lexer = (function($) {
           var result = Token.identify(string);
 
           if (result) {
-            tokens.push(result.token);
+            result.token && tokens.push(result.token);
             endOfMatch = result.position;
           } else {
             throw "Syntax Error: Illegal token: " + string;

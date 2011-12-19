@@ -1,4 +1,4 @@
-var Token = (function() {
+var Token = (function($) {
   var IDENTIFIER = '(?=[^a-zA-Z_0-9])';
 
   function compileRegex(tokens, escape) {
@@ -21,7 +21,6 @@ var Token = (function() {
         lookup[value[0]] = (typeof value[1] === 'function') ? value[1] : function() {
           return {
             token: {
-              value: value[0],
               type: value[1]
             }
           };
@@ -115,7 +114,6 @@ var Token = (function() {
     ['+', 'PLUS'],
     ['-', 'MINUS'],
     ['*', 'ASTERISK'],
-    ['/', 'SLASH'],
     ['%', 'MODULUS'],
     ['?', 'QUESTION'],
     [',', 'COMMA'],
@@ -138,20 +136,26 @@ var Token = (function() {
 
     // NUMERIC_LITERAL
     [
-      '[+-]?(?:((?:0[0-7]+))|((?:0x[a-fA-F0-9]+))|((?:(?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))(?:[eE]\\d+)?))',
+      '(?:((?:0[0-7]+))|((?:0x[a-fA-F0-9]+))|((?:(?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))(?:[eE]\\d+)?))',
       function(matches, string) {
-        matches = matches.slice(1);
-        var number = $.map(matches, function(value, index) { 
-          if (value) return [value, 8 + (index * 2)]; 
-        })[0];
+        var number = 0;
 
-        var token = {
-          type: 'INTEGER',
-          value: parseInt(number[0], number[1])
-        };
+        if (matches[1]) {
+          number = parseInt(matches[0], 8);
+        } else if (matches[2]) {
+          number = parseInt(matches[0], 16);
+        } else if (matches[3]) {
+          number = parseFloat(matches[0]);
+        } else {
+          return undefined;
+        }
 
         return {
-          token: token,
+          token: {
+            type: 'INTEGER',
+            value: number
+          },
+
           position: matches[0].length
         };
       }
@@ -185,52 +189,94 @@ var Token = (function() {
             endQuotePos = i;
             break;
           } else if (string[i] === '\\') {
+            // Skip whatever the next character is, because it is escaped, and we don't
+            // care...
             i++;
           }
         }
 
+        // Well they didn't close the string...
         if (!endQuotePos) return undefined;
-
-        var stringLiteral = string.substring(0, endQuotePos + 1);
-        var octal = /\\(([0-6]{1, 3}))/g;
-        var hex = /\\x([a-f0-9]{2})/gi;
-        var unicode = /\\u([a-f0-9]{4})/gi;
-
-
-        stringLiteral = stringLiteral.gsub(octal, function(matches) {
-                                       return String.fromCharCode(parseInt(matches[1], 7));
-                                     })
-                                     .gsub(hex, function(matches) {
-                                       return String.fromCharCode(parseInt(matches[1], 16));
-                                     })
-                                     .gsub(unicode, function(matches) {
-                                       return String.fromCharCode(parseInt(matches[1], 16));
-                                     });
 
         return {
           token: {
             type: 'STRING_LITERAL',
-            value: stringLiteral
+            value: string.substring(0, endQuotePos + 1)
           },
 
           position: endQuotePos + 1
         };
       }
     ],
-    
-    // REGEX
-    [
-      '(\\/(?:[^\\/]|\\/)*\\/)',
-      function(matches, string) {
-        var token = {
-          type: 'REGULAR_EXPRESSION',
-          value: matches[0].replace(/\s+/, '')
-        };
 
-        return {
-          token: token,
-          position: matches[0].length
+    // SINGLE_LINE_COMMENT, MULTI_LINE_COMMENT, and SLASH
+    [
+      '\\/',
+      function(matches, string) {
+
+        /**
+         *  Finds the end of a multi-line comment, but takes balancing into account.
+         *  Where traditional multi-line comments are terminated by a single
+         *  star-slash terminator, Yapl comments can be nested within themselves,
+         *  and to be closed must be balenced.
+         */
+        function findMultiCommentEnd(string, position) {
+          for (var i = position + 2, len = string.length; i < len; ++i) {
+            if (string[i] === '/' && string[i + 1] === '*') {
+              i = findMultiCommentEnd(string, i);
+            }
+
+            if (string[i] === '*' && string[i + 1] === '/') {
+              return i + 2;
+            }
+          }
         }
+
+
+        switch (string[1]) {
+          // Single-line comment
+          case '/':
+            var newlineIndex = string.indexOf('\n');
+            var end = newlineIndex >= 0 ? newlineIndex : string.length;
+
+            var comment = string.substring(0, end);
+
+            return {
+              token: {
+                type: 'SINGLE_LINE_COMMENT',
+                value: comment
+              },
+
+              position: comment.length
+            };
+          
+          // Multi-line comment
+          case '*':
+            // If it wasn't a balenced comment, the whole document from that point
+            // on is commented out.
+            var commentEnd = findMultiCommentEnd(string, 0) || string.length;
+
+            return {
+              token: {
+                type: 'MULTI_LINE_COMMENT',
+                value: string.substring(0, commentEnd + 1)
+              },
+
+              position: commentEnd + 1
+            };
+
+          // It was a slash, nothing special
+          default:
+            return {
+              token: {
+                type: 'SLASH'
+              },
+
+              position: 1
+            };
+        }
+
+        return token;
       }
     ],
 
@@ -239,11 +285,7 @@ var Token = (function() {
       '((?:[^\\S\\n]+))', 
       function(matches, string) {
         return {
-          token: {
-            type: 'WHITESPACE',
-            value: matches[0]
-          },
-
+          token: undefined,
           position: matches[0].length
         };
       }
@@ -271,4 +313,4 @@ var Token = (function() {
     types: prepare(tokens, prepare(reserved)),
     identify: identify
   }
-})();
+})(jQuery);
