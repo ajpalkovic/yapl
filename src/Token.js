@@ -275,8 +275,6 @@ var Token = (function($) {
               position: 1
             };
         }
-
-        return token;
       }
     ],
 
