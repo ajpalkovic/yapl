@@ -2,7 +2,7 @@ var Parser = (function($) {
   return Class.create({
     initialize: function Parser() {
       this.lexer = undefined;
-
+      this.cache = {};
     },
 
     parse: function(input) {

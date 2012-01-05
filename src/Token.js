@@ -1,5 +1,4 @@
 var Token = (function($) {
-  var IDENTIFIER = '(?=[^a-zA-Z_0-9])';
 
   function compileRegex(tokens, escape) {
     var regex = [];
@@ -30,6 +29,14 @@ var Token = (function($) {
 
     return lookup;
   }
+
+  var regexes = {
+    NUMERIC_LITERAL: '(?:((?:0[0-7]+))|((?:0x[a-fA-F0-9]+))|((?:(?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))(?:[eE]\\d+)?))',
+    IDENTIFIER: '((?:[a-zA-Z_\\$][_a-zA-Z0-9\\$]*))',
+    STRING_LITERAL: '(\'|")',
+    COMMENT_OR_SLASH: '\\/',
+    WHITESPACE: '((?:[^\\S\\n]+))'
+  };
 
   var reserved = [
     ['function', 'FUNCTION'],
@@ -136,7 +143,7 @@ var Token = (function($) {
 
     // NUMERIC_LITERAL
     [
-      '(?:((?:0[0-7]+))|((?:0x[a-fA-F0-9]+))|((?:(?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))(?:[eE]\\d+)?))',
+      regexes.NUMERIC_LITERAL,
       function(matches, string) {
         var number = 0;
 
@@ -163,7 +170,7 @@ var Token = (function($) {
 
     // IDENTIFIER
     [
-      '[a-zA-Z_\\$][-_a-zA-Z0-9\\$]*',
+      regexes.IDENTIFIER,
       function(matches, string) {
         var token = {
           type: 'IDENTIFIER',
@@ -179,7 +186,7 @@ var Token = (function($) {
 
     // STRING_LITERAL
     [
-      '(\'|")',
+      regexes.STRING_LITERAL,
       function(matches, string) {
         var quote = matches[1];
         var endQuotePos = 0;
@@ -211,7 +218,7 @@ var Token = (function($) {
 
     // SINGLE_LINE_COMMENT, MULTI_LINE_COMMENT, and SLASH
     [
-      '\\/',
+      regexes.COMMENT_OR_SLASH,
       function(matches, string) {
 
         /**
@@ -231,7 +238,6 @@ var Token = (function($) {
             }
           }
         }
-
 
         switch (string[1]) {
           // Single-line comment
@@ -280,7 +286,7 @@ var Token = (function($) {
 
     // WHITESPACE
     [
-      '((?:[^\\S\\n]+))', 
+      regexes.WHITESPACE, 
       function(matches, string) {
         return {
           token: undefined,
