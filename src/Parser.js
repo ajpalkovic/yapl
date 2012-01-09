@@ -4,7 +4,7 @@ var Parser = (function($) {
       this.lexer = undefined;
       this.cache = {};
     },
-
+    
     parse: function(input) {
       this.lexer = new Lexer(input);
       return this.parseProgram();

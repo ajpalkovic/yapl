@@ -36,7 +36,7 @@ var Lexer = (function($) {
             result.token && tokens.push(result.token);
             endOfMatch = result.position;
           } else {
-            throw "Syntax Error: Illegal token: " + string;
+            throw 'Syntax Error: Illegal token: ' + string;
           }
         }
 
