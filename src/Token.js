@@ -1,5 +1,12 @@
 var Token = (function($) {
 
+  /**
+   *  Basically this function takes an array of 'tokens', which are really just 2-element
+   *  arrays containing the token's value and the name of the token for parsing
+   *  purposes, and 
+   *    - escapes the token's value for regular expression reserved characters if specified
+   *    - compiles all the values into one big regular expression
+   */
   function compileRegex(tokens, escape) {
     var regex = [];
 
@@ -12,6 +19,13 @@ var Token = (function($) {
     return '(?:' + tokenRegex + ')';
   }
 
+  /**
+   *  Given a list of tokens and an optional token lookup table, this will basically create a lookup
+   *  of token values to a function that merely returns a token with that type.  The lexer uses the
+   *  lookup created here to match a lexed piece of source to a particular token type.  Tokens with
+   *  non-simple (i.e., the matched source code requires more logic to determine the corresponding token)
+   *  are not entered into the lookups.
+   */
   function prepare(tokens, lookup) {
     var lookup = lookup || {};
 
@@ -35,9 +49,10 @@ var Token = (function($) {
     IDENTIFIER: '((?:[a-zA-Z_\\$][_a-zA-Z0-9\\$]*))',
     STRING_LITERAL: '(\'|")',
     COMMENT_OR_SLASH: '\\/',
-    WHITESPACE: '((?:[^\\S\\n]+))'
+    WHITESPACE: '((?:[^\\S\\n]+))' // Does not match newlines
   };
 
+  // Language reserved words
   var reserved = [
     ['function', 'FUNCTION'],
     ['var', 'VAR'],
@@ -86,6 +101,8 @@ var Token = (function($) {
     ['unlike', 'UNLIKE'],
   ];
 
+  //  Note: tokens that are substrings of other tokens must be placed below those tokens
+  //        in this list.  (i.e., = must come after ==)
   var tokens = [
     ['>>>=', 'LOGICAL_SHIFTR_EQUAL'],
     ['>>>', 'LOGICAL_RSHIFT'],
@@ -148,10 +165,13 @@ var Token = (function($) {
         var number = 0;
 
         if (matches[1]) {
+          // It was an octal number
           number = parseInt(matches[0], 8);
         } else if (matches[2]) {
           number = parseInt(matches[0], 16);
+          // It has a hex number
         } else if (matches[3]) {
+          // It was a decimal number
           number = parseFloat(matches[0]);
         } else {
           return undefined;
@@ -191,6 +211,7 @@ var Token = (function($) {
         var quote = matches[1];
         var endQuotePos = 0;
 
+        // Find the closing quote/
         for (var i = matches[0].length, len = string.length; i < len; ++i) {
           if (string[i] === quote) {
             endQuotePos = i;
@@ -243,6 +264,9 @@ var Token = (function($) {
           // Single-line comment
           case '/':
             var newlineIndex = string.indexOf('\n');
+            
+            // The string may not have had a newline at all, so just go to the end if 
+            // that is the case.
             var end = newlineIndex >= 0 ? newlineIndex : string.length;
 
             var comment = string.substring(0, end);
@@ -258,7 +282,7 @@ var Token = (function($) {
           
           // Multi-line comment
           case '*':
-            // If it wasn't a balenced comment, the whole document from that point
+            // If it wasn't a balanced comment, the whole document from that point
             // on is commented out.
             var commentEnd = findMultiCommentEnd(string, 0) || string.length;
 
@@ -296,6 +320,10 @@ var Token = (function($) {
     ]
   ];
 
+  /**
+   *  Function that will take a string of matched source that was not in the lookup
+   *  of token values to types and try to match it to one of the advanced tokens.
+   */
   function identify(string) {
     for (var i = 0, len = advanced.length; i < len; ++i) {
       var re = new RegExp('^' + advanced[i][0]);
@@ -307,9 +335,13 @@ var Token = (function($) {
     return undefined;
   }
 
-  var reservedRegex = compileRegex(reserved, true) + IDENTIFIER;
+  // The appended regular expression ensures that in order for something to be a reserved
+  // word, it cannot be part of a valid identifier.  This covers the case where the reserved
+  // word appears at the beginning of the identifier...
+  var reservedRegex = compileRegex(reserved, true) + '(?=[^a-zA-Z_0-9])';
   var tokenRegex = compileRegex(tokens, true);
 
+  // ...which is the only case as the regex is only run at the beginning of the string.
   var compiledRe = '^' + compileRegex([[reservedRegex], [tokenRegex]]);
 
   return {
