@@ -14,8 +14,8 @@ var Lexer = (function($) {
       return this.tokens[this.currentPos++];
     },
 
-    setPosition: function(position) {
-      this.position = position;
+    setPosition: function(currentPos) {
+      this.currentPos = currentPos;
     },
 
     __lex: function(string) {
