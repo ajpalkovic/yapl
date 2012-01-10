@@ -1,14 +1,6 @@
 var Parser = (function($) {
   var functions = {
     parseProgram: function() {
-      this.cahce['program'] || this.cache['program'] = [];
-
-      var cached = this.cache['program'][this.lexer.currentPos];
-      if (cached) {
-        this.lexer.setPosition(cached.position);
-        return cached.result;
-      }
-
       var element = undefined;
       var source = [];
 
@@ -16,15 +8,13 @@ var Parser = (function($) {
         source.push(element);
       }
 
-      return this.cache['program'][this.lexer.currentPos] = {
+      return {
         type: 'program',
         source: source
       };
     },
 
     parseSourceElement:  function() {
-      this.cache['sourceElement'] || this.cache['sourceElement'] = [];
-
       var result = this.tryParse(this.parseStatement, 
                                  this.parseClass, 
                                  this.parseFunctionDeclaration, 
