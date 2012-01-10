@@ -1,40 +1,30 @@
 var Parser = (function($) {
-  return Class.create({
-    initialize: function Parser() {
-      this.lexer = undefined;
-      this.cache = {};
-    },
-    
-    parse: function(input) {
-      this.lexer = new Lexer(input);
-      return this.parseProgram();
-    },
-
-    tryParse: function() {
-      for (var i = 0, len = arguments.length; i < len; ++i) {
-        var result = arguments[i].call(this);
-        if (result) return result;
-      }
-
-      return undefined;
-    },
-
-    error: function() {
-      
-    },
-
+  var functions = {
     parseProgram: function() {
-      var sourceElement = undefined;
-      var program = new Program();
+      this.cahce['program'] || this.cache['program'] = [];
 
-      while (sourceElement = this.parseSourceElement()) {
-        program.add(sourceElement);
+      var cached = this.cache['program'][this.lexer.currentPos];
+      if (cached) {
+        this.lexer.setPosition(cached.position);
+        return cached.result;
       }
 
-      return program;
+      var element = undefined;
+      var source = [];
+
+      while (element = this.parseSourceElement()) {
+        source.push(element);
+      }
+
+      return this.cache['program'][this.lexer.currentPos] = {
+        type: 'program',
+        source: source
+      };
     },
 
     parseSourceElement:  function() {
+      this.cache['sourceElement'] || this.cache['sourceElement'] = [];
+
       var result = this.tryParse(this.parseStatement, 
                                  this.parseClass, 
                                  this.parseFunctionDeclaration, 
@@ -397,4 +387,61 @@ var Parser = (function($) {
 
     }
   });
+
+  var methods = {
+    initialize: function Parser() {
+      this.lexer = undefined;
+      this.cache = {};
+    },
+    
+    parse: function(input) {
+      this.lexer = new Lexer(input);
+      return this.parseProgram();
+    },
+
+    tryParse: function() {
+      for (var i = 0, len = arguments.length; i < len; ++i) {
+        var result = arguments[i].call(this);
+        if (result) return result;
+      }
+
+      return undefined;
+    },
+
+    error: function() {
+      
+    }
+  };
+
+  // Wrap the parse functions in a caching mechanism to ensure redundant parsing
+  // branches are never run at a given lexer position.
+  for (var fnName in functions) {
+    methods[fnName] = (function(fnName) {
+      return function() {
+        // This is the position of the lexer when we start parsing
+        var startPos = this.lexer.currentPos;
+        var cached = (this.cache[fnName] || this.cache[fnName] = [])[startPos];
+
+        if (cached) {
+          this.lexer.currentPos = cached.nextPos;
+          return cached.result;
+        }
+
+        var result = functions[fnName].call(this);
+
+        // After calling a parse function, the lexer position could have
+        // advanced, so that would be the 'next position' of the lexer
+        // if we ever end up running this parse function at the same
+        // position again.
+        this.cache[fnName][startPos] = {
+          nextPos: this.lexer.currentPos,
+          result: result
+        };
+
+        return result;
+      };
+    })(fnName);
+  }
+
+  return Class.create(methods);
 })(jQuery);
