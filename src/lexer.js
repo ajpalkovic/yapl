@@ -2,7 +2,7 @@ var Lexer = (function($) {
 
   return Class.create({
     initialize: function Lexer(string) {
-      this.tokens = this.__lex(string);
+      this.tokens = this.__condense(this.__lex(string));
       this.currentPos = 0;
     },
 
@@ -10,7 +10,7 @@ var Lexer = (function($) {
       return this.tokens[this.currentPos + 1];
     },
 
-    next: function() {
+    next: function(newlines) {
       return this.tokens[this.currentPos++];
     },
 
@@ -46,8 +46,19 @@ var Lexer = (function($) {
       return tokens;
     },
 
-    toString: function() {
-      return $.map(this.tokens, function(token, index) { return ['<', token.type, ' value=', token.value, '>'].join(''); }).join('\n');
+    __condense: function(tokens) {
+      for (var i = 0, len = tokens.length; i < len; ++i) {
+        for (var j = i; j < len; ++j) {
+          if (tokens[j].type !== 'NEWLINE') break;
+        }
+
+        if (i != j) {
+          tokens.splice(i, j - i, tokens[i]);
+          i = j;
+        }
+      }
+
+      return tokens;
     }
   });
 })(jQuery);
