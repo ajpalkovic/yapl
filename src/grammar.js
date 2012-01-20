@@ -498,11 +498,58 @@ var Grammar = {
   },
 
   Statement: {
-    rule: ,
+    rule: [
+      ['TerminatedStatement'],
+      ['ComplexStatement']
+    ],
+
     onParse: function() {
       
     } 
   },
+
+  TerminatedStatement: {
+    rule: [
+      ['EmptyStatement'],
+      ['SimpleStatement EndSt']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  ComplexStatement: {
+    rule: [
+      ['IfStatement'],
+      ['UnlessStatement'],
+      ['IterationStatement'],
+      ['WithStatement'],
+      ['SwitchStatement'],
+      ['TryStatement']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  SimpleStatement: {
+    rule: [
+      ['VariableStatement'],
+      ['ExpressionStatement'],
+      ['BreakStatement'],
+      ['ReturnStatement'],
+      ['ContinueStatement'],
+      ['LabelledStatement'],
+      ['ThrowStatement'],
+      ['DebuggerStatement']
+    ],
+
+    onParse: function() {
+      
+    } 
+  }
 
   EndSt: {
     rule: [
@@ -527,7 +574,10 @@ var Grammar = {
   },
 
   EmptyStatement: {
-    rule: ,
+    rule: [
+      ['EndSt']
+    ],
+
     onParse: function() {
       
     } 
