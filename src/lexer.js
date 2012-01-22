@@ -8,8 +8,12 @@ var Lexer = (function($) {
     },
 
     next: function(newlines) {
-      this.lastPos = Math.max(this.currentPos, this.lastPos);
+      this.lastPos = (this.currentPos < this.tokens.length) ? Math.max(this.currentPos, this.lastPos) : this.lastPos;
       return this.tokens[this.currentPos++];
+    },
+
+    peek: function() {
+      return this.tokens[this.currentPos];
     },
 
     last: function() {
@@ -40,7 +44,7 @@ var Lexer = (function($) {
         }
 
         if (token.type === 'NEWLINE') {
-          line++;
+          token.line = line++;
         } else {
           token.line = line;
         }
@@ -49,6 +53,10 @@ var Lexer = (function($) {
         string = string.substring(endOfMatch);
       }
 
+      // We add an end-of-file token to the end of the stream.
+      var eofToken = Token.types['<<EOF>>']();
+      eofToken.line = line;
+      tokens.push(eofToken);
       return tokens;
     }
 

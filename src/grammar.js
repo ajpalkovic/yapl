@@ -2,7 +2,8 @@ var Grammar = {
   Program: {
     productions: [
       ['SourceElement', 'Program'],
-      ['SourceElement']
+      ['SourceElement'],
+      ['<<EOF>>']
     ],
 
     onParse: function() {
@@ -107,7 +108,7 @@ var Grammar = {
 
   Closure: {
     productions: [
-      ['CLOSURE', 'Parameters', 'SourceElements', 'END']
+      ['CLOSURE', 'Parameters', 'FunctionBody', 'END']
     ],
 
     onParse: function() {
@@ -139,10 +140,10 @@ var Grammar = {
 
   Parameters: {
     productions: [
-      ['OPEN_PAREN',  'CLOSE_PAREN', ],
-      ['OPEN_PAREN',  'ParameterList',   'CLOSE_PAREN'],
-      ['OPEN_PAREN',  'VarArgs',   'CLOSE_PAREN'],
-      ['OPEN_PAREN',  'ParameterList', 'COMMA', 'VarArgs', 'CLOSE_PAREN']
+      ['OPEN_PAREN', 'CLOSE_PAREN'],
+      ['OPEN_PAREN', 'ParameterList', 'CLOSE_PAREN'],
+      ['OPEN_PAREN', 'VarArgs', 'CLOSE_PAREN'],
+      ['OPEN_PAREN', 'ParameterList', 'COMMA', 'VarArgs', 'CLOSE_PAREN']
     ],
 
     onParse: function() {
@@ -153,7 +154,7 @@ var Grammar = {
   ParameterList: {
     productions: [
       ['Parameter', 'COMMA', 'ParameterList'],
-      []
+      ['Parameter']
     ],
 
     onParse: function() {
@@ -163,9 +164,9 @@ var Grammar = {
 
   Parameter: {
     productions: [
-      ['IDENTIFIER'],
+      ['DefaultArgument'],
       ['AutoSetParam'],
-      ['DefaultArgument']
+      ['IDENTIFIER']
     ],
 
     onParse: function() {
@@ -185,7 +186,7 @@ var Grammar = {
 
   DefaultArgument: {
     productions: [
-      ['IDENTIFIER', 'EQUALS', 'Expression']
+      ['IDENTIFIER', 'ASSIGN', 'Expression']
     ],
 
     onParse: function() {
@@ -236,8 +237,8 @@ var Grammar = {
 
   ArrayElements: {
     productions: [
-      ['ArrayElement'],
-      ['ArrayElement', 'COMMA', 'ArrayElements']
+      ['ArrayElement', 'COMMA', 'ArrayElements'],
+      ['ArrayElement']
     ],
 
     onParse: function() {
@@ -258,8 +259,8 @@ var Grammar = {
 
   ObjectLiteral: {
     productions: [
-      ['OPEN_BRACE', 'CLOSE_BRACE'],
-      ['OPEN_BRACE', 'Properties', 'CLOSE_BRACE']
+      ['OPEN_BRACE', 'Properties', 'CLOSE_BRACE'],
+      ['OPEN_BRACE', 'CLOSE_BRACE']
     ],
 
     onParse: function() {
@@ -269,8 +270,8 @@ var Grammar = {
 
   Properties: {
     productions: [
+      ['Property', 'Properties'],
       ['Property']
-      ['Property', 'Properties']
     ],
 
     onParse: function() {
@@ -280,8 +281,8 @@ var Grammar = {
 
   Property: {
     productions: [
-      ['PropertyName'],
-      ['PropertyName', 'COLON', 'Expression']
+      ['PropertyName', 'COLON', 'Expression'],
+      ['PropertyName']
     ],
 
     onParse: function() {
@@ -317,18 +318,6 @@ var Grammar = {
       ['SimpleExpression', 'ASSIGN', 'Expression'],
       ['SimpleExpression', 'QUESTION', 'Expression', 'COLON', 'Expression'],
       ['SimpleExpression']
-
-      // ['Expression', 'AssignmentOperator', 'Expression'],
-      // ['Expression', 'QUESTION', 'Expression', 'COLON', 'Expression'],
-      // ['Expression', 'RelativeOperator', 'Expression']
-      // ['Expression', 'MultiplicationOperator', 'Expression'],
-      // ['Expression', 'AddOperator', 'Expression'],
-
-      // ['UnaryOperator', 'Expression'],
-      // ['INCREMENT', 'Expression'],
-      // ['Expression', 'INCREMENT'],
-      // ['DECREMENT', 'Expression'],
-      // ['Expression', 'DECREMENT']
     ],
 
     onParse: function() {
@@ -449,7 +438,8 @@ var Grammar = {
     productions: [
       ['ArrayDereference', 'MemberPart'],
       ['DOT',  'IDENTIFIER', 'MemberPart'],
-      ['Arguments', 'MemberPart']
+      ['Arguments', 'MemberPart'],
+      []
     ],
 
     onParse: function() {
@@ -591,7 +581,7 @@ var Grammar = {
     } 
   },
 
-  MultiplicationOp: {
+  MultiplicationOperator: {
     productions: [
       ['ASTERISK'],
       ['SLASH'],
@@ -660,7 +650,8 @@ var Grammar = {
   EndSt: {
     productions: [
       ['NEWLINE'],
-      ['SEMI']
+      ['SEMI'],
+      ['<<EOF>>']
     ],
 
     onParse: function() {
@@ -670,8 +661,8 @@ var Grammar = {
 
   StatementList:  {
     productions: [
-      ['Statement'],
-      ['StatementList Statement']
+      ['Statement', 'StatementList'],
+      ['Statement']
     ],
 
     onParse: function() {
@@ -691,8 +682,12 @@ var Grammar = {
 
   ExpressionStatement: {
     productions: [
-      ['Expression', '^FUNCTION']
+      ['Expression']
     ],
+
+    lookahead: {
+      'FUNCTION': false
+    },
 
     onParse: function() {
       
@@ -711,8 +706,8 @@ var Grammar = {
 
   VariableDeclarationList:  {
     productions: [
-      ['VariableDeclaration'],
-      ['VariableDeclarationList', 'COMMA', 'VariableDeclaration']
+      ['VariableDeclaration', 'COMMA', 'VariableDeclarationList'],
+      ['VariableDeclaration']
     ],
 
     onParse: function() {
@@ -733,10 +728,10 @@ var Grammar = {
 
   IfStatement:  {
     productions: [
-      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'END'],
-      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElsePart', 'END'],
-      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElseIfPart', 'END'],
       ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElseIfPart', 'ElsePart', 'END'],
+      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElseIfPart', 'END'],
+      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElsePart', 'END'],
+      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'END'],
       ['SimpleStatement', 'IF', 'Expression', 'EndSt']
     ],
 
@@ -779,8 +774,8 @@ var Grammar = {
 
   ElseIfPart: {
     productions: [
-      ['ElseIf'],
-      ['ElseIfPart', 'ElseIf']
+      ['ElseIf', 'ElseIfPart'],
+      ['ElseIf']
     ],
 
     onParse: function() {
@@ -891,10 +886,10 @@ var Grammar = {
 
   AdvancedForLoop: {
     productions: [
-      ['Expression', 'IN', 'Expression'],
       ['Expression', 'IN', 'Expression', 'AT', 'IDENTIFIER'],
-      ['Expression', 'COMMA', 'IDENTIFIER', 'IN', 'Expression'],
+      ['Expression', 'IN', 'Expression'],
       ['Expression', 'COMMA', 'IDENTIFIER', 'IN', 'Expression', 'AT', 'IDENTIFIER'],
+      ['Expression', 'COMMA', 'IDENTIFIER', 'IN', 'Expression'],
       ['Expression', 'AT', 'IDENTIFIER']
     ],
 
@@ -905,8 +900,8 @@ var Grammar = {
 
   ContinueStatement: {
     productions: [
-      ['CONTINUE'],
-      ['CONTINUE IDENTIFIER']
+      ['CONTINUE', 'IDENTIFIER'],
+      ['CONTINUE']
     ],
 
     onParse: function() {
@@ -916,8 +911,8 @@ var Grammar = {
 
   BreakStatement: {
     productions: [
-      ['BREAK'],
-      ['BREAK IDENTIFIER']
+      ['BREAK', 'IDENTIFIER'],
+      ['BREAK']
     ],
 
     onParse: function() {
@@ -927,8 +922,8 @@ var Grammar = {
 
   ReturnStatement: {
     productions: [
-      ['RETURN'],
-      ['RETURN Expression']
+      ['RETURN', 'Expression'],
+      ['RETURN']
     ],
 
     onParse: function() {
@@ -958,16 +953,12 @@ var Grammar = {
 
   CaseBlock: {
     productions: [
-      ['CaseClauses'],
-      ['DefaultClause'],
-      ['AlwaysClause'],
-
-      ['CaseClauses', 'DefaultClause'],
-      ['CaseClauses', 'AlwaysClause'],
-      ['DefaultClause', 'AlwaysClause'],
-      ['DefaultClause', 'CaseClauses'],
-      ['AlwaysClause', 'CaseClauses'],
-      ['AlwaysClause', 'DefaultClause'],
+      ['CaseClauses', 'DefaultClause', 'CaseClauses', 'AlwaysClause'],
+      ['CaseClauses', 'AlwaysClause', 'CaseClauses', 'DefaultClause'],
+      ['CaseClauses', 'DefaultClause', 'AlwaysClause', 'CaseClauses'],
+      ['CaseClauses', 'AlwaysClause', 'DefaultClause', 'CaseClauses'],
+      ['DefaultClause', 'CaseClauses', 'AlwaysClause', 'CaseClauses'],
+      ['AlwaysClause', 'CaseClauses', 'DefaultClause', 'CaseClauses'],
 
       ['CaseClauses', 'DefaultClause', 'CaseClauses'],
       ['CaseClauses', 'DefaultClause', 'AlwaysClause'],
@@ -978,12 +969,16 @@ var Grammar = {
       ['AlwaysClause', 'CaseClauses', 'DefaultClause'],
       ['AlwaysClause', 'DefaultClause', 'CaseClauses'],
 
-      ['CaseClauses', 'DefaultClause', 'CaseClauses', 'AlwaysClause'],
-      ['CaseClauses', 'AlwaysClause', 'CaseClauses', 'DefaultClause'],
-      ['CaseClauses', 'DefaultClause', 'AlwaysClause', 'CaseClauses'],
-      ['CaseClauses', 'AlwaysClause', 'DefaultClause', 'CaseClauses'],
-      ['DefaultClause', 'CaseClauses', 'AlwaysClause', 'CaseClauses'],
-      ['AlwaysClause', 'CaseClauses', 'DefaultClause', 'CaseClauses'],
+      ['CaseClauses', 'DefaultClause'],
+      ['CaseClauses', 'AlwaysClause'],
+      ['DefaultClause', 'AlwaysClause'],
+      ['DefaultClause', 'CaseClauses'],
+      ['AlwaysClause', 'CaseClauses'],
+      ['AlwaysClause', 'DefaultClause'],
+
+      ['CaseClauses'],
+      ['DefaultClause'],
+      ['AlwaysClause']
     ],
 
     onParse: function() {
@@ -993,8 +988,8 @@ var Grammar = {
 
   CaseClauses: {
     productions: [
-      ['CaseClause'],
-      ['CaseClauses', 'CaseClause']
+      ['CaseClause', 'CaseClauses']
+      ['CaseClause']
     ],
 
     onParse: function() {
@@ -1024,8 +1019,8 @@ var Grammar = {
 
   LabelledStatement: {
     productions: [
-      ['IDENTIFIER', 'COLON', 'Statement'],
-      ['IDENTIFIER', 'COLON', 'BlockBody', 'END']
+      ['IDENTIFIER', 'COLON', 'BlockBody', 'END'],
+      ['IDENTIFIER', 'COLON', 'Statement']
     ],
 
     onParse: function() {
@@ -1045,12 +1040,12 @@ var Grammar = {
 
   TryStatement: {
     productions: [
-      ['TRY', 'Catch', 'END'],
-      ['TRY', 'Finally', 'END'],
-      ['TRY', 'Catch', 'Finally', 'END'],
-      ['TRY', 'StatementList', 'Catch', 'END'],
+      ['TRY', 'StatementList', 'Catch', 'Finally', 'END'],
       ['TRY', 'StatementList', 'Finally', 'END'],
-      ['TRY', 'StatementList', 'Catch', 'Finally', 'END']
+      ['TRY', 'StatementList', 'Catch', 'END'],
+      ['TRY', 'Catch', 'Finally', 'END'],
+      ['TRY', 'Finally', 'END'],
+      ['TRY', 'Catch', 'END']
     ],
 
     onParse: function() {
@@ -1060,8 +1055,8 @@ var Grammar = {
 
   Catch: {
     productions: [
-      ['CATCH', 'NEWLINE', 'BlockBody'],
-      ['CATCH', 'IDENTIFIER', 'NEWLINE', 'BlockBody']
+      ['CATCH', 'IDENTIFIER', 'NEWLINE', 'BlockBody'],
+      ['CATCH', 'NEWLINE', 'BlockBody']
     ],
 
     onParse: function() {

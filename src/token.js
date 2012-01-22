@@ -33,6 +33,7 @@ var Token = (function($) {
       (function(value) {
         lookup[value[0]] = (typeof value[1] === 'function') ? value[1] : function() {
           return {
+            value: value[0],
             type: value[1],
             optional: (value[2] === true)
           };
@@ -340,15 +341,20 @@ var Token = (function($) {
   // The appended regular expression ensures that in order for something to be a reserved
   // word, it cannot be part of a valid identifier.  This covers the case where the reserved
   // word appears at the beginning of the identifier...
-  var reservedRegex = compileRegex(reserved, true) + '(?=[^a-zA-Z_0-9])';
+  var reservedRegex = compileRegex(reserved, true) + '(?![a-zA-Z_0-9])';
   var tokenRegex = compileRegex(tokens, true);
 
   // ...which is the only case as the regex is only run at the beginning of the string.
   var compiledRe = '^' + compileRegex([[reservedRegex], [tokenRegex]]);
 
+  // We didn't want this to be part of the overall regex, so we add it after the regex has been
+  // created.
+  tokens.push(['<<EOF>>', '<<EOF>>']);
+  var typeLookup = prepare(tokens, prepare(reserved));
+
   return {
     regex: compiledRe,
-    types: prepare(tokens, prepare(reserved)),
+    types: typeLookup,
     identify: identify
   }
 })(jQuery);
