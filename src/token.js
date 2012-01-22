@@ -33,9 +33,8 @@ var Token = (function($) {
       (function(value) {
         lookup[value[0]] = (typeof value[1] === 'function') ? value[1] : function() {
           return {
-            token: {
-              type: value[1]
-            }
+            type: value[1],
+            optional: (value[2] === true)
           };
         };
       })(tokens[i]);
@@ -60,7 +59,7 @@ var Token = (function($) {
     ['instanceof', 'INSTANCEOF'],
     ['in', 'IN'],
     ['else', 'ELSE'],
-    ['elseif', 'ELSEIF'],
+    // ['elseif', 'ELSEIF'],
     ['for', 'FOR'],
     ['while', 'WHILE'],
     ['do', 'DO'],
@@ -153,7 +152,7 @@ var Token = (function($) {
     ['^', 'XOR'],
     ['@', 'MEMBER'],
     ['#', 'BIND'],
-    ['\n', 'NEWLINE']
+    ['\n', 'NEWLINE', true]
   ];
 
   var advanced = [
@@ -179,7 +178,7 @@ var Token = (function($) {
 
         return {
           token: {
-            type: 'INTEGER',
+            type: 'NUMERIC_LITERAL',
             value: number
           },
 
@@ -313,7 +312,10 @@ var Token = (function($) {
       regexes.WHITESPACE, 
       function(matches, string) {
         return {
-          token: undefined,
+          token: {
+            type: 'WHITESPACE',
+            ignore: true
+          },
           position: matches[0].length
         };
       }

@@ -1,8 +1,8 @@
 var Grammar = {
   Program: {
-    rule: [
-      [],
-      ['Program', 'SourceElement']
+    productions: [
+      ['SourceElement', 'Program'],
+      ['SourceElement']
     ],
 
     onParse: function() {
@@ -11,9 +11,9 @@ var Grammar = {
   },
 
   SourceElement:  {
-    rule: [
+    productions: [
       ['Statement'],
-      ['Class'],
+      ['ClassDeclaration'],
       ['FunctionDeclaration'],
       ['Closure']
     ],
@@ -23,8 +23,8 @@ var Grammar = {
     } 
   },
 
-  Class: {
-    rule: [
+  ClassDeclaration: {
+    productions: [
       ['CLASS', 'IDENTIFIER', 'NEWLINE', 'ClassBody', 'END'],
       ['CLASS', 'IDENTIFIER', 'EXTENDS', 'MemberExpression', 'NEWLINE', 'END']
     ],
@@ -35,10 +35,9 @@ var Grammar = {
   },
 
   ClassBody: {
-    rule: [
-      [],
-      ['ClassElement'],
-      ['ClassBody', 'ClassElement']
+    productions: [
+      ['ClassElement', 'ClassBody'],
+      []
     ],
 
     onParse: function() {
@@ -47,7 +46,7 @@ var Grammar = {
   },
 
   ClassElement: {
-    rule: [
+    productions: [
       ['InstanceVarDeclaration'],
       ['STATIC', 'OPEN_BRACE', 'StatementList', 'CLOSE_BRACE'],
       ['Method'],
@@ -60,7 +59,7 @@ var Grammar = {
   },
 
   Method: {
-    rule: [
+    productions: [
       ['FunctionDeclaration']
       ['STATIC', 'FunctionDeclaration']
     ],
@@ -71,7 +70,7 @@ var Grammar = {
   },
 
   InstanceVarDeclaration: {
-    rule: [
+    productions: [
       ['VariableStatement', 'EndSt'],
       ['STATIC', 'VariableStatement', 'EndSt'],
       ['Accessor', 'VariableStatement', 'EndSt'],
@@ -85,7 +84,7 @@ var Grammar = {
   },
 
   Accessor: {
-    rule: [
+    productions: [
       ['GETTER'],
       ['SETTER'],
       ['ACCESSOR']
@@ -97,7 +96,7 @@ var Grammar = {
   },
 
   FunctionDeclaration: {
-    rule: [
+    productions: [
       ['FUNCTION', 'IDENTIFIER', 'Parameters', 'FunctionBody', 'END']
     ],
 
@@ -107,7 +106,7 @@ var Grammar = {
   },
 
   Closure: {
-    rule: [
+    productions: [
       ['CLOSURE', 'Parameters', 'SourceElements', 'END']
     ],
 
@@ -117,7 +116,7 @@ var Grammar = {
   },
 
   FunctionExpression: {
-    rule: [
+    productions: [
       ['FUNCTION', 'Parameters', 'FunctionBody', 'END'],
       ['FUNCTION', 'IDENTIFIER', 'Parameters', 'FunctionBody', 'END']
     ],
@@ -127,9 +126,9 @@ var Grammar = {
     } 
   },
 
-  // TODO: rule w/ identifier
+  // TODO: productions w/ identifier
   ClassExpression: {
-    rule: [
+    productions: [
       ['CLASS', 'ClassBody', 'END']
     ],
 
@@ -139,7 +138,7 @@ var Grammar = {
   },
 
   Parameters: {
-    rule: [
+    productions: [
       ['OPEN_PAREN',  'CLOSE_PAREN', ],
       ['OPEN_PAREN',  'ParameterList',   'CLOSE_PAREN'],
       ['OPEN_PAREN',  'VarArgs',   'CLOSE_PAREN'],
@@ -152,11 +151,21 @@ var Grammar = {
   },
 
   ParameterList: {
-    rule: [
+    productions: [
+      ['Parameter', 'COMMA', 'ParameterList'],
+      []
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  Parameter: {
+    productions: [
       ['IDENTIFIER'],
       ['AutoSetParam'],
-      ['DefaultArgument'],
-      ['ParameterList', 'COMMA', 'IDENTIFIER']
+      ['DefaultArgument']
     ],
 
     onParse: function() {
@@ -165,7 +174,7 @@ var Grammar = {
   },
 
   AutoSetParam: {
-    rule: [
+    productions: [
       ['AT', 'IDENTIFIER']
     ],
 
@@ -175,7 +184,7 @@ var Grammar = {
   },
 
   DefaultArgument: {
-    rule: [
+    productions: [
       ['IDENTIFIER', 'EQUALS', 'Expression']
     ],
 
@@ -185,7 +194,7 @@ var Grammar = {
   },
 
   VarArgs: {
-    rule: [
+    productions: [
       ['IDENTIFIER', 'ELLIPSES']
     ],
 
@@ -195,9 +204,9 @@ var Grammar = {
   },
 
   FunctionBody: {
-    rule: [
-      [],
-      ['FunctionBody', 'SourceElement']
+    productions: [
+      ['SourceElement', 'FunctionBody'],
+      []
     ],
 
     onParse: function() {
@@ -206,7 +215,7 @@ var Grammar = {
   },
 
   MemberIdentifier: {
-    rule: [
+    productions: [
       ['MEMBER', 'IDENTIFIER']
     ],
 
@@ -216,7 +225,7 @@ var Grammar = {
   },
 
   ArrayLiteral: {
-    rule: [
+    productions: [
       ['OPEN_BRACKET', 'ArrayElements', 'CLOSE_BRACKET']
     ],
 
@@ -226,11 +235,20 @@ var Grammar = {
   },
 
   ArrayElements: {
-    rule: [
-      [],
+    productions: [
+      ['ArrayElement'],
+      ['ArrayElement', 'COMMA', 'ArrayElements']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  ArrayElement: {
+    productions: [
       ['Expression'],
-      ['ArrayElements', 'COMMA'],
-      ['ArrayElements', 'COMMA', 'Expression']
+      []
     ],
 
     onParse: function() {
@@ -239,7 +257,7 @@ var Grammar = {
   },
 
   ObjectLiteral: {
-    rule: [
+    productions: [
       ['OPEN_BRACE', 'CLOSE_BRACE'],
       ['OPEN_BRACE', 'Properties', 'CLOSE_BRACE']
     ],
@@ -250,9 +268,9 @@ var Grammar = {
   },
 
   Properties: {
-    rule: [
+    productions: [
       ['Property']
-      ['Properties', 'Property']
+      ['Property', 'Properties']
     ],
 
     onParse: function() {
@@ -261,7 +279,7 @@ var Grammar = {
   },
 
   Property: {
-    rule: [
+    productions: [
       ['PropertyName'],
       ['PropertyName', 'COLON', 'Expression']
     ],
@@ -272,7 +290,7 @@ var Grammar = {
   },
 
   PropertyName: {
-    rule: [
+    productions: [
       ['IDENTIFIER'],
       ['STRING_LITERAL'],
       ['NUMERIC_LITERAL']
@@ -284,9 +302,9 @@ var Grammar = {
   },
 
   ExpressionList: {
-    rule: [
+    productions: [
       ['Expression'],
-      ['ExpressionList Expression']
+      ['Expression', 'COMMA', 'ExpressionList']
     ],
 
     onParse: function() {
@@ -295,20 +313,84 @@ var Grammar = {
   },
 
   Expression: {
-    rule: [
-      ['LeftHandSideExpression'],
+    productions: [
+      ['SimpleExpression', 'ASSIGN', 'Expression'],
+      ['SimpleExpression', 'QUESTION', 'Expression', 'COLON', 'Expression'],
+      ['SimpleExpression']
 
-      ['Expression', 'AssignmentOperator', 'Expression'],
-      ['Expression', 'QUESTION', 'Expression', 'COLON', 'Expression'],
-      ['Expression', 'RelativeOperator', 'Expression']
-      ['Expression', 'MultiplicationOperator', 'Expression'],
-      ['Expression', 'AddOperator', 'Expression'],
+      // ['Expression', 'AssignmentOperator', 'Expression'],
+      // ['Expression', 'QUESTION', 'Expression', 'COLON', 'Expression'],
+      // ['Expression', 'RelativeOperator', 'Expression']
+      // ['Expression', 'MultiplicationOperator', 'Expression'],
+      // ['Expression', 'AddOperator', 'Expression'],
 
-      ['UnaryOperator', 'Expression'],
-      ['INCREMENT', 'Expression'],
-      ['Expression', 'INCREMENT'],
-      ['DECREMENT', 'Expression'],
-      ['Expression', 'DECREMENT']
+      // ['UnaryOperator', 'Expression'],
+      // ['INCREMENT', 'Expression'],
+      // ['Expression', 'INCREMENT'],
+      // ['DECREMENT', 'Expression'],
+      // ['Expression', 'DECREMENT']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  SimpleExpression: {
+    productions: [
+      ['AdditiveExpression', 'RelativeOperator', 'Expression'],
+      ['AdditiveExpression']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  AdditiveExpression: {
+    productions: [
+      ['Term', 'MultiplicationOperator', 'Expression'],
+      ['Term']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  Term: {
+    productions: [
+      ['IncrementExpression', 'AddOperator', 'Expression'],
+      ['IncrementExpression']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  IncrementExpression: {
+    productions: [
+      ['UnaryExpression', 'DECREMENT'],
+      ['UnaryExpression', 'INCREMENT'],
+      ['INCREMENT', 'UnaryExpression'],
+      ['DECREMENT', 'UnaryExpression'],
+      ['UnaryExpression']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  UnaryExpression: {
+    productions: [
+      ['LOGICAL_NOT', 'UnaryExpression'],
+      ['BITWISE_NOT', 'UnaryExpression'],
+      ['QUESTION', 'UnaryExpression'],
+      ['MINUS', 'UnaryExpression'],
+      ['PLUS', 'UnaryExpression'],
+      ['LeftHandSideExpression']
     ],
 
     onParse: function() {
@@ -317,7 +399,21 @@ var Grammar = {
   },
 
   LeftHandSideExpression:  {
-    rule: [
+    productions: [
+      ['NewExpression'],
+      ['MemberExpression'],
+      ['BindExpression'],
+      ['FunctionExpression'],
+      ['ClassExpression']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  LeftHandSideExpressionNoDecl:  {
+    productions: [
       ['NewExpression'],
       ['MemberExpression'],
       ['BindExpression']
@@ -329,7 +425,7 @@ var Grammar = {
   },
 
   NewExpression:  {
-    rule: [
+    productions: [
       ['NEW', 'LeftHandSideExpression']
     ],
 
@@ -339,11 +435,21 @@ var Grammar = {
   },
 
   MemberExpression:  {
-    rule: [
-      ['PrimaryExpression'],
-      ['MemberExpression', 'ArrayDereference'],
-      ['MemberExpression', 'DOT',  'IDENTIFIER'],
-      ['MemberExpression', 'Arguments']
+    productions: [
+      ['PrimaryExpression', 'MemberPart'],
+      ['PrimaryExpression']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  MemberPart: {
+    productions: [
+      ['ArrayDereference', 'MemberPart'],
+      ['DOT',  'IDENTIFIER', 'MemberPart'],
+      ['Arguments', 'MemberPart']
     ],
 
     onParse: function() {
@@ -352,7 +458,7 @@ var Grammar = {
   },
 
   BindExpression:  {
-    rule: [
+    productions: [
       ['BIND', 'MemberExpression']
     ],
 
@@ -362,7 +468,7 @@ var Grammar = {
   },
 
   ArrayDereference: {
-    rule: [
+    productions: [
       ['OPEN_BRACKET', 'Expression', 'CLOSE_BRACKET']
     ],
 
@@ -372,7 +478,7 @@ var Grammar = {
   },
 
   Arguments: {
-    rule: [
+    productions: [
       ['OPEN_PAREN', 'CLOSE_PAREN'],
       ['OPEN_PAREN', 'ArgumentList', 'CLOSE_PAREN']
     ],
@@ -383,7 +489,7 @@ var Grammar = {
   },
 
   ArgumentList: {
-    rule: [
+    productions: [
       ['Expression'],
       ['ArgumentList', 'Expression']
     ],
@@ -394,7 +500,7 @@ var Grammar = {
   },
 
   PrimaryExpression:  {
-    rule: [
+    productions: [
       ['THIS'],
       ['SUPER'],
       ['IDENTIFIER'],
@@ -414,7 +520,7 @@ var Grammar = {
   },
 
   AssignmentOperator: {
-    rule: [
+    productions: [
       ['MUL_EQUALS'],
       ['DIV_EQUALS'],
       ['MOD_EQUALS'],
@@ -436,7 +542,7 @@ var Grammar = {
   },
 
   RelativeOperator: {
-    rule: [
+    productions: [
       ['EQUAL'],
       ['NOT_EQUAL'],
       ['LIKE'],
@@ -459,7 +565,7 @@ var Grammar = {
   },
 
   UnaryOperator: {
-    rule: [
+    productions: [
       ['LOGICAL_NOT'],
       ['BITWISE_NOT'],
       ['QUESTION'],
@@ -475,7 +581,7 @@ var Grammar = {
   },
 
   AddOperator: {
-    rule: [
+    productions: [
       ['PLUS'],
       ['MINUS']
     ],
@@ -486,7 +592,7 @@ var Grammar = {
   },
 
   MultiplicationOp: {
-    rule: [
+    productions: [
       ['ASTERISK'],
       ['SLASH'],
       ['MODULUS']
@@ -498,7 +604,7 @@ var Grammar = {
   },
 
   Statement: {
-    rule: [
+    productions: [
       ['TerminatedStatement'],
       ['ComplexStatement']
     ],
@@ -509,9 +615,9 @@ var Grammar = {
   },
 
   TerminatedStatement: {
-    rule: [
+    productions: [
       ['EmptyStatement'],
-      ['SimpleStatement EndSt']
+      ['SimpleStatement', 'EndSt']
     ],
 
     onParse: function() {
@@ -520,7 +626,7 @@ var Grammar = {
   },
 
   ComplexStatement: {
-    rule: [
+    productions: [
       ['IfStatement'],
       ['UnlessStatement'],
       ['IterationStatement'],
@@ -535,7 +641,7 @@ var Grammar = {
   },
 
   SimpleStatement: {
-    rule: [
+    productions: [
       ['VariableStatement'],
       ['ExpressionStatement'],
       ['BreakStatement'],
@@ -549,10 +655,10 @@ var Grammar = {
     onParse: function() {
       
     } 
-  }
+  },
 
   EndSt: {
-    rule: [
+    productions: [
       ['NEWLINE'],
       ['SEMI']
     ],
@@ -563,7 +669,7 @@ var Grammar = {
   },
 
   StatementList:  {
-    rule: [
+    productions: [
       ['Statement'],
       ['StatementList Statement']
     ],
@@ -574,7 +680,7 @@ var Grammar = {
   },
 
   EmptyStatement: {
-    rule: [
+    productions: [
       ['EndSt']
     ],
 
@@ -584,245 +690,400 @@ var Grammar = {
   },
 
   ExpressionStatement: {
-    rule: ,
+    productions: [
+      ['Expression', '^FUNCTION']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   VariableStatement:  {
-    rule: ,
+    productions: [
+      ['VAR', 'VariableDeclarationList']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   VariableDeclarationList:  {
-    rule: ,
+    productions: [
+      ['VariableDeclaration'],
+      ['VariableDeclarationList', 'COMMA', 'VariableDeclaration']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   VariableDeclaration:  {
-    rule: ,
+    productions: [
+      ['IDENTIFIER', 'ASSIGN', 'Expression'],
+      ['IDENTIFIER']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   IfStatement:  {
-    rule: ,
+    productions: [
+      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'END'],
+      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElsePart', 'END'],
+      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElseIfPart', 'END'],
+      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElseIfPart', 'ElsePart', 'END'],
+      ['SimpleStatement', 'IF', 'Expression', 'EndSt']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   UnlessStatement: {
-    rule: ,
+    productions: [
+      ['UNLESS', 'Expression', 'NEWLINE', 'BlockBody', 'END'],
+      ['SimpleStatement', 'UNLESS', 'Expression', 'EndSt']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   BlockBody: {
-    rule: ,
+    productions: [
+      ['StatementList'],
+      []
+    ],
+
     onParse: function() {
       
     } 
   },
 
   ElsePart: {
-    rule: ,
+    productions: [
+      ['ELSE', 'BlockBody']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   ElseIfPart: {
-    rule: ,
+    productions: [
+      ['ElseIf'],
+      ['ElseIfPart', 'ElseIf']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   ElseIf: {
-    rule: ,
+    productions: [
+      ['ELSE', '!NEWLINE', 'IF', 'Expression', 'NEWLINE', 'BlockBody']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   IterationStatement: {
-    rule: ,
+    productions: [
+      ['WhileLoop'],
+      ['UntilLoop'],
+      ['DoUntilLoop'],
+      ['DoWhileLoop'],
+      ['ForLoop']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   WhileLoop: {
-    rule: ,
+    productions: [
+      ['WHILE', 'Expression', 'NEWLINE', 'BlockBody']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   UntilLoop: {
-    rule: ,
+    productions: [
+      ['UNTIL', 'Expression', 'NEWLINE', 'BlockBody']
+    ],
     onParse: function() {
       
     } 
   },
 
   DoUntilLoop: {
-    rule: ,
+    productions: [
+      ['DO', 'BlockBody', '!NEWLINE', 'UNTIL', 'Expression', 'EndSt']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   DoWhileLoop: {
-    rule: ,
+    productions: [
+      ['DO', 'BlockBody', '!NEWLINE', 'WHILE', 'Expression', 'EndSt']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   ForLoop: {
-    rule: ,
+    productions: [
+      ['FOR', 'ForLoopCondition', 'NEWLINE', 'BlockBody', 'END']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   ForLoopCondition: {
-    rule: ,
+    productions: [
+      ['RegularForLoop'],
+      ['AdvancedForLoop']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   RegularForLoop: {
-    rule: ,
+    productions: [
+      ['SEMI', 'SEMI'],
+      ['Expression', 'SEMI', 'SEMI'],
+      ['SEMI', 'Expression', 'SEMI'],
+      ['SEMI', 'SEMI', 'Expression'],
+      ['Expression', 'SEMI', 'Expression', 'SEMI'],
+      ['SEMI', 'Expression', 'SEMI', 'Expression'],
+      ['Expression', 'SEMI', 'SEMI', 'Expression'],
+      ['Expression', 'SEMI', 'Expression', 'SEMI', 'Expression'],
+    ],
+
     onParse: function() {
       
     } 
   },
 
   AdvancedForLoop: {
-    rule: ,
+    productions: [
+      ['Expression', 'IN', 'Expression'],
+      ['Expression', 'IN', 'Expression', 'AT', 'IDENTIFIER'],
+      ['Expression', 'COMMA', 'IDENTIFIER', 'IN', 'Expression'],
+      ['Expression', 'COMMA', 'IDENTIFIER', 'IN', 'Expression', 'AT', 'IDENTIFIER'],
+      ['Expression', 'AT', 'IDENTIFIER']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   ContinueStatement: {
-    rule: ,
+    productions: [
+      ['CONTINUE'],
+      ['CONTINUE IDENTIFIER']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   BreakStatement: {
-    rule: ,
+    productions: [
+      ['BREAK'],
+      ['BREAK IDENTIFIER']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   ReturnStatement: {
-    rule: ,
+    productions: [
+      ['RETURN'],
+      ['RETURN Expression']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   WithStatement: {
-    rule: ,
+    productions: [
+      ['WITH', 'Expression', 'NEWLINE', 'BlockBody', 'END']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   SwitchStatement: {
-    rule: ,
+    productions: [
+      ['SWITCH', 'Expression', 'CaseBlock', 'END']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   CaseBlock: {
-    rule: ,
+    productions: [
+      ['CaseClauses'],
+      ['DefaultClause'],
+      ['AlwaysClause'],
+
+      ['CaseClauses', 'DefaultClause'],
+      ['CaseClauses', 'AlwaysClause'],
+      ['DefaultClause', 'AlwaysClause'],
+      ['DefaultClause', 'CaseClauses'],
+      ['AlwaysClause', 'CaseClauses'],
+      ['AlwaysClause', 'DefaultClause'],
+
+      ['CaseClauses', 'DefaultClause', 'CaseClauses'],
+      ['CaseClauses', 'DefaultClause', 'AlwaysClause'],
+      ['CaseClauses', 'AlwaysClause', 'CaseClases'],
+      ['CaseClauses', 'AlwaysClause', 'DefaultClause'],
+      ['DefaultClause', 'CaseClauses', 'AlwaysClause'],
+      ['DefaultClause', 'AlwaysClause', 'CaseClauses'],
+      ['AlwaysClause', 'CaseClauses', 'DefaultClause'],
+      ['AlwaysClause', 'DefaultClause', 'CaseClauses'],
+
+      ['CaseClauses', 'DefaultClause', 'CaseClauses', 'AlwaysClause'],
+      ['CaseClauses', 'AlwaysClause', 'CaseClauses', 'DefaultClause'],
+      ['CaseClauses', 'DefaultClause', 'AlwaysClause', 'CaseClauses'],
+      ['CaseClauses', 'AlwaysClause', 'DefaultClause', 'CaseClauses'],
+      ['DefaultClause', 'CaseClauses', 'AlwaysClause', 'CaseClauses'],
+      ['AlwaysClause', 'CaseClauses', 'DefaultClause', 'CaseClauses'],
+    ],
+
     onParse: function() {
       
     } 
   },
 
   CaseClauses: {
-    rule: ,
+    productions: [
+      ['CaseClause'],
+      ['CaseClauses', 'CaseClause']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   CaseClause: {
-    rule: ,
-    onParse: function() {
-      
-    } 
-  },
+    productions: [
+      ['CASE', 'ExpressionList', 'COLON', 'BlockBody']
+    ],
 
-  CaseExpressionList: {
-    rule: ,
     onParse: function() {
       
     } 
   },
 
   DefaultClause: {
-    rule: ,
-    onParse: function() {
-      
-    } 
-  },
+    productions: [
+      ['DEFAULT', 'COLON', 'BlockBody']
+    ],
 
-  AlwaysClause: {
-    rule: ,
     onParse: function() {
       
     } 
   },
 
   LabelledStatement: {
-    rule: ,
+    productions: [
+      ['IDENTIFIER', 'COLON', 'Statement'],
+      ['IDENTIFIER', 'COLON', 'BlockBody', 'END']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   ThrowStatement: {
-    rule: ,
+    productions: [
+      ['THROW', 'Expression']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   TryStatement: {
-    rule: ,
+    productions: [
+      ['TRY', 'Catch', 'END'],
+      ['TRY', 'Finally', 'END'],
+      ['TRY', 'Catch', 'Finally', 'END'],
+      ['TRY', 'StatementList', 'Catch', 'END'],
+      ['TRY', 'StatementList', 'Finally', 'END'],
+      ['TRY', 'StatementList', 'Catch', 'Finally', 'END']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   Catch: {
-    rule: ,
+    productions: [
+      ['CATCH', 'NEWLINE', 'BlockBody'],
+      ['CATCH', 'IDENTIFIER', 'NEWLINE', 'BlockBody']
+    ],
+
     onParse: function() {
       
     } 
   },
 
   Finally: {
-    rule: ,
+    productions: [
+      ['FINALLY', 'BlockBody']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  DebuggerStatement: {
+    productions: [
+      ['DEBUGGER']
+    ],
+
     onParse: function() {
       
     } 
