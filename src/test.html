@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <script type="text/javascript" src="../lib/jquery.min.js"></script>
+    <script type="text/javascript" src="../lib/prototype.js"></script>
+
+    <script type="text/javascript" src="token.js"></script>
+    <script type="text/javascript" src="lexer.js"></script>
+    <script type="text/javascript" src="grammar.js"></script>
+    <script type="text/javascript" src="parser.js"></script>
+
+    <script type="text/javascript">
+      jQuery.noConflict();
+      jQuery(document).ready(function($) {
+        $('#submit').click(function() {
+          window.parser = new Parser();
+          window.parser.parse($('#code').val());
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <textarea id="code" style="width: 500px; min-height: 500px"></textarea>
+    <input id="submit" type="button" value="Parse" />
+    <textarea id="output" style="width: 500px; min-height: 200px"></textarea>
+  </body>
+</html>
