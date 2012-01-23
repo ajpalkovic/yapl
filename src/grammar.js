@@ -6,9 +6,9 @@ var Grammar = {
       ['<<EOF>>']
     ],
 
-    onParse: function() {
-      
-    } 
+    onParse: function(sourceElement, program) {
+
+    }
   },
 
   SourceElement:  {
@@ -19,9 +19,9 @@ var Grammar = {
       ['Closure']
     ],
 
-    onParse: function() {
+    onParse: function(sourceElement) {
       
-    } 
+    }
   },
 
   ClassDeclaration: {
@@ -32,7 +32,7 @@ var Grammar = {
 
     onParse: function() {
       
-    } 
+    }
   },
 
   ClassBody: {
@@ -49,9 +49,19 @@ var Grammar = {
   ClassElement: {
     productions: [
       ['InstanceVarDeclaration'],
-      ['STATIC', 'OPEN_BRACE', 'StatementList', 'CLOSE_BRACE'],
+      ['StaticBlock'],
       ['Method'],
       ['ClassDeclaration']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  StaticBlock: {
+    productions: [
+      ['STATIC', 'OPEN_BRACE', 'StatementList', 'CLOSE_BRACE']
     ],
 
     onParse: function() {
