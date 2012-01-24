@@ -274,6 +274,7 @@ var Token = (function($) {
             return {
               token: {
                 type: 'SINGLE_LINE_COMMENT',
+                ignore: true,
                 value: comment
               },
 
@@ -289,6 +290,7 @@ var Token = (function($) {
             return {
               token: {
                 type: 'MULTI_LINE_COMMENT',
+                ignore: true,
                 value: string.substring(0, commentEnd + 1)
               },
 

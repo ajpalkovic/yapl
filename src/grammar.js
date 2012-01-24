@@ -7,7 +7,7 @@ var Grammar = {
     ],
 
     onParse: function(sourceElement, program) {
-
+      
     }
   },
 
@@ -280,8 +280,20 @@ var Grammar = {
 
   Properties: {
     productions: [
-      ['Property', 'Properties'],
+      ['Property', 'ObjPropDelim', 'Properties'],
       ['Property']
+    ],
+
+    onParse: function() {
+      
+    } 
+  },
+
+  ObjPropDelim: {
+    productions: [
+      ['NEWLINE'],
+      ['COMMA', 'NEWLINE'],
+      ['COMMA']
     ],
 
     onParse: function() {
@@ -314,8 +326,8 @@ var Grammar = {
 
   ExpressionList: {
     productions: [
-      ['Expression'],
-      ['Expression', 'COMMA', 'ExpressionList']
+      ['Expression', 'COMMA', 'ExpressionList'],
+      ['Expression']
     ],
 
     onParse: function() {
@@ -400,8 +412,8 @@ var Grammar = {
   LeftHandSideExpression:  {
     productions: [
       ['NewExpression'],
-      ['MemberExpression'],
       ['BindExpression'],
+      ['MemberExpression'],
       ['FunctionExpression'],
       ['ClassExpression']
     ],
@@ -414,8 +426,8 @@ var Grammar = {
   LeftHandSideExpressionNoDecl:  {
     productions: [
       ['NewExpression'],
-      ['MemberExpression'],
-      ['BindExpression']
+      ['BindExpression'],
+      ['MemberExpression']
     ],
 
     onParse: function() {
@@ -459,7 +471,7 @@ var Grammar = {
 
   BindExpression:  {
     productions: [
-      ['BIND', 'MemberExpression']
+      ['MemberExpression', 'LESS_THAN', 'ArgumentList', 'GREATER_THAN']
     ],
 
     onParse: function() {
@@ -490,8 +502,8 @@ var Grammar = {
 
   ArgumentList: {
     productions: [
-      ['Expression'],
-      ['ArgumentList', 'Expression']
+      ['Expression', 'COMMA', 'ArgumentList'],
+      ['Expression']
     ],
 
     onParse: function() {
