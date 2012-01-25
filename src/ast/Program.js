@@ -1,12 +1,15 @@
-function Program(sourceElements) {
-  this.sourceElements = sourceElements;
-};
+var Program = (function($) {
+  var template = compiler.compileTemplate(function(sourceElements) {
+    '#{sourceElements}';
+  });
 
-Program.prototype.compile = function() {
-  try {
-    this.sourceElements && this.sourceElements.compile();
-  } finally {
-    var out = compiler.flushOut();
-    console.log(out);
-  }
-};
+  return Class.create({
+    initialize: function Program(sourceElements) {
+      this.sourceElements = sourceElements || [];
+    },
+
+    genJs: function(buffer) {
+
+    }
+  });
+})(jQuery);

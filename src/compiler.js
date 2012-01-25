@@ -41,14 +41,48 @@ Compiler.prototype.out = function(varargs) {
   for (var i = 0, len = arguments.length; i < len; ++i) {
     if (!arguments[i]) continue;
 
-    if (arguments[i] instanceof String || typeof arguments[i] === 'string') {
-      this.outputBuffer.push(arguments[i]);
-    } else if (typeof arguments[i] === 'function') {
-      arguments[i]();
-    } else {
-      arguments[i].compile();
+    switch (typeof arguments[i]) {
+      case 'string':
+        this.outputBuffer.push(arguments[i]);
+        break;
+      case 'function':
+        arguments[i]();
+        break;
+      default:
+        if (arguments[i] instanceof Array) {
+          this.out.apply(this, arguments[i]);
+        } else {
+          arguments[i].compile();
+        }
     }
   }
+};
+
+Compiler.prototype.compileTempalte = function(template) {
+  var string = template + '';
+  var compiledStr = this.interpolate(string);
+};
+
+Compiler.prototype.interpolate = function(string) {
+  var output = [];
+  var startingSym = false;
+  var start = 0, end = 0;
+  
+  for (var i = 0, len = string.length; i < len; ++i) {
+    switch (string[i]) {
+      case '#':
+        startingSym = true;
+        break;
+      case '{':
+        if (startingSym)
+      case '}':
+      case '\\':
+        i++;
+        break;
+    }
+  }
+  
+  return output.join('');
 };
 
 Compiler.prototype.flushOut = function() {
