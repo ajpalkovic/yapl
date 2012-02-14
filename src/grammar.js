@@ -421,7 +421,8 @@ var Grammar = {
       ['BindExpression'],
       ['MemberExpression'],
       ['FunctionExpression'],
-      ['ClassExpression']
+      ['ClassExpression'],
+      ['Closure']
     ],
 
     onParse: function() {
@@ -498,7 +499,8 @@ var Grammar = {
   Arguments: {
     productions: [
       ['OPEN_PAREN', 'CLOSE_PAREN'],
-      ['OPEN_PAREN', 'ArgumentList', 'CLOSE_PAREN']
+      ['OPEN_PAREN', 'ArgumentList', 'CLOSE_PAREN'],
+      ['ArgumentList']
     ],
 
     onParse: function() {
