@@ -36,7 +36,7 @@ var Grammar = {
       ['CLASS', 'IDENTIFIER', 'EXTENDS', 'MemberExpression', 'NEWLINE', 'END']
     ],
 
-    onParse: function(identifier, ) {
+    onParse: function() {
       
     }
   },
@@ -297,7 +297,6 @@ var Grammar = {
 
   ObjPropDelim: {
     productions: [
-      ['NEWLINE'],
       ['COMMA', 'NEWLINE'],
       ['COMMA']
     ],
