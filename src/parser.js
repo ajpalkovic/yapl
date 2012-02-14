@@ -92,15 +92,19 @@ var Parser = (function($) {
 
           if (Grammar[expectedTokenType]) {
             var parseResult = this.__parse(expectedTokenType, this.lexer.currentPos);
-            var captureResult = expectedTokenType.match(/^\?\:/);
+            var shouldCapture = expectedTokenType.match(/^\?\:/);
 
-            if (parseResult && captureResult) parseResults.push(parseResult);
+            if (parseResult && shouldCapture) parseResults.push(parseResult);
             parseFailed = !parseResult;
           } else {
             var matchResult = this.__match(expectedTokenType);
-            parseFailed = !matchResult.matched;
+            if (matchResult) {
+              parseResults.push(matchResult);
+              
+              if (!matchResult.advance) j--;
+            }
 
-            if (!matchResult.advance) j--;
+            parseFailed = !matchResult.matched;
           }
 
           if (parseFailed) break;

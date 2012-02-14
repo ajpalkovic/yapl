@@ -7,7 +7,13 @@ var Grammar = {
     ],
 
     onParse: function(sourceElement, program) {
-      
+      program = program || {
+        type: 'Program',
+        sourceElements: []
+      };
+
+      program.sourceElements.splice(0, 0, sourceElement);
+      return program;
     }
   },
 
@@ -20,7 +26,7 @@ var Grammar = {
     ],
 
     onParse: function(sourceElement) {
-      
+      return sourceElement;
     }
   },
 
@@ -30,7 +36,7 @@ var Grammar = {
       ['CLASS', 'IDENTIFIER', 'EXTENDS', 'MemberExpression', 'NEWLINE', 'END']
     ],
 
-    onParse: function() {
+    onParse: function(identifier, ) {
       
     }
   },

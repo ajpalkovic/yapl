@@ -58,32 +58,53 @@ Compiler.prototype.out = function(varargs) {
   }
 };
 
-Compiler.prototype.compileTempalte = function(template) {
-  var string = template + '';
-  var compiledStr = this.interpolate(string);
-};
+// Compiler.prototype.compileTempalte = function(template) {
+//   var string = template + '';
+//   return eval('(' + this.interpolate(string) + ')');
+// };
 
-Compiler.prototype.interpolate = function(string) {
-  var output = [];
-  var startingSym = false;
-  var start = 0, end = 0;
+// Compiler.prototype.interpolate = function(string) {
+//   function findCodeEnd(string, start) {
+//     var balance = 0;
+//     var balanced = false;
+
+//     for (var i = start, len = string.length; i < len && !balanced; ++i) {
+//       switch (string[i]) {
+//         case '{':
+//           balance++;
+//           break;
+//         case '}':
+//           balance--;
+//           break;
+//       }
+
+//       balanced = !balance;
+//     }
+
+//     return i - 1;
+//   }
+
+//   var output = [];
+//   var endIndex = -1;
+
+//   for (var i = 0, len = string.length; i < len; ++i) {
+//     if (string[i] === '\\') {
+//       ++i;
+//     } else if (string[i] === '#' && string[i + 1] === '{') {
+//       endIndex = findCodeEnd(string, i + 1);
+
+//       var before = string.substring(0, i);
+//       var code = string.substring(i + 2, endIndex);
+
+//       output.push(before, 'compiler.out(', code, ')');
+//       i = endIndex + 1;
+//     }
+//   }
+
+//   output.push(string.substring(endIndex + 1));
   
-  for (var i = 0, len = string.length; i < len; ++i) {
-    switch (string[i]) {
-      case '#':
-        startingSym = true;
-        break;
-      case '{':
-        if (startingSym)
-      case '}':
-      case '\\':
-        i++;
-        break;
-    }
-  }
-  
-  return output.join('');
-};
+//   return output.join('');
+// };
 
 Compiler.prototype.flushOut = function() {
   var str = this.outputBuffer.join('');
