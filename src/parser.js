@@ -26,6 +26,7 @@ var Parser = (function($) {
     
     parse: function(input) {
       var _this = this;
+      this.cache = {};
 
       this.lexer = new Lexer(input);
       var tree = this.__parse('Program', 0);
