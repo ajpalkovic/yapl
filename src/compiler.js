@@ -69,17 +69,7 @@ Compiler.prototype.interpolate = function(string) {
   var start = 0, end = 0;
   
   for (var i = 0, len = string.length; i < len; ++i) {
-    switch (string[i]) {
-      case '#':
-        startingSym = true;
-        break;
-      case '{':
-        if (startingSym)
-      case '}':
-      case '\\':
-        i++;
-        break;
-    }
+    if (string[i] === '\\')
   }
   
   return output.join('');

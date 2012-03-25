@@ -5,7 +5,9 @@ var Parser = (function($) {
     return;
     var args = Array.prototype.slice.call(arguments, 0);
     args.splice(0, 0, INDENT[INDENT.length - 1]);
-    console.log.apply(console, args);
+    args.push('\n');
+    var element = $('#debug');
+    element.text(element.text() + args.join(' '));
   }
 
   function dbg_i() {
@@ -14,8 +16,8 @@ var Parser = (function($) {
   }
 
   function dbg_u() {
-    arguments.length && dbg.apply(this, arguments);
     INDENT.pop();
+    arguments.length && dbg.apply(this, arguments);
   }
 
   return Class.create({
@@ -26,6 +28,7 @@ var Parser = (function($) {
     
     parse: function(input) {
       var _this = this;
+      this.cache = {};
 
       this.lexer = new Lexer(input);
       var tree = this.__parse('Program', 0);
@@ -42,11 +45,10 @@ var Parser = (function($) {
 
       var cached = (this.cache[currentRule] || (this.cache[currentRule] = []))[startPos];
       if (cached) {
-        dbg('**** Cache hit! Parsed this rule at position', startPos, 'in token stream!');
-        this.lexer.currentPos = cached.nextPos;
+        dbg('**** Cache hit! Parsed this rule at position', startPos, 'in token stream! Moving to ', cached.nextPos);
+        if (cached.result) this.lexer.currentPos = cached.nextPos;
 
-        dbg_u();
-        dbg('}');
+        dbg_u('}');
         return cached.result;
       }
 
@@ -62,7 +64,7 @@ var Parser = (function($) {
       // If the lookahead wasn't fufilled, then we consider the parsing a failure.
       var cacheEntry = undefined;
       if (lookaheadFufilled) {
-        cacheEntry = this.__parseRule(rule, startPos);
+        cacheEntry = this.__parseRule(currentRule, rule, startPos);
       } else {
         dbg('. Negative lookahead prohibits', nextToken.type, '! Moving on...');
       }
@@ -72,13 +74,12 @@ var Parser = (function($) {
         result: undefined
       };
 
-      dbg_u();
-      dbg('}');
+      dbg_u('}');
 
       return (this.cache[currentRule][startPos] = cacheEntry).result;
     },
 
-    __parseRule: function(rule, startPos) {
+    __parseRule: function(ruleName, rule, startPos) {
       for (var i = 0, numProds = rule.productions.length; i < numProds; ++i) {
         var production = rule.productions[i];
 
@@ -107,8 +108,8 @@ var Parser = (function($) {
         }
 
         if (!parseFailed) {
-          dbg('- Successfully parsed production!!');
-          dbg_u();
+          dbg_u('- Successfully parsed production!!', production);
+          //console.log("we parsed a", ruleName, "with production", production);
 
           var result = rule.onParse.apply(parseResults);
 
@@ -118,11 +119,10 @@ var Parser = (function($) {
           // position again.
           return {
             nextPos: this.lexer.currentPos,
-            result: 'yay'
+            result: ruleName
           };
         } else {
-          dbg('- Failed to parse production!!');
-          dbg_u();
+          dbg_u('- Failed to parse production', production, '!!');
 
           // We need to reset the lexer to where we were when
           // we started parsing the current rule because the previous
