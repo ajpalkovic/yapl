@@ -58,54 +58,6 @@ Compiler.prototype.out = function(varargs) {
   }
 };
 
-// Compiler.prototype.compileTempalte = function(template) {
-//   var string = template + '';
-//   return eval('(' + this.interpolate(string) + ')');
-// };
-
-// Compiler.prototype.interpolate = function(string) {
-//   function findCodeEnd(string, start) {
-//     var balance = 0;
-//     var balanced = false;
-
-//     for (var i = start, len = string.length; i < len && !balanced; ++i) {
-//       switch (string[i]) {
-//         case '{':
-//           balance++;
-//           break;
-//         case '}':
-//           balance--;
-//           break;
-//       }
-
-//       balanced = !balance;
-//     }
-
-//     return i - 1;
-//   }
-
-//   var output = [];
-//   var endIndex = -1;
-
-//   for (var i = 0, len = string.length; i < len; ++i) {
-//     if (string[i] === '\\') {
-//       ++i;
-//     } else if (string[i] === '#' && string[i + 1] === '{') {
-//       endIndex = findCodeEnd(string, i + 1);
-
-//       var before = string.substring(0, i);
-//       var code = string.substring(i + 2, endIndex);
-
-//       output.push(before, 'compiler.out(', code, ')');
-//       i = endIndex + 1;
-//     }
-//   }
-
-//   output.push(string.substring(endIndex + 1));
-  
-//   return output.join('');
-// };
-
 Compiler.prototype.flushOut = function() {
   var str = this.outputBuffer.join('');
   this.outputBuffer = [];
