@@ -7,8 +7,12 @@ var Grammar = {
     ],
 
     onParse: function(sourceElement, program) {
-      program = program || new Program();
-      program.add(sourceElement);
+      program = program || {
+        type: 'Program',
+        sourceElements: []
+      };
+
+      program.sourceElements.splice(0, 0, sourceElement);
       return program;
     }
   },
@@ -22,7 +26,7 @@ var Grammar = {
     ],
 
     onParse: function(sourceElement) {
-      
+      return sourceElement;
     }
   },
 
@@ -293,6 +297,7 @@ var Grammar = {
 
   ObjPropDelim: {
     productions: [
+      ['COMMA', 'NEWLINE'],
       ['COMMA']
     ],
 

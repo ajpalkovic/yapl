@@ -58,23 +58,6 @@ Compiler.prototype.out = function(varargs) {
   }
 };
 
-Compiler.prototype.compileTempalte = function(template) {
-  var string = template + '';
-  var compiledStr = this.interpolate(string);
-};
-
-Compiler.prototype.interpolate = function(string) {
-  var output = [];
-  var startingSym = false;
-  var start = 0, end = 0;
-  
-  for (var i = 0, len = string.length; i < len; ++i) {
-    if (string[i] === '\\')
-  }
-  
-  return output.join('');
-};
-
 Compiler.prototype.flushOut = function() {
   var str = this.outputBuffer.join('');
   this.outputBuffer = [];
