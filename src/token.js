@@ -48,7 +48,7 @@ var Token = (function($) {
     NUMERIC_LITERAL: '(?:((?:0[0-7]+))|((?:0x[a-fA-F0-9]+))|((?:(?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))(?:[eE]\\d+)?))',
     IDENTIFIER: '((?:[a-zA-Z_\\$][_a-zA-Z0-9\\$]*))',
     STRING_LITERAL: '(\'|")',
-    COMMENT_OR_SLASH: '\\/',
+    FORWARD_SLASH: '\\/',
     WHITESPACE: '((?:[^\\S\\n]+))' // Does not match newlines
   };
 
@@ -153,15 +153,26 @@ var Token = (function($) {
     ['^', 'XOR'],
     ['@', 'MEMBER'],
     ['#', 'BIND'],
+    ['\\', 'BACK_SLASH'],
     ['\n', 'NEWLINE', true]
   ];
+
+  // These are the types of the tokens that cannot preceed a regular expression
+  // literal in the source.  This tries to solve the inherent ambiguity between
+  // the division operator and the regular expression literal in ECMA Script.
+  var nonPreRegexTokens = {
+    'REGEX_LITERAL': true,
+    'IDENTIFIER': true,
+    'NUMERIC_LITERAL': true,
+    'STRING_LITERAL': true
+  };
 
   var advanced = [
 
     // NUMERIC_LITERAL
     [
       regexes.NUMERIC_LITERAL,
-      function(matches, string) {
+      function(matches, string, tokens) {
         var number = 0;
 
         if (matches[1]) {
@@ -191,7 +202,7 @@ var Token = (function($) {
     // IDENTIFIER
     [
       regexes.IDENTIFIER,
-      function(matches, string) {
+      function(matches, string, tokens) {
         var token = {
           type: 'IDENTIFIER',
           value: matches[0]
@@ -207,7 +218,7 @@ var Token = (function($) {
     // STRING_LITERAL
     [
       regexes.STRING_LITERAL,
-      function(matches, string) {
+      function(matches, string, tokens) {
         var quote = matches[1];
         var endQuotePos = 0;
 
@@ -237,10 +248,10 @@ var Token = (function($) {
       }
     ],
 
-    // SINGLE_LINE_COMMENT, MULTI_LINE_COMMENT, and SLASH
+    // SINGLE_LINE_COMMENT, MULTI_LINE_COMMENT, REGEX_LITERAL, and FORWARD_SLASH
     [
-      regexes.COMMENT_OR_SLASH,
-      function(matches, string) {
+      regexes.FORWARD_SLASH,
+      function(matches, string, tokens) {
 
         /**
          *  Finds the end of a multi-line comment, but takes balancing into account.
@@ -248,16 +259,74 @@ var Token = (function($) {
          *  star-slash terminator, Yapl comments can be nested within themselves,
          *  and to be closed must be balenced.
          */
-        function findMultiCommentEnd(string, position) {
+        function findMultiCommentEnd(position) {
           for (var i = position + 2, len = string.length; i < len; ++i) {
             if (string[i] === '/' && string[i + 1] === '*') {
-              i = findMultiCommentEnd(string, i);
+              i = findMultiCommentEnd(i);
             }
 
             if (string[i] === '*' && string[i + 1] === '/') {
               return i + 2;
             }
           }
+        }
+
+        /**
+         *  Will determine if the regular expression literal trying to be lexed should
+         *  be tokenized as such, or as a division operator.  There is an inherent ambiguity
+         *  in the language between these two tokens and how they should be scanned.
+         *
+         *  This will return true iff there is no preceeding token or the preceeding token
+         *  is not a token that would lexically preceed a division operator.
+         */
+        function canBeRegex() {
+          var previous = tokens[tokens.length - 1];
+
+          return !previous || !nonPreRegexTokens[previous.type];
+        }
+
+        /**
+         *  Tries to match a regex literal from the start of the current string.
+         *  Regexes in Yapl can span multiple lines and contain whitespace, so anything
+         *  goes for their content.
+         *  
+         *  This wil return undefined if a regular expression literal could not be
+         *  lexed from the string.
+         */
+        function matchRegex() {
+          if (!canBeRegex()) return undefined;
+
+          for (var i = 1, len = string.length; i < len; ++i) {
+            if (string[i] === '\\') {
+              ++i;
+              continue;
+            }
+
+            if (string[i] === '/') {
+              // Because Chrome is lame and doesn't have the equivalent to FF's y regex flag
+              // (basically allows you to use lastIndex and ^ so it doesn't do a global match),
+              // we use a substring to match flags.
+              var rest = string.substring(i + 1);
+
+              // ECMA 262 regex flags are basically identifiers, and are
+              // even defined as such.
+              var flagsRegex = new RegExp('^' + regexes.IDENTIFIER);
+
+              var matches = flagsRegex.exec(rest);
+              var endOfRegex = i + (matches ? matches[1].length : 0) + 1;
+
+              return {
+                token: {
+                  type: 'REGEX_LITERAL',
+                  value: string.substring(0, endOfRegex)
+                },
+
+                position: endOfRegex
+              };
+            }
+          }
+
+          return undefined;
         }
 
         switch (string[1]) {
@@ -285,7 +354,7 @@ var Token = (function($) {
           case '*':
             // If it wasn't a balanced comment, the whole document from that point
             // on is commented out.
-            var commentEnd = findMultiCommentEnd(string, 0) || string.length;
+            var commentEnd = findMultiCommentEnd(0) || string.length;
 
             return {
               token: {
@@ -297,11 +366,15 @@ var Token = (function($) {
               position: commentEnd + 1
             };
 
-          // It was a slash, nothing special
+          // Well if the character following the first '/' wasn't another '/' or a '*',
+          // it can be a valid ECMA 262 regex literal (see http://bclary.com/2004/11/07/#a-7.8.5),
+          // or it can simply be the division operator.  Let's find out...
           default:
-            return {
+            var regexToken = matchRegex();
+
+            return regexToken || {
               token: {
-                type: 'SLASH'
+                type: 'FORWARD_SLASH'
               },
 
               position: 1
@@ -329,12 +402,12 @@ var Token = (function($) {
    *  Function that will take a string of matched source that was not in the lookup
    *  of token values to types and try to match it to one of the advanced tokens.
    */
-  function identify(string) {
+  function identify(string, tokens) {
     for (var i = 0, len = advanced.length; i < len; ++i) {
       var re = new RegExp('^' + advanced[i][0]);
       var matches = string.match(re);
 
-      if (matches) return advanced[i][1](matches, string);
+      if (matches) return advanced[i][1](matches, string, tokens);
     }
 
     return undefined;

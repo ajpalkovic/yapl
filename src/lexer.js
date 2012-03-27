@@ -33,7 +33,7 @@ var Lexer = (function($) {
           token = Token.types[match[0]]();
           endOfMatch = match[0].length;
         } else {
-          var result = Token.identify(string);
+          var result = Token.identify(string, tokens);
 
           if (result) {
             token = result.token;
@@ -49,7 +49,7 @@ var Lexer = (function($) {
           token.line = line;
         }
 
-        !token.ignore && tokens.push(token);
+        if (!token.ignore) tokens.push(token);
         string = string.substring(endOfMatch);
       }
 

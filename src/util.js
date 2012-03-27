@@ -13,4 +13,15 @@
       return fn.apply(this, arguments);
     };
   };
-})(jQuery); 
+
+  window.$S(items, delimeter) {
+    items = (typeof items === 'string') ? items.split(delimeter || '') : items;
+    var object = {};
+
+    $.each(items, function(index, value) {
+      object[value] = true;
+    });
+
+    return object;
+  }
+})(jQuery);

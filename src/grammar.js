@@ -533,10 +533,13 @@ var Grammar = {
     productions: [
       ['THIS'],
       ['SUPER'],
+      ['TRUE'],
+      ['FALSE'],
       ['IDENTIFIER'],
       ['MemberIdentifier'],
       ['NUMERIC_LITERAL'],
       ['STRING_LITERAL'],
+      ['REGEX_LITERAL'],
       ['SYMBOL'],
       ['REGEX'],
       ['ObjectLiteral'],
@@ -624,7 +627,7 @@ var Grammar = {
   MultiplicationOperator: {
     productions: [
       ['ASTERISK'],
-      ['SLASH'],
+      ['FORWARD_SLASH'],
       ['MODULUS']
     ],
 
