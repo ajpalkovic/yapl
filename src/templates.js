@@ -1,29 +1,35 @@
 var Templates = (function({
-  function makeVar(varName, value) {
+  function declaration(varName, value) {
     return new TerminatedStatement(
         new VariableStatement([new VariableDeclaration(varName, value)]));
   }
 
+  function emptyObject(varName) {
+    return declaration(varName, new ObjectLiteral());
+  }
+
+  var IDENTIFIER = {
+    METHODS: '__methods__',
+    SUPER: '__super__'
+  };
+
   return {
     ClassDeclaration: [
-      [
-        '(function () {',
-        '  var __methods__ = {};',
-        '  #{body}',
-        '  return function() {',
-        '    ',
-        '  };',
-        '  return #{body.constructor.name};',
-        '})();'
-      ],
+      function(body) {
+        [
+          'var ' 
+        ];
+      },
 
-      [
-        '(function () {',
-        '  var __methods__ = {}',
-        '  #{makeVar("__super__", #{parent})}',
-        '  #{body}',
-        '})();'
-      ]
-    ],
+      function(body, parentClass) {
+        [
+          '(function () {',
+          '  var __methods__ = {}',
+          '  #{assignment(IDENTIFIER.SUPER, parent)}',
+          '  #{body}',
+          '})();'
+        ];
+      }
+    ]
   };
-})();  
+})();

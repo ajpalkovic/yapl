@@ -2,12 +2,13 @@ var Parser = (function($) {
   var INDENT = [''];
 
   function dbg() {
-    return;
+    //return;
     var args = Array.prototype.slice.call(arguments, 0);
     args.splice(0, 0, INDENT[INDENT.length - 1]);
     args.push('\n');
     var element = $('#debug');
     element.text(element.text() + args.join(' '));
+    //console.log(args.join(' '));
   }
 
   function dbg_i() {
@@ -93,15 +94,15 @@ var Parser = (function($) {
 
           if (Grammar[expectedTokenType]) {
             var parseResult = this.__parse(expectedTokenType, this.lexer.currentPos);
-            var shouldCapture = expectedTokenType.match(/^\?\:/);
+            var capture = !expectedTokenType.match(/^\?\:/);
 
-            if (parseResult && shouldCapture) parseResults.push(parseResult);
+            if (parseResult && capture) parseResults.push(parseResult);
             parseFailed = !parseResult;
           } else {
             var matchResult = this.__match(expectedTokenType);
             if (matchResult) {
-              parseResults.push(matchResult);
-              
+              if (matchResult.value) parseResults.push(matchResult.value);
+
               if (!matchResult.advance) j--;
             }
 
@@ -115,7 +116,7 @@ var Parser = (function($) {
           dbg_u('- Successfully parsed production!!', production);
           //console.log("we parsed a", ruleName, "with production", production);
 
-          var result = rule.onParse.apply(parseResults);
+          //var result = rule.onParse[i].apply(parseResults);
 
           // After calling a parse function, the lexer position could have
           // advanced, so that would be the 'next position' of the lexer
@@ -123,7 +124,10 @@ var Parser = (function($) {
           // position again.
           return {
             nextPos: this.lexer.currentPos,
-            result: ruleName
+            result: {
+              aName: ruleName,
+              children: parseResults
+            }
           };
         } else {
           dbg_u('- Failed to parse production', production, '!!');
@@ -139,34 +143,44 @@ var Parser = (function($) {
     },
 
     __match: function(expectedTokenType) {
+      // If there is a negative lookahead condition, check to see that
+      // we passed it.
+      if (expectedTokenType.match(/^!.+/)) {
+        var passes = this.passesNegativeLookahead(expectedTokenType.substring(1));
+
+        return {
+          value: undefined,
+          matched: passes,
+          advance: passes
+        };
+      }
+
       var lexedToken = this.lexer.next();
       var advance = true;
 
       // Hit the end of the token stream so we failed.
-      if (!lexedToken) return false;
+      if (!lexedToken) return {};
 
-      var prohibited = (expectedTokenType[0] === '!');
-      var matchFailed = ((expectedTokenType !== lexedToken.type) || prohibited);
-
-      if (matchFailed && !lexedToken.optional) {
-        dbg('. Failed to match', expectedTokenType, 'to', lexedToken.type, 'from lexer! Moving on...');
-      } else if (matchFailed && lexedToken.optional) {
-        // If we had a mismatch and the token from the lexer was optional,
-        // we want to make sure we reparse the terminal token we just tried
-        // to match with whatever the lexer has next.
-        advance = false;
-        dbg('. Hit optional token', lexedToken.type);
-      } else {
-        dbg('. Matched', expectedTokenType, 'to', lexedToken.type, 'from lexer! Moving on...');
+      if (expectedTokenType.match(/^\([^\)]+\)$/)) {
+        var capture = true;
+        expectedTokenType = expectedTokenType.substring(1, expectedTokenType.length - 1);
       }
 
-      // If the match didn't fail/it did fail but the offending token was optional,
-      // and there wasn't a negative lookahead violation, then we successfully matched.
-      // Else we didn't...
+      var tokensMatch = expectedTokenType === lexedToken.type;
+
+      var matched = tokensMatch || lexedToken.optional
+      var advance = tokensMatch || !lexedToken.optional;
+
       return {
-        matched: (!matchFailed || lexedToken.optional),
+        value: capture && (lexedToken.value || lexedToken.type),
+        matched: matched,
         advance: advance
       };
+    },
+
+    passesNegativeLookahead: function(expectedTokenType) {
+      var nextToken = this.lexer.peek();
+      return !nextToken || nextToken.type !== expectedTokenType;
     },
 
     error: function() {

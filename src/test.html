@@ -13,7 +13,7 @@
       jQuery(document).ready(function($) {
         $('#submit').click(function() {
           window.parser = new Parser();
-          window.parser.parse($('#code').val());
+          window.result = window.parser.parse($('#code').val());
         });
       });
     </script>

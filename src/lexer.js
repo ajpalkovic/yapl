@@ -8,16 +8,21 @@ var Lexer = (function($) {
     },
 
     next: function(newlines) {
-      this.lastPos = (this.currentPos < this.tokens.length) ? Math.max(this.currentPos, this.lastPos) : this.lastPos;
-      return this.tokens[this.currentPos++];
+      this.lastPos = (this.currentPos < this.tokens.length) ? 
+          Math.max(this.currentPos, this.lastPos) : this.lastPos;
+      return this.__get(this.currentPos++);
     },
 
     peek: function() {
-      return this.tokens[this.currentPos];
+      return this.__get(this.currentPos);
     },
 
     last: function() {
       return this.tokens[this.lastPos];
+    },
+
+    __get: function(index) {
+      return this.tokens[index];
     },
 
     __lex: function(string) {

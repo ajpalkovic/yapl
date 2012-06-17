@@ -60,7 +60,6 @@ var Token = (function($) {
     ['instanceof', 'INSTANCEOF'],
     ['in', 'IN'],
     ['else', 'ELSE'],
-    // ['elseif', 'ELSEIF'],
     ['for', 'FOR'],
     ['while', 'WHILE'],
     ['do', 'DO'],
@@ -106,10 +105,12 @@ var Token = (function($) {
   var tokens = [
     ['>>>=', 'LOGICAL_SHIFTR_EQUAL'],
     ['>>>', 'LOGICAL_RSHIFT'],
+    ['<=>', 'COMPARE_TO'],
     ['...', 'ELLIPSES'],
     ['||=', 'CONDITIONAL_EQUALS'],
     ['<<=', 'SHIFTL_EQUALS'],
     ['>>=', 'SHIFTR_EQUALS'],
+    ['**=', 'EXPONENTIATION_EQUALS'],
     ['++', 'INCREMENT'],
     ['--', 'DECREMENT'],
     ['==', 'EQUAL'],
@@ -128,6 +129,7 @@ var Token = (function($) {
     ['||', 'LOGICAL_OR'],
     ['<<', 'LSHIFT'],
     ['>>', 'RSHIFT'],
+    ['**', 'EXPONENTIATION'],
     ['(', 'OPEN_PAREN'],
     [')', 'CLOSE_PAREN'],
     ['[', 'OPEN_BRACKET'],
@@ -422,8 +424,9 @@ var Token = (function($) {
   // ...which is the only case as the regex is only run at the beginning of the string.
   var compiledRe = '^' + compileRegex([[reservedRegex], [tokenRegex]]);
 
-  // We didn't want this to be part of the overall regex, so we add it after the regex has been
-  // created.
+  // We didn't want this to be part of the overall regex because its not actually
+  // matched to the source input.  It's really just a placeholder to represent
+  // the end of the file. Thererfore, we add it after the regex has been created.
   tokens.push(['<<EOF>>', '<<EOF>>']);
   var typeLookup = prepare(tokens, prepare(reserved));
 
