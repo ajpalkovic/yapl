@@ -349,4 +349,39 @@ var Nodes = (function() {
       this.elements = [elseIf];
     }
   };
+
+  var ElseIf = {
+    initialize: function(condition, blockBody) {
+      this.condition = condition;
+      this.blockBody = blockBody;
+    }
+  };
+
+  var WhileLoop = {
+    initialize: function(condition, blockBody) {
+      this.condition = condition;
+      this.blockBody = blockBody;
+    }
+  };
+
+  var UntilLoop = {
+    initialize: function(condition, blockBody) {
+      this.condition = condition;
+      this.blockBody = blockBody;
+    }
+  };
+
+  var DoWhileLoop = {
+    initialize: function(blockBody, condition) {
+      this.blockBody = blockBody;
+      this.condition = condition;
+    }
+  };
+
+  var DoUntilLoop = {
+    initialize: function(blockBody, condition) {
+      this.blockBody = blockBody;
+      this.condition = condition;
+    }
+  };
 })();

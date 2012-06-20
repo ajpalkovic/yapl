@@ -1,8 +1,10 @@
+stack = [];
+
 var Parser = (function($) {
   var INDENT = [''];
 
   function dbg() {
-    //return;
+    return;
     var args = Array.prototype.slice.call(arguments, 0);
     args.splice(0, 0, INDENT[INDENT.length - 1]);
     args.push('\n');
@@ -55,6 +57,8 @@ var Parser = (function($) {
 
       var rule = Grammar[currentRule];
 
+      stack.push(currentRule);
+
       // If a rule has no lookahead requirements, or it does, but the next token in the lexer
       // is in the lookahead map positively, then we have fufilled the lookahead condition.
       // If it is in the map but negatively, then it fails.  If there was not another token in
@@ -76,6 +80,8 @@ var Parser = (function($) {
       };
 
       dbg_u('}');
+
+      stack.pop();
 
       return (this.cache[currentRule][startPos] = cacheEntry).result;
     },

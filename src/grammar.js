@@ -2,7 +2,7 @@ var Grammar = {
   Program: {
     productions: [
       ['SourceElement', 'Program'],
-      ['SourceElement'],
+      ['SourceElement', '<<EOF>>'],
       ['<<EOF>>']
     ]
   },
@@ -305,9 +305,34 @@ var Grammar = {
     productions: [
       ['ArrayDereference'],
       ['PropertyAccess'],
-      ['Arguments'],
+      ['Call'],
       ['BindExpression']
     ]
+  },
+
+  Call: {
+    productions: [
+      ['Arguments']
+    ],
+
+    // This prevents calling a function with its arguments on the next
+    // line.  It originally arose from the following ambiguity (but there
+    // are obviously more):
+    //
+    //    if a
+    //      function b
+    //        return 1337
+    //      end
+    //    end
+    //
+    // In this case, because we support paren-less function calls and
+    // complex statements, should this be parsed where the condition of 
+    // the 'if' statement is calling the function 'a' passing it function
+    // 'b' as its parameter, or should the condition be simply 'a'?
+    // We opt for the latter.
+    lookahead: {
+      'NEWLINE': false
+    }
   },
 
   PropertyAccess: {
@@ -456,12 +481,14 @@ var Grammar = {
   TerminatedStatement: {
     productions: [
       ['SimpleStatement', 'EndSt'],
+      ['SimpleStatement'],
       ['EndSt']
     ]
   },
 
   ComplexStatement: {
     productions: [
+      ['FunctionDeclaration'],
       ['IfStatement'],
       ['UnlessStatement'],
       ['OneLineIfStatement'],
@@ -489,8 +516,7 @@ var Grammar = {
   EndSt: {
     productions: [
       ['NEWLINE'],
-      ['SEMI'],
-      ['<<EOF>>']
+      ['SEMI']
     ]
   },
 
@@ -526,10 +552,10 @@ var Grammar = {
 
   IfStatement:  {
     productions: [
-      //['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElseIfList', 'ElsePart', 'END'],
+      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElseIfList', 'ElsePart', 'END'],
       ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElseIfList', 'END'],
-      //['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElsePart', 'END'],
-      //['IF', 'Expression', 'NEWLINE', 'BlockBody', 'END']
+      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElsePart', 'END'],
+      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'END']
     ]
   },
 
@@ -599,15 +625,15 @@ var Grammar = {
     ]
   },
 
-  DoUntilLoop: {
-    productions: [
-      ['DO', 'BlockBody', '!NEWLINE', 'UNTIL', 'Expression', 'EndSt']
-    ]
-  },
-
   DoWhileLoop: {
     productions: [
       ['DO', 'BlockBody', '!NEWLINE', 'WHILE', 'Expression', 'EndSt']
+    ]
+  },
+
+  DoUntilLoop: {
+    productions: [
+      ['DO', 'BlockBody', '!NEWLINE', 'UNTIL', 'Expression', 'EndSt']
     ]
   },
 
@@ -634,6 +660,13 @@ var Grammar = {
       ['SEMI', 'Expression', 'SEMI', 'Expression'],
       ['Expression', 'SEMI', 'SEMI', 'Expression'],
       ['Expression', 'SEMI', 'Expression', 'SEMI', 'Expression'],
+    ]
+  },
+
+  ForLoopElement: {
+    productions: [
+      ['Expression'],
+      []
     ]
   },
 
