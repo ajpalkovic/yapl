@@ -177,6 +177,8 @@ var Parser = (function($) {
       var matched = tokensMatch || lexedToken.optional
       var advance = tokensMatch || !lexedToken.optional;
 
+      dbg(expectedTokenType, 'matched:', matched, 'got:', lexedToken.type);
+
       return {
         value: capture && (lexedToken.value || lexedToken.type),
         matched: matched,

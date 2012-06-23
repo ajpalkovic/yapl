@@ -1,387 +1,527 @@
 var Nodes = (function() {
-  var Program = {
-    initialize: function() {
-      this.sourceElements = [];
-    }
-  };
+  var classes = {
+    Program: {
+      initialize: function() {
+        this.sourceElements = [];
+      }
+    },
 
-  var ClassDeclaration = {
-    initialize: $.overload(function(className, body) {
-      this.initialize(className, undefined, body);
-    }, function(className, parentClass, body) {
-      this.className = className;
-      this.parentClass = parentClass;
-      this.body = body;
-    });
-  };
+    ClassDeclaration: {
+      initialize: $.overload(function(className, body) {
+        this.initialize(className, undefined, body);
+      }, function(className, parentClass, body) {
+        this.className = className;
+        this.parentClass = parentClass;
+        this.body = body;
+      });
+    },
 
-  var ClassBody = {
-    initialize: function() {
-      this.classElements = [];
-    }
-  };
+    ClassBody: {
+      initialize: function() {
+        this.classElements = [];
+      }
+    },
 
-  var StaticMethod = {
-    initialize: function(functionDelcaration) {
-      this.functionDeclaration = functionDeclaration;
-    }
-  };
+    StaticMethod: {
+      initialize: function(functionDelcaration) {
+        this.functionDeclaration = functionDeclaration;
+      }
+    },
 
-  var Accessor = {
-    initialize: function(type, variableDeclarationList) {
-      this.type = type;
-      this.variableDeclarationList = variableDeclarationList;
-    }
-  };
+    Accessor: {
+      initialize: function(type, variableDeclarationList) {
+        this.type = type;
+        this.variableDeclarationList = variableDeclarationList;
+      }
+    },
 
-  var FunctionDeclaration = {
-    initialize: function(name, parameters, body) {
-      this.name = name;
-      this.parameters = parameters;
-      this.body;
-    }
-  };
+    FunctionDeclaration: {
+      initialize: function(name, parameters, body) {
+        this.name = name;
+        this.parameters = parameters;
+        this.body;
+      }
+    },
 
-  var Closure = {
-    initialize: function(parameters, body) {
-      this.parameters = parameters;
-      this.body = body;
-    }
-  };
+    Closure: {
+      initialize: function(parameters, body) {
+        this.parameters = parameters;
+        this.body = body;
+      }
+    },
 
-  var FunctionExpression = {
-    initialize: $.overload(function(parameters, body) {
-      this.initialize(undefined, parameters, body);
-    }, function(name, parameters, body) {
-      this.name = name;
-      this.parameters = parameters;
-      this.body = body;
-    })
-  };
+    FunctionExpression: {
+      initialize: $.overload(function(parameters, body) {
+        this.initialize(undefined, parameters, body);
+      }, function(name, parameters, body) {
+        this.name = name;
+        this.parameters = parameters;
+        this.body = body;
+      })
+    },
 
-  var ClassExpression = {
-    initialize: function(body) {
-      this.body = body;
-    }
-  };
+    ClassExpression: {
+      initialize: function(body) {
+        this.body = body;
+      }
+    },
 
-  var Parameters = {
-    initialize: function(parameterList) {
-      this.parameterList = parameterList;
-    }
-  };
+    Parameters: {
+      initialize: function(parameterList) {
+        this.parameterList = parameterList;
+      }
+    },
 
-  var ParameterList = {
-    initialize: function(parameter) {
-      this.elements = [parameter];
-    }
-  };
+    ParameterList: {
+      initialize: function(parameter) {
+        this.elements = [parameter];
+      }
+    },
 
-  var AutoSetParam = {
-    initialize: function(identifier) {
-      this.identifier = identifier;
-    }
-  };
+    AutoSetParam: {
+      initialize: function(identifier) {
+        this.identifier = identifier;
+      }
+    },
 
-  var DefaultArgument = {
-    initialize: function(identifier, expression) {
-      this.identifier = identifier;
-      this.expression = expression;
-    }
-  };
+    DefaultArgument: {
+      initialize: function(identifier, expression) {
+        this.identifier = identifier;
+        this.expression = expression;
+      }
+    },
 
-  var FunctionBody = {
-    initialize: function() {
-      this.sourceElements = [];
-    }
-  };
+    FunctionBody: {
+      initialize: function() {
+        this.sourceElements = [];
+      }
+    },
 
-  var MemberIdentifier = {
-    initialize: function(identifier) {
-      this.identifier = identifier;
-    };
-  };
+    MemberIdentifier: {
+      initialize: function(identifier) {
+        this.identifier = identifier;
+      },
+    },
 
-  var ArrayLiteral = {
-    initialize: function(arrayElements) {
-      this.arrayElements = arrayElements;
-    }
-  };
+    ArrayLiteral: {
+      initialize: function(arrayElements) {
+        this.arrayElements = arrayElements;
+      }
+    },
 
-  var ArrayElements = {
-    initialize: function(arrayElement) {
-      this.arrayElements = [arrayElement];
-    }
-  };
+    ArrayElements: {
+      initialize: function(arrayElement) {
+        this.arrayElements = [arrayElement];
+      }
+    },
 
-  var ObjectLiteral = {
-    initialize: function(properties) {
-      this.properties = properties;
-    }
-  };
+    ObjectLiteral: {
+      initialize: function(properties) {
+        this.properties = properties;
+      }
+    },
 
-  var Properties = {
-    initialize: function(property) {
-      this.properties = [property];
-    }
-  };
+    Properties: {
+      initialize: function(property) {
+        this.properties = [property];
+      }
+    },
 
-  var Property = {
-    initialize: $.overload(function(name) {
-      this.initialize(name, undefined);
-    }, function(name, expression) {
-      this.name = name;
-      this.expression = expression;
-    })
-  };
+    Property: {
+      initialize: function(name, expression) {
+        this.name = name;
+        this.expression = expression;
+      }
+    },
 
-  var PropertyName = {
-    initialize: function(value) {
-      this.value = value;
-    }
-  };
+    PropertyName: {
+      initialize: function(value) {
+        this.value = value;
+      }
+    },
 
-  var ExpressionList = {
-    initialize: function(expression) {
-      this.elements = [expression];
-    }
-  };
+    ExpressionList: {
+      initialize: function(expression) {
+        this.elements = [expression];
+      }
+    },
 
-  var AssignmentExpression = {
-    initialize: function(leftHandSide, rightHandSide) {
-      this.leftHandSide = leftHandSide;
-      this.rightHandSide = rightHandSide;
-    }
-  };
+    AssignmentExpression: {
+      initialize: function(leftHandSide, rightHandSide) {
+        this.leftHandSide = leftHandSide;
+        this.rightHandSide = rightHandSide;
+      }
+    },
 
-  var ConditionalExpression = {
-    initialize: function(condition, trueExpresion, falseExpression) {
-      this.condition = condition;
-      this.trueExpression = trueExpression;
-      this.falseExpression = falseExpression;
-    }
-  };
+    ConditionalExpression: {
+      initialize: function(condition, trueExpresion, falseExpression) {
+        this.condition = condition;
+        this.trueExpression = trueExpression;
+        this.falseExpression = falseExpression;
+      }
+    },
 
-  var SimpleExpression = {
-    initialize: function(additiveExpression, relativeOperator, expression) {
-      this.additiveExpression = additiveExpression;
-      this.relativeOperator = relativeOperator;
-      this.expression = expression;
-    }
-  };
+    SimpleExpression: {
+      initialize: function(additiveExpression, relativeOperator, expression) {
+        this.additiveExpression = additiveExpression;
+        this.relativeOperator = relativeOperator;
+        this.expression = expression;
+      }
+    },
 
-  var AdditiveExpression = {
-    initialize: function(term, multiplicativeOperator, expression) {
-      this.term = term;
-      this.multiplicativeOperator = multiplicativeOperator;
-      this.expression = expression;
-    }
-  };
+    AdditiveExpression: {
+      initialize: function(term, multiplicativeOperator, expression) {
+        this.term = term;
+        this.multiplicativeOperator = multiplicativeOperator;
+        this.expression = expression;
+      }
+    },
 
-  var Term = {
-    initialize: function(unaryExpression, additiveExpression, expression) {
-      this.unaryExpression = unaryExpression;
-      this.additiveExpression = additiveExpression;
-      this.expression = expression;
-    }
-  };
+    Term: {
+      initialize: function(unaryExpression, additiveExpression, expression) {
+        this.unaryExpression = unaryExpression;
+        this.additiveExpression = additiveExpression;
+        this.expression = expression;
+      }
+    },
 
-  var UnaryExpression = {
-    initialize: $.overload(function(expression) {
-      this.initialize(undefined, expression);
-    }, function(type, expression) {
-      this.type = type;
-      this.expression = expression;
-    })
-  };
+    UnaryExpression: {
+      initialize: $.overload(function(expression) {
+        this.initialize(undefined, expression);
+      }, function(type, expression) {
+        this.type = type;
+        this.expression = expression;
+      })
+    },
 
-  var PostfixIncrementExpression = {
-    initialize: function(leftHandSideExpression, type) {
-      this.leftHandSideExpression = leftHandSideExpression;
-      this.type = type;
-    }
-  };
+    PostfixIncrementExpression: {
+      initialize: function(leftHandSideExpression, type) {
+        this.leftHandSideExpression = leftHandSideExpression;
+        this.type = type;
+      }
+    },
 
-  var PrefixIncrementExpression = {
-    initialize: function(type, leftHandSideExpression) {
-      this.type = type;
-      this.leftHandSideExpression = leftHandSideExpression;
-    }
-  };
+    PrefixIncrementExpression: {
+      initialize: function(type, leftHandSideExpression) {
+        this.type = type;
+        this.leftHandSideExpression = leftHandSideExpression;
+      }
+    },
 
-  var NewExpression = {
-    initialize: function(leftHandSideExpression) {
-      this.leftHandSideExpression = leftHandSideExpression;
-    }
-  };
+    NewExpression: {
+      initialize: function(leftHandSideExpression) {
+        this.leftHandSideExpression = leftHandSideExpression;
+      }
+    },
 
-  var MemberExpression = {
-    initialize: function(primaryExpression, memberPart) {
-      this.primaryExpression = primaryExpression;
-      this.memberPart = memberPart;
-    }
-  };
+    MemberExpression: {
+      initialize: function(primaryExpression, memberPart) {
+        this.primaryExpression = primaryExpression;
+        this.memberPart = memberPart;
+      }
+    },
 
-  var MemberPart = {
-    initialize: function(member, memberPart) {
-      this.member = member;
-      this.memberPart = memberPart;
-    }
-  };
+    MemberPart: {
+      initialize: function(member, memberPart) {
+        this.member = member;
+        this.memberPart = memberPart;
+      }
+    },
 
-  var PropertyAccess = {
-    initialize: function(identifier) {
-      this.identifier = identifier;
-    }
-  };
+    PropertyAccess: {
+      initialize: function(identifier) {
+        this.identifier = identifier;
+      }
+    },
 
-  var BindExpression = {
-    initialize: function(argumentList) {
-      this.argumentList = argumentList;
-    }
-  };
+    BindExpression: {
+      initialize: function(argumentList) {
+        this.argumentList = argumentList;
+      }
+    },
 
-  var ArrayDereference = {
-    initialize: function(expression) {
-      this.expression = expression;
-    }
-  };
+    ArrayDereference: {
+      initialize: function(expression) {
+        this.expression = expression;
+      }
+    },
 
-  var Arguments = {
-    initialize: function(argumentList) {
-      this.argumentList = argumentList;
-    }
-  };
+    Arguments: {
+      initialize: function(argumentList) {
+        this.argumentList = argumentList;
+      }
+    },
 
-  var ArgumentList = {
-    initialize: function(expression) {
-      this.elements = [expression];
-    }
-  };
+    ArgumentList: {
+      initialize: function(expression) {
+        this.elements = [expression];
+      }
+    },
 
-  var PrimaryExpression = {
-    initialize: function(expression) {
-      this.expression = expression;
-    }
-  };
+    PrimaryExpression: {
+      initialize: function(expression) {
+        this.expression = expression;
+      }
+    },
 
-  var NestedExpression = {
-    initialize: function(expression) {
-      this.expression = expression;
-    }
-  };
+    NestedExpression: {
+      initialize: function(expression) {
+        this.expression = expression;
+      }
+    },
 
-  var Operator = {
-    initialize: function(type) {
-      this.type = type;
-    }
-  };
+    Operator: {
+      initialize: function(type) {
+        this.type = type;
+      }
+    },
 
-  var StatementList = {
-    initialize: function(statement) {
-      this.elements = [statement];
-    }
-  };
+    StatementList: {
+      initialize: function(statement) {
+        this.elements = [statement];
+      }
+    },
 
-  var TerminatedStatement = {
-    initialize: function(statement) {
-      this.statement = statement;
-    }
-  };
+    TerminatedStatement: {
+      initialize: function(statement) {
+        this.statement = statement;
+      }
+    },
 
-  var VariableStatement = {
-    initialize: function(variableDeclarationList) {
-      this.variableDeclarationList = variableDeclarationList;
-    }
-  };
+    VariableStatement: {
+      initialize: function(variableDeclarationList) {
+        this.variableDeclarationList = variableDeclarationList;
+      }
+    },
 
-  var VariableDeclarationList = {
-    initialize: function(variableDeclaration) {
-      this.elements = [variableDeclaration];
-    }
-  };
+    VariableDeclarationList: {
+      initialize: function(variableDeclaration) {
+        this.elements = [variableDeclaration];
+      }
+    },
 
-  var VariableDeclaration = {
-    initialize: function(identifier, expression) {
-      this.identifier = identifier;
-      this.expression = expression;
-    }
-  };
+    VariableDeclaration: {
+      initialize: function(identifier, expression) {
+        this.identifier = identifier;
+        this.expression = expression;
+      }
+    },
 
-  var IfStatement = {
-    initialize: function(expression, blockBody, elseIfPart, elsePart) {
-      this.expression = expression;
-      this.blockBody = blockBody;
-      this.elseIfPart = elseIfPart;
-      this.elsePart = elsePart;
-    }
-  };
+    IfStatement: {
+      initialize: function(expression, blockBody, elseIfPart, elsePart) {
+        this.expression = expression;
+        this.blockBody = blockBody;
+        this.elseIfPart = elseIfPart;
+        this.elsePart = elsePart;
+      }
+    },
 
-  var OneLineIfStatement = {
-    initialize: function(simpleStatement, condition) {
-      this.simpleStatement = simpleStatement;
-      this.condition = condition;
-    }
-  };
+    OneLineIfStatement: {
+      initialize: function(simpleStatement, condition) {
+        this.simpleStatement = simpleStatement;
+        this.condition = condition;
+      }
+    },
 
-  var UnlessStatement = {
-    initialize: function(expression, blockBody) {
-      this.expression = expression;
-      this.blockBody = blockBody;
-    }
-  };
+    UnlessStatement: {
+      initialize: function(expression, blockBody) {
+        this.expression = expression;
+        this.blockBody = blockBody;
+      }
+    },
 
-  var OneLineUnlessStatement = {
-    initialize: function(simpleStatement, condition) {
-      this.simpleStatement = simpleStatement;
-      this.condition = condition;
-    }
-  };
+    OneLineUnlessStatement: {
+      initialize: function(simpleStatement, condition) {
+        this.simpleStatement = simpleStatement;
+        this.condition = condition;
+      }
+    },
 
-  var ElsePart = {
-    initialize: function(blockBody) {
-      this.blockBody = blockBody;
-    }
-  };
+    ElsePart: {
+      initialize: function(blockBody) {
+        this.blockBody = blockBody;
+      }
+    },
 
-  var ElseIfList = {
-    initialize: function(elseIf) {
-      this.elements = [elseIf];
-    }
-  };
+    ElseIfList: {
+      initialize: function(elseIf) {
+        this.elements = [elseIf];
+      }
+    },
 
-  var ElseIf = {
-    initialize: function(condition, blockBody) {
-      this.condition = condition;
-      this.blockBody = blockBody;
-    }
-  };
+    ElseIf: {
+      initialize: function(condition, blockBody) {
+        this.condition = condition;
+        this.blockBody = blockBody;
+      }
+    },
 
-  var WhileLoop = {
-    initialize: function(condition, blockBody) {
-      this.condition = condition;
-      this.blockBody = blockBody;
-    }
-  };
+    WhileLoop: {
+      initialize: function(condition, blockBody) {
+        this.condition = condition;
+        this.blockBody = blockBody;
+      }
+    },
 
-  var UntilLoop = {
-    initialize: function(condition, blockBody) {
-      this.condition = condition;
-      this.blockBody = blockBody;
-    }
-  };
+    UntilLoop: {
+      initialize: function(condition, blockBody) {
+        this.condition = condition;
+        this.blockBody = blockBody;
+      }
+    },
 
-  var DoWhileLoop = {
-    initialize: function(blockBody, condition) {
-      this.blockBody = blockBody;
-      this.condition = condition;
-    }
-  };
+    DoWhileLoop: {
+      initialize: function(blockBody, condition) {
+        this.blockBody = blockBody;
+        this.condition = condition;
+      }
+    },
 
-  var DoUntilLoop = {
-    initialize: function(blockBody, condition) {
-      this.blockBody = blockBody;
-      this.condition = condition;
-    }
+    DoUntilLoop: {
+      initialize: function(blockBody, condition) {
+        this.blockBody = blockBody;
+        this.condition = condition;
+      }
+    },
+
+    ForLoop: {
+      initialize: function(forLoopStructure, blockBody) {
+        this.forLoopStructure = forLoopStructure;
+        this.blockBody = blockBody;
+      }
+    },
+
+    StandardForStructure: {
+      initialize: function(initializer, condition, increment) {
+        this.initializer = initializer;
+        this.condition = condition;
+        this.increment = increment;
+      }
+    },
+
+    ForInstructure: {
+      initialize: function(variable, value, index) {
+        this.variable = variable;
+        this.value = value;
+        this.index = index;
+      }
+    },
+
+    MultipleForInStructure: {
+      initialize: function(firstVariable, secondVariable, value, index) {
+        this.firstVariable = firstVariable;
+        this.secondVariable = secondVariable;
+        this.value = value;
+        this.index = index;
+      }
+    },
+
+    InflectedForStructure: {
+      initialize: function(value, index) {
+        this.value = value;
+        this.index = index;
+      }
+    },
+
+    ContinueStatement: {
+      initialize: function(identifier) {
+        this.identifier = identifier;
+      }
+    },
+
+    BreakStatement: {
+      initialize: function(identifier) {
+        this.identifier = identifier;
+      }
+    },
+
+    ReturnStatement: {
+      initialize: function(identifier) {
+        this.identifier = identifier;
+      }
+    },
+
+    WithStatement: {
+      initialize: function(context, blockBody) {
+        this.context = context;
+        this.blockBody = blockBody;
+      }
+    },
+
+    SwitchStatement: {
+      initialize: function(expression, caseBlock) {
+        this.expression = expression;
+        this.caseBlock = caseBlock;
+      }
+    },
+
+    CaseBlock: {
+      initialize: function(firstSection, secondSection, thirdSection) {
+        this.firstSection = firstSection;
+        this.secondSection = secondSection;
+        this.thirdSection = thirdSection;
+      }
+    },
+
+    CaseClauses: {
+      initialize: function(caseClause) {
+        this.elements = [causeClause];
+      }
+    },
+
+    CaseClause: {
+      initialize: function(expressionList, blockBody) {
+        this.expressionList = expressionList;
+        this.blockBody = blockBody;
+      }
+    },
+
+    DefaultClause: {
+      initialize: function(blockBody) {
+        this.blockBody = blockBody;
+      }
+    },
+
+    LabelledStatement: {
+      initialize: function(identifier, value) {
+        this.identifier = identifier;
+        this.value = value;
+      }
+    },
+
+    ThrowStatement: {
+      initialize: function(expression) {
+        this.expression = expression;
+      }
+    },
+
+    TryStatement: {
+      initialize: function(firstSection, secondSection, thirdSection) {
+        this.firstSection = firstSection;
+        this.secondSection = secondSection;
+        this.thirdSection = thirdSection;
+      }
+    },
+
+    Catch: {
+      initialize: $.overload(function(blockBody) {
+        this.initialize(undefined, identifier);
+      }, function(identifier, blockBody) {
+        this.identifier = identifier;
+        this.blockBody = blockBody;
+      })
+    },
+
+    Finally: {
+      initialize: function(blockBody) {
+        this.blockBody = blockBody;
+      }
+    },
+
+    DebuggerStatement: {
+      initialize: function() {
+        
+      }
+    },
   };
 })();

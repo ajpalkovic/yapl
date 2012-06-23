@@ -64,23 +64,5 @@ var Lexer = (function($) {
       tokens.push(eofToken);
       return tokens;
     }
-
-    // Not needed for now as the parser will handle optional tokens (aka newlines).
-    // This also needs extra logic to keep track of line #s for error reporting.
-
-    /*__condense: function(tokens) {
-      for (var i = 0, len = tokens.length; i < len; ++i) {
-        for (var j = i; j < len; ++j) {
-          if (tokens[j].type !== 'NEWLINE') break;
-        }
-
-        if (i != j) {
-          tokens.splice(i, j - i, tokens[i]);
-          i = j;
-        }
-      }
-
-      return tokens;
-    }*/
   });
 })(jQuery);

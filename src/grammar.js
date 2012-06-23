@@ -3,6 +3,7 @@ var Grammar = {
     productions: [
       ['SourceElement', 'Program'],
       ['SourceElement', '<<EOF>>'],
+      ['SourceElement'],
       ['<<EOF>>']
     ]
   },
@@ -481,7 +482,6 @@ var Grammar = {
   TerminatedStatement: {
     productions: [
       ['SimpleStatement', 'EndSt'],
-      ['SimpleStatement'],
       ['EndSt']
     ]
   },
@@ -496,6 +496,7 @@ var Grammar = {
       ['IterationStatement'],
       ['WithStatement'],
       ['SwitchStatement'],
+      ['LabelledStatement'],
       ['TryStatement']
     ]
   },
@@ -507,7 +508,6 @@ var Grammar = {
       ['BreakStatement'],
       ['ReturnStatement'],
       ['ContinueStatement'],
-      ['LabelledStatement'],
       ['ThrowStatement'],
       ['DebuggerStatement']
     ]
@@ -516,7 +516,8 @@ var Grammar = {
   EndSt: {
     productions: [
       ['NEWLINE'],
-      ['SEMI']
+      ['SEMI'],
+      ['<<EOF>>']
     ]
   },
 
@@ -639,44 +640,57 @@ var Grammar = {
 
   ForLoop: {
     productions: [
-      ['FOR', 'ForLoopCondition', 'NEWLINE', 'BlockBody', 'END']
+      ['FOR', 'ForLoopStructure', 'NEWLINE', 'BlockBody', 'END']
     ]
   },
 
-  ForLoopCondition: {
+  ForLoopStructure: {
     productions: [
-      ['RegularForLoop'],
-      ['AdvancedForLoop']
+      ['StandardForStructure'],
+      ['ForInStructure'],
+      ['MultipleForInStructure'],
+      ['InflectedForStructure']
     ]
   },
 
-  RegularForLoop: {
+  StandardForStructure: {
     productions: [
-      ['SEMI', 'SEMI'],
-      ['Expression', 'SEMI', 'SEMI'],
-      ['SEMI', 'Expression', 'SEMI'],
-      ['SEMI', 'SEMI', 'Expression'],
-      ['Expression', 'SEMI', 'Expression', 'SEMI'],
-      ['SEMI', 'Expression', 'SEMI', 'Expression'],
-      ['Expression', 'SEMI', 'SEMI', 'Expression'],
-      ['Expression', 'SEMI', 'Expression', 'SEMI', 'Expression'],
+      ['ForLoopInitializer', 'SEMI', 'OptionalExpression', 'SEMI', 'OptionalExpression']
     ]
   },
 
-  ForLoopElement: {
+  ForLoopInitializer: {
+    productions: [
+      ['VariableStatement'],
+      ['LeftHandSideExpression'],
+      []
+    ]
+  },
+
+  OptionalExpression: {
     productions: [
       ['Expression'],
       []
     ]
   },
 
-  AdvancedForLoop: {
+  ForInStructure: {
     productions: [
-      ['Expression', 'IN', 'Expression', 'AT', 'IDENTIFIER'],
-      ['Expression', 'IN', 'Expression'],
-      ['Expression', 'COMMA', 'IDENTIFIER', 'IN', 'Expression', 'AT', 'IDENTIFIER'],
-      ['Expression', 'COMMA', 'IDENTIFIER', 'IN', 'Expression'],
-      ['Expression', 'AT', 'IDENTIFIER']
+      ['VariableDeclaration', 'IN', 'Expression', 'AT', 'VariableDeclaration'],
+      ['VariableDeclaration', 'IN', 'Expression']
+    ]
+  },
+
+  MultipleForInStructure: {
+    productions: [
+      ['VariableDeclaration', 'COMMA', 'VariableDeclaration', 'IN', 'Expression', 'AT', 'VariableDeclaration'],
+      ['VariableDeclaration', 'COMMA', 'VariableDeclaration', 'IN', 'Expression']
+    ]
+  },
+
+  InflectedForStructure: {
+    productions: [
+      ['Expression', 'AT', 'VariableDeclaration']
     ]
   },
 
@@ -709,38 +723,17 @@ var Grammar = {
 
   SwitchStatement: {
     productions: [
-      ['SWITCH', 'Expression', 'CaseBlock', 'END']
+      ['SWITCH', 'Expression', 'NEWLINE', 'CaseBlock', 'END']
     ]
   },
 
   CaseBlock: {
     productions: [
-      ['CaseClauses', 'DefaultClause', 'CaseClauses', 'AlwaysClause'],
-      ['CaseClauses', 'AlwaysClause', 'CaseClauses', 'DefaultClause'],
-      ['CaseClauses', 'DefaultClause', 'AlwaysClause', 'CaseClauses'],
-      ['CaseClauses', 'AlwaysClause', 'DefaultClause', 'CaseClauses'],
-      ['DefaultClause', 'CaseClauses', 'AlwaysClause', 'CaseClauses'],
-      ['AlwaysClause', 'CaseClauses', 'DefaultClause', 'CaseClauses'],
-
       ['CaseClauses', 'DefaultClause', 'CaseClauses'],
-      ['CaseClauses', 'DefaultClause', 'AlwaysClause'],
-      ['CaseClauses', 'AlwaysClause', 'CaseClases'],
-      ['CaseClauses', 'AlwaysClause', 'DefaultClause'],
-      ['DefaultClause', 'CaseClauses', 'AlwaysClause'],
-      ['DefaultClause', 'AlwaysClause', 'CaseClauses'],
-      ['AlwaysClause', 'CaseClauses', 'DefaultClause'],
-      ['AlwaysClause', 'DefaultClause', 'CaseClauses'],
-
       ['CaseClauses', 'DefaultClause'],
-      ['CaseClauses', 'AlwaysClause'],
-      ['DefaultClause', 'AlwaysClause'],
       ['DefaultClause', 'CaseClauses'],
-      ['AlwaysClause', 'CaseClauses'],
-      ['AlwaysClause', 'DefaultClause'],
-
       ['CaseClauses'],
       ['DefaultClause'],
-      ['AlwaysClause']
     ]
   },
 
@@ -765,8 +758,7 @@ var Grammar = {
 
   LabelledStatement: {
     productions: [
-      ['IDENTIFIER', 'COLON', 'BlockBody', 'END'],
-      ['IDENTIFIER', 'COLON', 'Statement']
+      ['(IDENTIFIER)', 'COLON', 'Statement']
     ]
   },
 
@@ -778,9 +770,9 @@ var Grammar = {
 
   TryStatement: {
     productions: [
-      ['TRY', 'StatementList', 'Catch', 'Finally', 'END'],
-      ['TRY', 'StatementList', 'Finally', 'END'],
-      ['TRY', 'StatementList', 'Catch', 'END'],
+      ['TRY', 'BlockBody', 'Catch', 'Finally', 'END'],
+      ['TRY', 'BlockBody', 'Finally', 'END'],
+      ['TRY', 'BlockBody', 'Catch', 'END'],
       ['TRY', 'Catch', 'Finally', 'END'],
       ['TRY', 'Finally', 'END'],
       ['TRY', 'Catch', 'END']
@@ -789,8 +781,8 @@ var Grammar = {
 
   Catch: {
     productions: [
-      ['CATCH', 'IDENTIFIER', 'NEWLINE', 'BlockBody'],
-      ['CATCH', 'NEWLINE', 'BlockBody']
+      ['CATCH', '(IDENTIFIER)', 'NEWLINE', 'BlockBody'],
+      ['CATCH', 'BlockBody']
     ]
   },
 
