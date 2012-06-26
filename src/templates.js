@@ -1,4 +1,4 @@
-var Templates = (function({
+var Templates = (function() {
   function declaration(varName, value) {
     return new TerminatedStatement(
         new VariableStatement([new VariableDeclaration(varName, value)]));
@@ -8,26 +8,42 @@ var Templates = (function({
     return declaration(varName, new ObjectLiteral());
   }
 
-  var IDENTIFIER = {
-    METHODS: '__methods__',
-    SUPER: '__super__'
+  var id = {
+    classProto: '__proto__',
+    method: '__method__',
+    super: '__super__',
+    klass: '__klass__',
+    ctor: '__ctor__'
   };
 
   return {
     ClassDeclaration: [
-      function(body) {
+      function(name, body) {
         [
           'var ' 
         ];
       },
 
-      function(body, parentClass) {
+      function(name, parentClass, body) {
         [
-          '(function () {',
-          '  var __methods__ = {}',
-          '  #{assignment(IDENTIFIER.SUPER, parent)}',
-          '  #{body}',
-          '})();'
+          'var #{name} = -function() {',
+
+            // Setup the inheritance.
+            'function #{name}() {',
+              'this.#{name}.apply(this, arguments);',
+            '};',
+
+            'function #{id.klass}() {};',
+            '#{id.klass}.prototype = #{parentClass}.prototype;',
+            '#{name}.prototype = new #{id.klass};',
+
+            'var #{id.classProto} = #{name}.prototype;',
+
+            '#{body}',
+
+            'if (!#{name}.prototype.#{name}) #{name}.prototype.#{name} = function() {};',
+            'return #{name};',
+          '}();'
         ];
       }
     ]

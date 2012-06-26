@@ -136,13 +136,13 @@ var Grammar = {
 
   ArrayLiteral: {
     productions: [
-      ['OPEN_BRACKET', 'ArrayElements', 'CLOSE_BRACKET']
+      ['OPEN_BRACKET', 'ArrayElementList', 'CLOSE_BRACKET']
     ]
   },
 
-  ArrayElements: {
+  ArrayElementList: {
     productions: [
-      ['ArrayElement', 'COMMA', 'ArrayElements'],
+      ['ArrayElement', 'COMMA', 'ArrayElementList'],
       ['ArrayElement']
     ]
   },
@@ -156,14 +156,14 @@ var Grammar = {
 
   ObjectLiteral: {
     productions: [
-      ['OPEN_BRACE', 'Properties', 'CLOSE_BRACE'],
+      ['OPEN_BRACE', 'PropertyList', 'CLOSE_BRACE'],
       ['OPEN_BRACE', 'CLOSE_BRACE']
     ]
   },
 
-  Properties: {
+  PropertyList: {
     productions: [
-      ['Property', 'ObjPropDelim', 'Properties'],
+      ['Property', 'ObjPropDelim', 'PropertyList'],
       ['Property']
     ]
   },
@@ -729,17 +729,17 @@ var Grammar = {
 
   CaseBlock: {
     productions: [
-      ['CaseClauses', 'DefaultClause', 'CaseClauses'],
-      ['CaseClauses', 'DefaultClause'],
-      ['DefaultClause', 'CaseClauses'],
-      ['CaseClauses'],
+      ['CaseClauseList', 'DefaultClause', 'CaseClauseList'],
+      ['CaseClauseList', 'DefaultClause'],
+      ['DefaultClause', 'CaseClauseList'],
+      ['CaseClauseList'],
       ['DefaultClause'],
     ]
   },
 
-  CaseClauses: {
+  CaseClauseList: {
     productions: [
-      ['CaseClause', 'CaseClauses']
+      ['CaseClause', 'CaseClauseList']
       ['CaseClause']
     ]
   },

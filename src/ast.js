@@ -1,527 +1,826 @@
-var Nodes = (function() {
+var Nodes = (function($) {
+  function findConstructor(className, classBody) {
+    for (var i = 0; i < classBody.classElements.length; ++i) {
+      var classElement = classBody.classElements[i];
+      if (classElement.node === 'FunctionDeclaration' && classElement.name === className) return classElement;
+    }
+  }
+
   var classes = {
     Program: {
-      initialize: function() {
-        this.sourceElements = [];
+      onParse: function(sourceElement, program) {
+        program = program || {
+          node: 'Program',
+          sourceElements: []
+        };
+
+        program.sourceElements.splice(0, 0, sourceElement);
+        return program;
       }
     },
 
     ClassDeclaration: {
-      initialize: $.overload(function(className, body) {
-        this.initialize(className, undefined, body);
+      onParse: $.overload(function(className, body) {
+        var constructor = findConstructor(className, body) || Nodes['FunctionDeclaration'](className);
+
+        return {
+          node: 'ClassDeclaration',
+          className: className,
+          body: body,
+          constructor: constructor
+        };
       }, function(className, parentClass, body) {
-        this.className = className;
-        this.parentClass = parentClass;
-        this.body = body;
-      });
+        return {
+          node: 'ClassDeclaration',
+          className: className,
+          parentClass: parentClass,
+          body: body,
+          constructor: constructor
+        };
+      })
     },
 
     ClassBody: {
-      initialize: function() {
-        this.classElements = [];
+      onParse: function(classElement, classBody) {
+        classBody = classBody || {
+          node: 'ClassBody',
+          classElements: []
+        };
+
+        classBody.classElements.splice(0, 0, classElement);
+        return classBody;
       }
     },
 
     StaticMethod: {
-      initialize: function(functionDelcaration) {
-        this.functionDeclaration = functionDeclaration;
+      onParse: function(functionDelcaration) {
+        return {
+          node: 'StaticMethod',
+          functionDeclaration: functionDeclaration
+        };
       }
     },
 
     Accessor: {
-      initialize: function(type, variableDeclarationList) {
-        this.type = type;
-        this.variableDeclarationList = variableDeclarationList;
+      onParse: function(type, variableDeclarationList) {
+        return {
+          node: 'Accessor',
+          type: type,
+          variableDeclarationList: variableDeclarationList
+        };
       }
     },
 
     FunctionDeclaration: {
-      initialize: function(name, parameters, body) {
-        this.name = name;
-        this.parameters = parameters;
-        this.body;
+      onParse: function(name, parameters, body) {
+        return {
+          node: 'FunctionDeclaration',
+          name: name,
+          parameters: parameters,
+          body: body
+        };
       }
     },
 
     Closure: {
-      initialize: function(parameters, body) {
-        this.parameters = parameters;
-        this.body = body;
+      onParse: function(parameters, body) {
+        return {
+          node: 'Closure',
+          parameters: parameters,
+          body: body
+        };
       }
     },
 
     FunctionExpression: {
-      initialize: $.overload(function(parameters, body) {
-        this.initialize(undefined, parameters, body);
+      onParse: $.overload(function(parameters, body) {
+        return {
+          node: 'FunctionExpression',
+          parameters: parameters,
+          body: body
+        };
       }, function(name, parameters, body) {
-        this.name = name;
-        this.parameters = parameters;
-        this.body = body;
+        return {
+          node: 'FunctionExpression',
+          name: name,
+          parameters: parameters,
+          body: body
+        };
       })
     },
 
     ClassExpression: {
-      initialize: function(body) {
-        this.body = body;
+      onParse: function(body) {
+        return {
+          node: 'ClassExpression',
+          body: body
+        };
       }
     },
 
     Parameters: {
-      initialize: function(parameterList) {
-        this.parameterList = parameterList;
+      onParse: function(parameterList) {
+        return {
+          node: 'Parameters',
+          parameterList: parameterList
+        };
       }
     },
 
     ParameterList: {
-      initialize: function(parameter) {
-        this.elements = [parameter];
+      onParse: function(parameter, parameterList) {
+        parameterList = parameterList || {
+          node: 'ParameterList',
+          parameters: []
+        };
+
+        parameterList.parameters.splice(0, 0, parameter);
+        return parameterList;
       }
     },
 
     AutoSetParam: {
-      initialize: function(identifier) {
-        this.identifier = identifier;
+      onParse: function(identifier) {
+        return {
+          node: 'AutoSetParam',
+          identifier: identifier
+        };
       }
     },
 
     DefaultArgument: {
-      initialize: function(identifier, expression) {
-        this.identifier = identifier;
-        this.expression = expression;
+      onParse: function(identifier, expression) {
+        return {
+          node: 'DefaultArgument',
+          identifier: identifier,
+          expression: expression
+        };
       }
     },
 
     FunctionBody: {
-      initialize: function() {
-        this.sourceElements = [];
+      onParse: function(sourceElement, functionBody) {
+        functionBody = functionBody || {
+          node: 'FunctionBody',
+          sourceElements: []
+        };
+
+        functionBody.sourceElements.splice(0, 0, sourceElement);
+        return functionBody;
       }
     },
 
     MemberIdentifier: {
-      initialize: function(identifier) {
-        this.identifier = identifier;
+      onParse: function(identifier) {
+        return {
+          node: 'MemberIdentifier',
+          identifier: identifier
+        }
       },
     },
 
     ArrayLiteral: {
-      initialize: function(arrayElements) {
-        this.arrayElements = arrayElements;
+      onParse: function(arrayElements) {
+        return {
+          node: 'ArrayLiteral',
+          arrayElements: arrayElements
+        };
       }
     },
 
-    ArrayElements: {
-      initialize: function(arrayElement) {
-        this.arrayElements = [arrayElement];
+    ArrayElementList: {
+      onParse: function(arrayElement, arrayElementList) {
+        arrayElementList = arrayElementList || {
+          node: 'ArrayElementList',
+          arrayElements: []
+        };
+
+        arrayElementList.arrayElements.splice(0, 0, arrayElement);
+        return arrayElementList;
       }
     },
 
     ObjectLiteral: {
-      initialize: function(properties) {
-        this.properties = properties;
+      onParse: function(properties) {
+        return {
+          node: 'ObjectLiteral',
+          properties: properties
+        };
       }
     },
 
-    Properties: {
-      initialize: function(property) {
-        this.properties = [property];
+    PropertyList: {
+      onParse: function(property, propertyList) {
+        propertyList = propertyList || {
+          node: 'PropertyList',
+          properties: []
+        };
+
+        propertyList.properties.splice(0, 0, property);
+        return propertyList;
       }
     },
 
     Property: {
-      initialize: function(name, expression) {
-        this.name = name;
-        this.expression = expression;
+      onParse: function(name, expression) {
+        return {
+          node: 'Property',
+          name: name,
+          expression: expression
+        };
       }
     },
 
     PropertyName: {
-      initialize: function(value) {
-        this.value = value;
+      onParse: function(value) {
+        return {
+          node: 'PropertyName',
+          value: value
+        };
       }
     },
 
     ExpressionList: {
-      initialize: function(expression) {
-        this.elements = [expression];
+      onParse: function(expression, expressionList) {
+        expressionList = expressionList || {
+          node: 'ExpressionList',
+          expressions: []
+        };
+
+        expressionList.expressions.splice(0, 0, expression);
+        return expressionList;
       }
     },
 
     AssignmentExpression: {
-      initialize: function(leftHandSide, rightHandSide) {
-        this.leftHandSide = leftHandSide;
-        this.rightHandSide = rightHandSide;
+      onParse: function(leftHandSide, rightHandSide) {
+        return {
+          node: 'AssignmentExpression',
+          leftHandSide: leftHandSide,
+          rightHandSide: rightHandSide
+        };
       }
     },
 
     ConditionalExpression: {
-      initialize: function(condition, trueExpresion, falseExpression) {
-        this.condition = condition;
-        this.trueExpression = trueExpression;
-        this.falseExpression = falseExpression;
+      onParse: function(condition, trueExpresion, falseExpression) {
+        return {
+          node: 'ConditionalExpression',
+          condition: condition,
+          trueExpression: trueExpression,
+          falseExpression: falseExpression
+        };
       }
     },
 
     SimpleExpression: {
-      initialize: function(additiveExpression, relativeOperator, expression) {
-        this.additiveExpression = additiveExpression;
-        this.relativeOperator = relativeOperator;
-        this.expression = expression;
+      onParse: function(additiveExpression, relativeOperator, expression) {
+        return {
+          node: 'SimpleExpression',
+          additiveExpression: additiveExpression,
+          relativeOperator: relativeOperator,
+          expression: expression
+        };
       }
     },
 
     AdditiveExpression: {
-      initialize: function(term, multiplicativeOperator, expression) {
-        this.term = term;
-        this.multiplicativeOperator = multiplicativeOperator;
-        this.expression = expression;
+      onParse: function(term, multiplicativeOperator, expression) {
+        return {
+          node: 'AdditiveExpression',
+          term: term,
+          multiplicativeOperator: multiplicativeOperator,
+          expression: expression
+        };
       }
     },
 
     Term: {
-      initialize: function(unaryExpression, additiveExpression, expression) {
-        this.unaryExpression = unaryExpression;
-        this.additiveExpression = additiveExpression;
-        this.expression = expression;
+      onParse: function(unaryExpression, additiveExpression, expression) {
+        return {
+          node: 'Term',
+          unaryExpression: unaryExpression,
+          additiveExpression: additiveExpression,
+          expression: expression
+        };
       }
     },
 
     UnaryExpression: {
-      initialize: $.overload(function(expression) {
-        this.initialize(undefined, expression);
+      onParse: $.overload(function(expression) {
+        return {
+          node: 'UnaryExpression',
+          expression: expression
+        };
       }, function(type, expression) {
-        this.type = type;
-        this.expression = expression;
+        return {
+          node: 'UnaryExpression',
+          type: type,
+          expression: expression
+        };
       })
     },
 
     PostfixIncrementExpression: {
-      initialize: function(leftHandSideExpression, type) {
-        this.leftHandSideExpression = leftHandSideExpression;
-        this.type = type;
+      onParse: function(leftHandSideExpression, type) {
+        return {
+          node: 'PostfixIncrementExpression',
+          leftHandSideExpression: leftHandSideExpression,
+          type: type
+        };
       }
     },
 
     PrefixIncrementExpression: {
-      initialize: function(type, leftHandSideExpression) {
-        this.type = type;
-        this.leftHandSideExpression = leftHandSideExpression;
+      onParse: function(type, leftHandSideExpression) {
+        return {
+          node: 'PrefixIncrementExpression',
+          type: type,
+          leftHandSideExpression: leftHandSideExpression
+        };
       }
     },
 
     NewExpression: {
-      initialize: function(leftHandSideExpression) {
-        this.leftHandSideExpression = leftHandSideExpression;
+      onParse: function(leftHandSideExpression) {
+        return {
+          node: 'NewExpression',
+          leftHandSideExpression: leftHandSideExpression
+        };
       }
     },
 
     MemberExpression: {
-      initialize: function(primaryExpression, memberPart) {
-        this.primaryExpression = primaryExpression;
-        this.memberPart = memberPart;
+      onParse: function(primaryExpression, memberPart) {
+        return {
+          node: 'MemberExpression',
+          primaryExpression: primaryExpression,
+          memberPart: memberPart
+        };
       }
     },
 
     MemberPart: {
-      initialize: function(member, memberPart) {
-        this.member = member;
-        this.memberPart = memberPart;
+      onParse: function(member, memberPart) {
+        return {
+          node: 'MemberPart',
+          member: member,
+          memberPart: memberPart
+        };
       }
     },
 
     PropertyAccess: {
-      initialize: function(identifier) {
-        this.identifier = identifier;
+      onParse: function(identifier) {
+        return {
+          node: 'PropertyAccess',
+          identifier: identifier
+        };
       }
     },
 
     BindExpression: {
-      initialize: function(argumentList) {
-        this.argumentList = argumentList;
+      onParse: function(argumentList) {
+        return {
+          node: 'BindExpression',
+          argumentList: argumentList
+        };
       }
     },
 
     ArrayDereference: {
-      initialize: function(expression) {
-        this.expression = expression;
+      onParse: function(expression) {
+        return {
+          node: 'ArrayDereference',
+          expression: expression
+        };
       }
     },
 
     Arguments: {
-      initialize: function(argumentList) {
-        this.argumentList = argumentList;
+      onParse: function(argumentList) {
+        return {
+          node: 'Arguments',
+          argumentList: argumentList
+        };
       }
     },
 
     ArgumentList: {
-      initialize: function(expression) {
-        this.elements = [expression];
+      onParse: function(argument, argumentList) {
+        argumentList = argumentList || {
+          node: 'ArgumentList',
+          arguments: []
+        };
+
+        argumentList.arguments.splice(0, 0, argument);
+        return argumentList;
       }
     },
 
+    // TODO: implement all of the different primary expressions
     PrimaryExpression: {
-      initialize: function(expression) {
-        this.expression = expression;
+      onParse: function(expression) {
+        return {
+          node: 'PrimaryExpression',
+          expression: expression
+        };
       }
     },
 
     NestedExpression: {
-      initialize: function(expression) {
-        this.expression = expression;
+      onParse: function(expression) {
+        return {
+          node: 'NestedExpression',
+          expression: expression
+        };
       }
     },
 
     Operator: {
-      initialize: function(type) {
-        this.type = type;
+      onParse: function(type) {
+        return {
+          node: 'Operator',
+          type: type
+        };
       }
     },
 
     StatementList: {
-      initialize: function(statement) {
-        this.elements = [statement];
+      onParse: function(statement, statementList) {
+        statementList = statementList || {
+          node: 'StatementList',
+          statements: []
+        };
+
+        statementList.statements.splice(0, 0, statement);
+        return statementList;
       }
     },
 
     TerminatedStatement: {
-      initialize: function(statement) {
-        this.statement = statement;
+      onParse: function(statement) {
+        return {
+          node: 'TerminatedStatement',
+          statement: statement
+        };
       }
     },
 
     VariableStatement: {
-      initialize: function(variableDeclarationList) {
-        this.variableDeclarationList = variableDeclarationList;
+      onParse: function(variableDeclarationList) {
+        return {
+          node: 'VariableStatement',
+          variableDeclarationList: variableDeclarationList
+        };
       }
     },
 
     VariableDeclarationList: {
-      initialize: function(variableDeclaration) {
-        this.elements = [variableDeclaration];
+      onParse: function(variableDeclaration, variableDeclarationList) {
+        variableDeclarationList = variableDeclarationList || {
+          node: 'VariableDeclarationList',
+          variableDeclarations: []
+        };
+
+        variableDeclarationList.variableDeclarations.splice(0, 0, variableDeclaration);
+        return variableDeclarationList;
       }
     },
 
     VariableDeclaration: {
-      initialize: function(identifier, expression) {
-        this.identifier = identifier;
-        this.expression = expression;
+      onParse: function(identifier, expression) {
+        return {
+          node: 'VariableDeclaration',
+          identifier: identifier,
+          expression: expression
+        };
       }
     },
 
     IfStatement: {
-      initialize: function(expression, blockBody, elseIfPart, elsePart) {
-        this.expression = expression;
-        this.blockBody = blockBody;
-        this.elseIfPart = elseIfPart;
-        this.elsePart = elsePart;
+      onParse: function(condition, blockBody, elseIfPart, elsePart) {
+        return {
+          node: 'IfStatement',
+          condition: condition,
+          blockBody: blockBody,
+          elseIfPart: elseIfPart,
+          elsePart: elsePart
+        };
       }
     },
 
     OneLineIfStatement: {
-      initialize: function(simpleStatement, condition) {
-        this.simpleStatement = simpleStatement;
-        this.condition = condition;
+      onParse: function(statement, condition) {
+        return {
+          node: 'OneLineIfStatement',
+          statement: statement,
+          condition: condition
+        };
       }
     },
 
     UnlessStatement: {
-      initialize: function(expression, blockBody) {
-        this.expression = expression;
-        this.blockBody = blockBody;
+      onParse: function(condition, blockBody) {
+        return {
+          node: 'UnlessStatement',
+          condition: condition,
+          blockBody: blockBody
+        };
       }
     },
 
     OneLineUnlessStatement: {
-      initialize: function(simpleStatement, condition) {
-        this.simpleStatement = simpleStatement;
-        this.condition = condition;
+      onParse: function(statement, condition) {
+        return {
+          node: 'OneLineUnlessStatement',
+          statement: statement,
+          condition: condition
+        };
       }
     },
 
     ElsePart: {
-      initialize: function(blockBody) {
-        this.blockBody = blockBody;
+      onParse: function(blockBody) {
+        return {
+          node: 'ElsePart',
+          blockBody: blockBody
+        };
       }
     },
 
     ElseIfList: {
-      initialize: function(elseIf) {
-        this.elements = [elseIf];
+      onParse: function(elseIf, elseIfList) {
+        elseIfList = elseIfList || {
+          node: 'ElseIfList',
+          elseIfs: []
+        };
+
+        elseIfList.elseIfs.splice(0, 0, elseIf);
+        return elseIfList;
       }
     },
 
     ElseIf: {
-      initialize: function(condition, blockBody) {
-        this.condition = condition;
-        this.blockBody = blockBody;
+      onParse: function(condition, blockBody) {
+        return {
+          node: 'ElseIf',
+          condition: condition,
+          blockBody: blockBody
+        };
       }
     },
 
     WhileLoop: {
-      initialize: function(condition, blockBody) {
-        this.condition = condition;
-        this.blockBody = blockBody;
+      onParse: function(condition, blockBody) {
+        return {
+          node: 'WhileLoop',
+          condition: condition,
+          blockBody: blockBody
+        };
       }
     },
 
     UntilLoop: {
-      initialize: function(condition, blockBody) {
-        this.condition = condition;
-        this.blockBody = blockBody;
+      onParse: function(condition, blockBody) {
+        return {
+          node: 'UntilLoop',
+          condition: condition,
+          blockBody: blockBody
+        };
       }
     },
 
     DoWhileLoop: {
-      initialize: function(blockBody, condition) {
-        this.blockBody = blockBody;
-        this.condition = condition;
+      onParse: function(blockBody, condition) {
+        return {
+          node: 'DoWhileLoop',
+          blockBody: blockBody,
+          condition: condition
+        };
       }
     },
 
     DoUntilLoop: {
-      initialize: function(blockBody, condition) {
-        this.blockBody = blockBody;
-        this.condition = condition;
+      onParse: function(blockBody, condition) {
+        return {
+          node: 'DoUntilLoop',
+          blockBody: blockBody,
+          condition: condition
+        };
       }
     },
 
     ForLoop: {
-      initialize: function(forLoopStructure, blockBody) {
-        this.forLoopStructure = forLoopStructure;
-        this.blockBody = blockBody;
+      onParse: function(forLoopStructure, blockBody) {
+        return {
+          node: 'ForLoop',
+          forLoopStructure: forLoopStructure,
+          blockBody: blockBody
+        };
       }
     },
 
     StandardForStructure: {
-      initialize: function(initializer, condition, increment) {
-        this.initializer = initializer;
-        this.condition = condition;
-        this.increment = increment;
+      onParse: function(initializer, condition, increment) {
+        return {
+          node: 'StandardForStructure',
+          initializer: initializer,
+          condition: condition,
+          increment: increment
+        };
       }
     },
 
-    ForInstructure: {
-      initialize: function(variable, value, index) {
-        this.variable = variable;
-        this.value = value;
-        this.index = index;
+    ForInStructure: {
+      onParse: function(variable, value, index) {
+        return {
+          node: 'ForInStructure',
+          variable: variable,
+          value: value,
+          index: index
+        };
       }
     },
 
     MultipleForInStructure: {
-      initialize: function(firstVariable, secondVariable, value, index) {
-        this.firstVariable = firstVariable;
-        this.secondVariable = secondVariable;
-        this.value = value;
-        this.index = index;
+      onParse: function(firstVariable, secondVariable, value, index) {
+        return {
+          node: 'MultipleForInStructure',
+          firstVariable: firstVariable,
+          secondVariable: secondVariable,
+          value: value,
+          index: index
+        };
       }
     },
 
     InflectedForStructure: {
-      initialize: function(value, index) {
-        this.value = value;
-        this.index = index;
+      onParse: function(value, index) {
+        return {
+          node: 'InflectedForStructure',
+          value: value,
+          index: index
+        };
       }
     },
 
     ContinueStatement: {
-      initialize: function(identifier) {
-        this.identifier = identifier;
+      onParse: function(identifier) {
+        return {
+          node: 'ContinueStatement',
+          identifier: identifier
+        };
       }
     },
 
     BreakStatement: {
-      initialize: function(identifier) {
-        this.identifier = identifier;
+      onParse: function(identifier) {
+        return {
+          node: 'BreakStatement',
+          identifier: identifier
+        };
       }
     },
 
     ReturnStatement: {
-      initialize: function(identifier) {
-        this.identifier = identifier;
+      onParse: function(identifier) {
+        return {
+          node: 'ReturnStatement',
+          identifier: identifier
+        };
       }
     },
 
     WithStatement: {
-      initialize: function(context, blockBody) {
-        this.context = context;
-        this.blockBody = blockBody;
+      onParse: function(context, blockBody) {
+        return {
+          node: 'WithStatement',
+          context: context,
+          blockBody: blockBody
+        };
       }
     },
 
     SwitchStatement: {
-      initialize: function(expression, caseBlock) {
-        this.expression = expression;
-        this.caseBlock = caseBlock;
+      onParse: function(expression, caseBlock) {
+        return {
+          node: 'SwitchStatement',
+          expression: expression,
+          caseBlock: caseBlock
+        };
       }
     },
 
     CaseBlock: {
-      initialize: function(firstSection, secondSection, thirdSection) {
-        this.firstSection = firstSection;
-        this.secondSection = secondSection;
-        this.thirdSection = thirdSection;
+      onParse: function(firstSection, secondSection, thirdSection) {
+        return {
+          node: 'CaseBlock',
+          firstSection: firstSection,
+          secondSection: secondSection,
+          thirdSection: thirdSection
+        };
       }
     },
 
-    CaseClauses: {
-      initialize: function(caseClause) {
-        this.elements = [causeClause];
+    CaseClauseList: {
+      onParse: function(caseClause, caseClauseList) {
+        caseClauseList = caseClauseList || {
+          node: 'CaseClauseList',
+          caseClauses: []
+        };
+
+        caseClauseList.caseClauses.splice(0, 0, caseClause);
+        return caseClauseList;
       }
     },
 
     CaseClause: {
-      initialize: function(expressionList, blockBody) {
-        this.expressionList = expressionList;
-        this.blockBody = blockBody;
+      onParse: function(expressionList, blockBody) {
+        return {
+          node: 'CaseClause',
+          expressionList: expressionList,
+          blockBody: blockBody
+        };
       }
     },
 
     DefaultClause: {
-      initialize: function(blockBody) {
-        this.blockBody = blockBody;
+      onParse: function(blockBody) {
+        return {
+          node: 'DefaultClause',
+          blockBody: blockBody
+        };
       }
     },
 
     LabelledStatement: {
-      initialize: function(identifier, value) {
-        this.identifier = identifier;
-        this.value = value;
+      onParse: function(identifier, value) {
+        return {
+          node: 'LabelledStatement',
+          identifier: identifier,
+          value: value
+        };
       }
     },
 
     ThrowStatement: {
-      initialize: function(expression) {
-        this.expression = expression;
+      onParse: function(expression) {
+        return {
+          node: 'ThrowStatement',
+          expression: expression
+        };
       }
     },
 
     TryStatement: {
-      initialize: function(firstSection, secondSection, thirdSection) {
-        this.firstSection = firstSection;
-        this.secondSection = secondSection;
-        this.thirdSection = thirdSection;
+      onParse: function(firstSection, secondSection, thirdSection) {
+        return {
+          node: 'TryStatement',
+          firstSection: firstSection,
+          secondSection: secondSection,
+          thirdSection: thirdSection
+        };
       }
     },
 
     Catch: {
-      initialize: $.overload(function(blockBody) {
-        this.initialize(undefined, identifier);
+      onParse: $.overload(function(blockBody) {
+        return {
+          node: 'Catch',
+          blockBody: blockBody
+        };
       }, function(identifier, blockBody) {
-        this.identifier = identifier;
-        this.blockBody = blockBody;
+        return {
+          node: 'Catch',
+          identifier: identifier,
+          blockBody: blockBody
+        };
       })
     },
 
     Finally: {
-      initialize: function(blockBody) {
-        this.blockBody = blockBody;
+      onParse: function(blockBody) {
+        return {
+          node: 'Finally',
+          blockBody: blockBody
+        };
       }
     },
 
     DebuggerStatement: {
-      initialize: function() {
-        
+      onParse: function() {
+        return {
+          node: 'DebuggerStatement'
+        };
       }
     },
   };
-})();
+
+  for (var className in classes) {
+    var methods = classes[className];
+    methods.template = Templates[className];
+  }
+
+  return classes;
+})(jQuery);

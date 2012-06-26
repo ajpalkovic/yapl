@@ -1,6 +1,6 @@
 stack = [];
 
-var Parser = (function($) {
+!function($) {
   var INDENT = [''];
 
   function dbg() {
@@ -34,7 +34,7 @@ var Parser = (function($) {
       this.cache = {};
 
       this.lexer = new Lexer(input);
-      var tree = this.__parse('Program', 0);
+      var tree = this._parse('Program', 0);
 
       if (!tree) {
         this.error();
@@ -43,7 +43,7 @@ var Parser = (function($) {
       return tree;
     },
 
-    __parse: function(currentRule, startPos) {
+    _parse: function(currentRule, startPos) {
       dbg_i('o Parsing', currentRule, '{');
 
       var cached = (this.cache[currentRule] || (this.cache[currentRule] = []))[startPos];
@@ -69,7 +69,7 @@ var Parser = (function($) {
       // If the lookahead wasn't fufilled, then we consider the parsing a failure.
       var cacheEntry = undefined;
       if (lookaheadFufilled) {
-        cacheEntry = this.__parseRule(currentRule, rule, startPos);
+        cacheEntry = this._parseRule(currentRule, rule, startPos);
       } else {
         dbg('. Negative lookahead prohibits', nextToken.type, '! Moving on...');
       }
@@ -86,7 +86,7 @@ var Parser = (function($) {
       return (this.cache[currentRule][startPos] = cacheEntry).result;
     },
 
-    __parseRule: function(ruleName, rule, startPos) {
+    _parseRule: function(ruleName, rule, startPos) {
       for (var i = 0, numProds = rule.productions.length; i < numProds; ++i) {
         var production = rule.productions[i];
 
@@ -99,7 +99,7 @@ var Parser = (function($) {
           var expectedTokenType = production[j];
 
           if (Grammar[expectedTokenType]) {
-            var parseResult = this.__parse(expectedTokenType, this.lexer.currentPos);
+            var parseResult = this._parse(expectedTokenType, this.lexer.currentPos);
             var capture = !expectedTokenType.match(/^\?\:/);
 
             if (parseResult && capture) parseResults.push(parseResult);
@@ -122,7 +122,12 @@ var Parser = (function($) {
           dbg_u('- Successfully parsed production!!', production);
           //console.log("we parsed a", ruleName, "with production", production);
 
-          //var result = rule.onParse[i].apply(parseResults);
+          var node = Nodes[ruleName];
+          if (node) {
+            var result = node.onParse.apply(this, parseResults);
+          } else {
+            var result = parseResults[0];
+          }
 
           // After calling a parse function, the lexer position could have
           // advanced, so that would be the 'next position' of the lexer
@@ -130,10 +135,7 @@ var Parser = (function($) {
           // position again.
           return {
             nextPos: this.lexer.currentPos,
-            result: {
-              aName: ruleName,
-              children: parseResults
-            }
+            result: result || {}
           };
         } else {
           dbg_u('- Failed to parse production', production, '!!');
@@ -196,4 +198,4 @@ var Parser = (function($) {
       throw ['ParseError: Unexpected', last.type, 'at line', last.line + 1].join(' ');
     }
   });
-})(jQuery);
+}(jQuery);

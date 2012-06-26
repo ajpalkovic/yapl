@@ -7,14 +7,14 @@
       var fn = fns[i];
       table[fn.length] = fn;
     }
-
+    
     return function() {
       var fn = table[arguments.length];
       return fn.apply(this, arguments);
     };
   };
 
-  window.$S(items, delimeter) {
+  window.$S = function(items, delimeter) {
     items = (typeof items === 'string') ? items.split(delimeter || '') : items;
     var object = {};
 

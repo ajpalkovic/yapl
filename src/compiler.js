@@ -7,6 +7,55 @@ function Compiler() {
   this.outputBuffer = [];
 };
 
+Compiler.prototype.compileTemplates = function() {
+  for (var templateName in Templates) {
+    var template = Templates[templateName];
+
+    for (var i = 0; i < template.length; ++i) {
+      var fnString = template[i] + '';
+      Templates[templateName][i] = this.interpolateTemplate(fnString);
+    }
+  }
+};
+
+Compiler.prototype.interpolateTemplate = function(templateFnString) {
+  function balanceInterpolation(index) {
+    for (var i = index; i < templateFnString.length; ++i) {
+      switch (templateFnString[i]) {
+        case '{':
+          var end = balanceInterpolation(i + 1);
+          i = end;
+        case '}':
+          return i;
+      }
+    }
+  }
+
+  var newTemplateFnString = '';
+  var endOfLastInterpolation = 0;
+
+  for (var i = 0; i < templateFnString.length; ++i) {
+    if (templateFnString[i] === '\\') {
+      i++;
+      continue;
+    }
+
+    if (templateFnString[i] === '#' && templateFnString[i + 1] === '{') {
+      var end = balanceInterpolation(i + 1);
+
+      var before = templateFnString.substring(endOfLastInterpolation, i);
+      var code = templateFnString.substring(i + 2, end);
+
+      newTemplateFnString += before + "', " + code + ", '";
+
+      endOfLastInterpolation = end + 1;
+    }
+  }
+
+  newTemplateFnString += templateFnString.substring(endOfLastInterpolation);
+  return eval('(' + newTemplateFnString + ')');
+};
+
 Compiler.prototype.pushScope = function(name) {
   this.currentScope = {
     name: name,
@@ -76,4 +125,4 @@ Compiler.prototype.undent = function() {
   this.indentLevel.pop();
 };
 
-compiler = new Compiler();
+window.compiler = new Compiler();
