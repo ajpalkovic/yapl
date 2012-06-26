@@ -13,7 +13,7 @@ Compiler.prototype.compileTemplates = function() {
 
     for (var i = 0; i < template.length; ++i) {
       var fnString = template[i] + '';
-      Templates[templateName][i] = this.interpolateTemplate(fnString);
+      Templates.templateFns[templateName][i] = this.interpolateTemplate(fnString);
     }
   }
 };

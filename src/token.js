@@ -1,4 +1,4 @@
-var Token = (function($) {
+!function($) {
 
   /**
    *  Basically this function takes an array of 'tokens', which are really just 2-element
@@ -430,9 +430,9 @@ var Token = (function($) {
   tokens.push(['<<EOF>>', '<<EOF>>']);
   var typeLookup = prepare(tokens, prepare(reserved));
 
-  return {
+  window.Tokens = {
     regex: compiledRe,
     types: typeLookup,
     identify: identify
-  }
-})(jQuery);
+  };
+}(jQuery);

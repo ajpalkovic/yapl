@@ -1,4 +1,4 @@
-var Templates = (function() {
+!function() {
   function declaration(varName, value) {
     return new TerminatedStatement(
         new VariableStatement([new VariableDeclaration(varName, value)]));
@@ -8,7 +8,7 @@ var Templates = (function() {
     return declaration(varName, new ObjectLiteral());
   }
 
-  var id = {
+  var varNames = {
     classProto: '__proto__',
     method: '__method__',
     super: '__super__',
@@ -16,7 +16,11 @@ var Templates = (function() {
     ctor: '__ctor__'
   };
 
-  return {
+  window.Templates = {
+    varNames: varNames
+  };
+
+  window.Templates.templateFns = {
     ClassDeclaration: [
       function(name, body) {
         [
@@ -26,26 +30,26 @@ var Templates = (function() {
 
       function(name, parentClass, body) {
         [
-          'var #{name} = -function() {',
+          '!function() {',
 
             // Setup the inheritance.
             'function #{name}() {',
               'this.#{name}.apply(this, arguments);',
             '};',
 
-            'function #{id.klass}() {};',
-            '#{id.klass}.prototype = #{parentClass}.prototype;',
-            '#{name}.prototype = new #{id.klass};',
+            'function #{varNames.klass}() {};',
+            '#{varNames.klass}.prototype = #{parentClass}.prototype;',
+            '#{name}.prototype = new #{varNames.klass};',
 
-            'var #{id.classProto} = #{name}.prototype;',
+            'var #{varNames.classProto} = #{name}.prototype;',
 
             '#{body}',
 
             'if (!#{name}.prototype.#{name}) #{name}.prototype.#{name} = function() {};',
-            'return #{name};',
+            '#{$parentScope}.#{name} = #{name};'
           '}();'
         ];
       }
     ]
   };
-})();
+}();

@@ -1,4 +1,4 @@
-var Nodes = (function($) {
+!function($) {
   function findConstructor(className, classBody) {
     for (var i = 0; i < classBody.classElements.length; ++i) {
       var classElement = classBody.classElements[i];
@@ -6,7 +6,7 @@ var Nodes = (function($) {
     }
   }
 
-  var classes = {
+  var Nodes = {
     Program: {
       onParse: function(sourceElement, program) {
         program = program || {
@@ -817,10 +817,10 @@ var Nodes = (function($) {
     },
   };
 
-  for (var className in classes) {
-    var methods = classes[className];
+  for (var className in Nodes) {
+    var methods = Nodes[className];
     methods.template = Templates[className];
   }
 
-  return classes;
-})(jQuery);
+  window.Nodes = Nodes;
+}(jQuery);
