@@ -157,7 +157,7 @@
     var advance = tokensMatch || !lexedToken.optional;
 
     return {
-      value: capture && (lexedToken.value || lexedToken.type),
+      value: tokensMatch && capture && (lexedToken.value || lexedToken.type),
       matched: matched,
       advance: advance
     };
@@ -177,7 +177,7 @@
    */
   function error() {
     var last = this.lexer.last();
-    throw ['ParseError: Unexpected', last.type, 'at line', last.line + 1].join(' '); 
+    throw ['ParseError: Unexpected', last.type, 'at line', last.line + 1].join(' ');
   }
 
   window.Parser = Class.create({

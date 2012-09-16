@@ -4,13 +4,13 @@
     <script type="text/javascript" src="../lib/prototype.js"></script>
 
     <script type="text/javascript" src="util.js"></script>
-    <script type="text/javascript" src="compiler.js"></script>
     <script type="text/javascript" src="templates.js"></script>
     <script type="text/javascript" src="ast.js"></script>
     <script type="text/javascript" src="token.js"></script>
     <script type="text/javascript" src="lexer.js"></script>
     <script type="text/javascript" src="grammar.js"></script>
     <script type="text/javascript" src="parser.js"></script>
+    <script type="text/javascript" src="compiler.js"></script>
 
     <script type="text/javascript">
       jQuery.noConflict();
@@ -18,15 +18,23 @@
         $('#submit').click(function() {
           window.parser = new Parser();
           window.result = window.parser.parse($('#code').val());
+
+          var astElement = $('#ast');
+          astElement.text(JSON.stringify(result, undefined, 2));
         });
       });
     </script>
   </head>
   <body>
-    <textarea id="code" style="width: 500px; min-height: 500px"></textarea>
-    <input id="submit" type="button" value="Parse" />
-    <textarea id="output" style="width: 500px; min-height: 200px"></textarea>
+    <div>
+      <div style="float:left; width:50%;">
+        <textarea id="code" style="min-height: 500px; width: 100%"></textarea>
+        <input id="submit" type="button" value="Parse" />
+      </div>
+      <diV style="float:right; width:50%; padding-left: 20px; box-sizing: border-box">
+        <pre id="ast"></pre>
+      </div>
+    </div>
     <pre id="debug"></pre>
-    <div id="ast"></div>
   </body>
 </html>

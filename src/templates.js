@@ -24,7 +24,7 @@
     ClassDeclaration: [
       function(name, body) {
         [
-          'var ' 
+          'var '
         ];
       },
 
@@ -46,7 +46,7 @@
             '#{body}',
 
             'if (!#{name}.prototype.#{name}) #{name}.prototype.#{name} = function() {};',
-            '#{$parentScope}.#{name} = #{name};'
+            '#{$parentScope}.#{name} = #{name};',
           '}();'
         ];
       }

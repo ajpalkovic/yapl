@@ -1,27 +1,27 @@
 !function($) {
   function findConstructor(className, classBody) {
-    for (var i = 0; i < classBody.classElements.length; ++i) {
-      var classElement = classBody.classElements[i];
+    for (var i = 0; i < classBody.length; ++i) {
+      var classElement = classBody[i];
       if (classElement.node === 'FunctionDeclaration' && classElement.name === className) return classElement;
     }
   }
 
   var Nodes = {
     Program: {
-      onParse: function(sourceElement, program) {
-        program = program || {
+      onParse: $.overload(function() {
+        return {
           node: 'Program',
           sourceElements: []
         };
-
+      }, function(sourceElement, program) {
         program.sourceElements.splice(0, 0, sourceElement);
         return program;
-      }
+      })
     },
 
     ClassDeclaration: {
       onParse: $.overload(function(className, body) {
-        var constructor = findConstructor(className, body) || Nodes['FunctionDeclaration'](className);
+        var constructor = findConstructor(className, body) || Nodes['FunctionDeclaration'].onParse(className);
 
         return {
           node: 'ClassDeclaration',
@@ -42,12 +42,9 @@
 
     ClassBody: {
       onParse: function(classElement, classBody) {
-        classBody = classBody || {
-          node: 'ClassBody',
-          classElements: []
-        };
+        classBody = classBody || [];
 
-        classBody.classElements.splice(0, 0, classElement);
+        if (classElement) classBody.splice(0, 0, classElement);
         return classBody;
       }
     },
@@ -118,15 +115,6 @@
       }
     },
 
-    Parameters: {
-      onParse: function(parameterList) {
-        return {
-          node: 'Parameters',
-          parameterList: parameterList
-        };
-      }
-    },
-
     ParameterList: {
       onParse: function(parameter, parameterList) {
         parameterList = parameterList || {
@@ -159,15 +147,15 @@
     },
 
     FunctionBody: {
-      onParse: function(sourceElement, functionBody) {
-        functionBody = functionBody || {
+      onParse: $.overload(function() {
+        return {
           node: 'FunctionBody',
           sourceElements: []
         };
-
+      }, function(sourceElement, functionBody) {
         functionBody.sourceElements.splice(0, 0, sourceElement);
         return functionBody;
-      }
+      })
     },
 
     MemberIdentifier: {
@@ -275,6 +263,8 @@
 
     SimpleExpression: {
       onParse: function(additiveExpression, relativeOperator, expression) {
+        if (!expression) return additiveExpression;
+
         return {
           node: 'SimpleExpression',
           additiveExpression: additiveExpression,
@@ -286,6 +276,8 @@
 
     AdditiveExpression: {
       onParse: function(term, multiplicativeOperator, expression) {
+        if (!expression) return term;
+
         return {
           node: 'AdditiveExpression',
           term: term,
@@ -297,6 +289,8 @@
 
     Term: {
       onParse: function(unaryExpression, additiveExpression, expression) {
+        if (!expression) return unaryExpression;
+
         return {
           node: 'Term',
           unaryExpression: unaryExpression,
@@ -308,10 +302,7 @@
 
     UnaryExpression: {
       onParse: $.overload(function(expression) {
-        return {
-          node: 'UnaryExpression',
-          expression: expression
-        };
+        return expression;
       }, function(type, expression) {
         return {
           node: 'UnaryExpression',
@@ -352,21 +343,25 @@
 
     MemberExpression: {
       onParse: function(primaryExpression, memberPart) {
-        return {
-          node: 'MemberExpression',
-          primaryExpression: primaryExpression,
-          memberPart: memberPart
-        };
+        if (memberPart) {
+          memberPart.splice(0, 0, primaryExpression);
+
+          return {
+            node: 'MemberExpression',
+            members: memberPart
+          };
+        }
+
+        return primaryExpression;
       }
     },
 
     MemberPart: {
       onParse: function(member, memberPart) {
-        return {
-          node: 'MemberPart',
-          member: member,
-          memberPart: memberPart
-        };
+        var chain = memberPart || [member];
+        if (memberPart) chain.splice(0, 0, member);
+
+        return chain;
       }
     },
 
@@ -397,11 +392,11 @@
       }
     },
 
-    Arguments: {
+    Call: {
       onParse: function(argumentList) {
         return {
-          node: 'Arguments',
-          argumentList: argumentList
+          node: 'Call',
+          arguments: argumentList.arguments
         };
       }
     },
@@ -418,21 +413,12 @@
       }
     },
 
-    // TODO: implement all of the different primary expressions
-    PrimaryExpression: {
-      onParse: function(expression) {
+    KeywordArgument: {
+      onParse: function(name, value) {
         return {
-          node: 'PrimaryExpression',
-          expression: expression
-        };
-      }
-    },
-
-    NestedExpression: {
-      onParse: function(expression) {
-        return {
-          node: 'NestedExpression',
-          expression: expression
+          node: 'KeywordArgument',
+          name: name,
+          value: value
         };
       }
     },
@@ -466,6 +452,15 @@
         };
       }
     },
+
+    // EndSt: {
+    //   onParse: function(type) {
+    //     return {
+    //       node: 'EndSt',
+    //       type: type
+    //     };
+    //   }
+    // },
 
     VariableStatement: {
       onParse: function(variableDeclarationList) {

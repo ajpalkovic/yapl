@@ -2,8 +2,6 @@ var Grammar = {
   Program: {
     productions: [
       ['SourceElement', 'Program'],
-      ['SourceElement', '<<EOF>>'],
-      ['SourceElement'],
       ['<<EOF>>']
     ]
   },
@@ -19,8 +17,8 @@ var Grammar = {
 
   ClassDeclaration: {
     productions: [
-      ['CLASS', '(IDENTIFIER)', 'NEWLINE', 'ClassBody', 'END'],
-      ['CLASS', '(IDENTIFIER)', 'EXTENDS', 'MemberExpression', 'NEWLINE', 'ClassBody', 'END']
+      ['CLASS', '(IDENTIFIER)', 'EXTENDS', 'MemberExpression', 'NEWLINE', 'ClassBody', 'END'],
+      ['CLASS', '(IDENTIFIER)', 'NEWLINE', 'ClassBody', 'END']
     ]
   },
 
@@ -76,13 +74,14 @@ var Grammar = {
   FunctionExpression: {
     productions: [
       ['FUNCTION', 'Parameters', 'FunctionBody', 'END'],
-      ['FUNCTION', 'IDENTIFIER', 'Parameters', 'FunctionBody', 'END']
+      ['FUNCTION', '(IDENTIFIER)', 'Parameters', 'FunctionBody', 'END']
     ]
   },
 
   // TODO: productions w/ identifier
   ClassExpression: {
     productions: [
+      ['CLASS', '(IDENTIFIER)', 'NEWLINE', 'ClassBody', 'END'],
       ['CLASS', 'ClassBody', 'END']
     ]
   },
@@ -327,7 +326,7 @@ var Grammar = {
     //    end
     //
     // In this case, because we support paren-less function calls and
-    // complex statements, should this be parsed where the condition of 
+    // complex statements, should this be parsed where the condition of
     // the 'if' statement is calling the function 'a' passing it function
     // 'b' as its parameter, or should the condition be simply 'a'?
     // We opt for the latter.
@@ -364,8 +363,21 @@ var Grammar = {
 
   ArgumentList: {
     productions: [
-      ['Expression', 'COMMA', 'ArgumentList'],
+      ['Argument', 'COMMA', 'ArgumentList'],
+      ['Argument']
+    ]
+  },
+
+  Argument: {
+    productions: [
+      ['KeywordArgument'],
       ['Expression']
+    ]
+  },
+
+  KeywordArgument: {
+    productions: [
+      ['(IDENTIFIER)', 'COLON', 'Expression']
     ]
   },
 
@@ -390,7 +402,7 @@ var Grammar = {
 
   NestedExpression: {
     productions: [
-      ['OPEN_PAREN', 'ExpressionList', 'CLOSE_PAREN']
+      ['OPEN_PAREN', 'Expression', 'CLOSE_PAREN']
     ]
   },
 
@@ -527,7 +539,8 @@ var Grammar = {
     ],
 
     lookahead: {
-      'FUNCTION': false
+      'FUNCTION': false,
+      'CLASS': false
     }
   },
 
