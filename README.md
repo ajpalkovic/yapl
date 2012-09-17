@@ -17,11 +17,8 @@ For example: consider the following code
 
     foo bar(1)[1, 2], 3, 4
 
-Because Yapl supports paren-less function calls, you might intuitively guess that the previous code could be interpreted like this:
-
-    foo(bar(1), [1, 2], 3, 4)
-
-Unfortunately, Yapl would parse it like this:
+Because Yapl supports paren-less function calls, you might intuitively guess that the previous code would not parse
+successfully. In actuality, Yapl would parse it like this:
 
     foo(bar(1)([1, 2], 3, 4))
 
