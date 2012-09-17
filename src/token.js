@@ -3,7 +3,7 @@
   /**
    *  Basically this function takes an array of 'tokens', which are really just 2-element
    *  arrays containing the token's value and the name of the token for parsing
-   *  purposes, and 
+   *  purposes, and
    *    - escapes the token's value for regular expression reserved characters if specified
    *    - compiles all the values into one big regular expression
    */
@@ -164,7 +164,6 @@
   // the division operator and the regular expression literal in ECMA Script.
   var nonPreRegexTokens = {
     'REGEX_LITERAL': true,
-    'IDENTIFIER': true,
     'NUMERIC_LITERAL': true,
     'STRING_LITERAL': true
   };
@@ -284,14 +283,14 @@
         function canBeRegex() {
           var previous = tokens[tokens.length - 1];
 
-          return !previous || !nonPreRegexTokens[previous.type];
+          return !(previous && nonPreRegexTokens[previous.type]);
         }
 
         /**
          *  Tries to match a regex literal from the start of the current string.
          *  Regexes in Yapl can span multiple lines and contain whitespace, so anything
          *  goes for their content.
-         *  
+         *
          *  This wil return undefined if a regular expression literal could not be
          *  lexed from the string.
          */
@@ -335,8 +334,8 @@
           // Single-line comment
           case '/':
             var newlineIndex = string.indexOf('\n');
-            
-            // The string may not have had a newline at all, so just go to the end if 
+
+            // The string may not have had a newline at all, so just go to the end if
             // that is the case.
             var end = newlineIndex >= 0 ? newlineIndex : string.length;
 
@@ -351,7 +350,7 @@
 
               position: comment.length
             };
-          
+
           // Multi-line comment
           case '*':
             // If it wasn't a balanced comment, the whole document from that point
@@ -368,11 +367,17 @@
               position: commentEnd + 1
             };
 
+          // A regular expression literal cannot begin with a whitespace character.
+          // This prevents weird ambiguities between chained divisions separated by
+          // whitespace.
+          case ' ':
+            var invalidWhitespace = true;
+
           // Well if the character following the first '/' wasn't another '/' or a '*',
           // it can be a valid ECMA 262 regex literal (see http://bclary.com/2004/11/07/#a-7.8.5),
           // or it can simply be the division operator.  Let's find out...
           default:
-            var regexToken = matchRegex();
+            var regexToken = !invalidWhitespace && matchRegex();
 
             return regexToken || {
               token: {
@@ -387,7 +392,7 @@
 
     // WHITESPACE
     [
-      regexes.WHITESPACE, 
+      regexes.WHITESPACE,
       function(matches, string) {
         return {
           token: {

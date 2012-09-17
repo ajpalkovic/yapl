@@ -17,10 +17,17 @@
       jQuery(document).ready(function($) {
         $('#submit').click(function() {
           window.parser = new Parser();
-          window.result = window.parser.parse($('#code').val());
+
+          var resultText = undefined;
+          try {
+            window.result = window.parser.parse($('#code').val());
+            resultText = JSON.stringify(result, undefined, 2);
+          } catch (e) {
+            resultText = e;
+          }
 
           var astElement = $('#ast');
-          astElement.text(JSON.stringify(result, undefined, 2));
+          astElement.text(resultText);
         });
       });
     </script>

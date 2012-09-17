@@ -276,7 +276,6 @@ var Grammar = {
       ['MemberExpression'],
       ['FunctionExpression'],
       ['ClassExpression'],
-      ['BindExpression'],
       ['Closure']
     ]
   },
@@ -343,7 +342,7 @@ var Grammar = {
 
   BindExpression:  {
     productions: [
-      ['LESS_THAN', 'ArgumentList', 'GREATER_THAN']
+      ['BIND', 'Call']
     ]
   },
 
@@ -494,7 +493,7 @@ var Grammar = {
   TerminatedStatement: {
     productions: [
       ['SimpleStatement', 'EndSt'],
-      ['EndSt']
+      ['EmptyStatement']
     ]
   },
 
@@ -522,6 +521,12 @@ var Grammar = {
       ['ContinueStatement'],
       ['ThrowStatement'],
       ['DebuggerStatement']
+    ]
+  },
+
+  EmptyStatement: {
+    productions: [
+      ['SEMI']
     ]
   },
 

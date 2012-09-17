@@ -30,6 +30,8 @@
           constructor: constructor
         };
       }, function(className, parentClass, body) {
+        var constructor = findConstructor(className, body) || Nodes['FunctionDeclaration'].onParse(className);
+
         return {
           node: 'ClassDeclaration',
           className: className,
@@ -375,10 +377,10 @@
     },
 
     BindExpression: {
-      onParse: function(argumentList) {
+      onParse: function(call) {
         return {
           node: 'BindExpression',
-          argumentList: argumentList
+          arguments: call.arguments
         };
       }
     },
@@ -393,24 +395,29 @@
     },
 
     Call: {
-      onParse: function(argumentList) {
+      onParse: function(arguments) {
         return {
           node: 'Call',
-          arguments: argumentList.arguments
+          arguments: arguments
         };
       }
     },
 
-    ArgumentList: {
-      onParse: function(argument, argumentList) {
-        argumentList = argumentList || {
-          node: 'ArgumentList',
-          arguments: []
-        };
+    Arguments: {
+      onParse: $.overload(function() {
+        return [];
+      }, function(argumentList) {
+        return argumentList;
+      })
+    },
 
+    ArgumentList: {
+      onParse: $.overload(function(argument) {
+        return [argument];
+      }, function(argument, argumentList) {
         argumentList.arguments.splice(0, 0, argument);
         return argumentList;
-      }
+      })
     },
 
     KeywordArgument: {
