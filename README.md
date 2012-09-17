@@ -23,5 +23,6 @@ successfully. In actuality, Yapl would parse it like this:
     foo(bar(1)([1, 2], 3, 4))
 
 Ruby does not have the notion of first-class functions, so it does not run into these types of ambiguities.
-JavaScript, and subsequently Yapl, support both first-class functions, so there is an inherent ambiguity.  I
-will have to assess whether or not the utility of paren-less function calls outweighs the awkward ambiguities.
+JavaScript and Yapl however support first-class functions, so there is an inherent ambiguity when the return value of
+a function is another function, as would be the case with the above example.  I will have to assess whether or not the
+utility of paren-less function calls outweighs the awkward ambiguities.
