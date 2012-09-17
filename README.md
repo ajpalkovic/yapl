@@ -1,5 +1,4 @@
 # Yet Another Programming Language
----
 
 Yapl (Yet Another Programming Language) is a new language that aims to simplify/transform the syntax of JavaScript
 to a more Ruby-like experience, while preserving JavaScript's powerful semantic concepts.  Ultimately, Yapl will compile to ECMA-262 compliant JavaScript, and could be used in either browser clients or on the server via frameworks such as Node.js.
@@ -10,9 +9,7 @@ expressiveness and JavaScript's powerful semantic concepts.  Yapl also introduce
 I will be primarily developing this language for a class project, but I hope to continue developing it in the future.
 
 ## Development Log
----
 ### 9-16-2012
----
 I broke out the old code and started to fix some quirky bugs and fix the remaining AST parser actions.  The parser seems
 to work just fine, but there are some inherent nasty ambiguities in the language.
 
