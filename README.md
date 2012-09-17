@@ -27,4 +27,4 @@ Unfortunately, Yapl would parse it like this:
 
 Ruby does not have the notion of first-class functions, so it does not run into these types of ambiguities.
 JavaScript, and subsequently Yapl, support both first-class functions, so there is an inherent ambiguity.  I
-will have to assess the utility of paren-less function calls outweighs the awkward ambiguities.
+will have to assess whether or not the utility of paren-less function calls outweighs the awkward ambiguities.
