@@ -26,3 +26,10 @@ Ruby does not have the notion of first-class functions, so it does not run into 
 JavaScript and Yapl however support first-class functions, so there is an inherent ambiguity when the return value of
 a function is another function, as is case with the above example.  I will have to assess whether or not the
 utility of paren-less function calls outweighs the awkward ambiguities.
+
+### 9-17-2012
+I fixed a couple more bugs in the parser and lexer:
+  - if a parser rule captured the value of a terminal, but at that position in the lexer there was an optional
+    terminal (such as a \n), then it would capture the value of that optional token, as opposed to ignoring it.
+  - the first character of a regular expression literal must not be a space character
+    - I should probably make that more extensible to any whitespace character.
