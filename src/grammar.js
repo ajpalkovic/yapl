@@ -188,13 +188,6 @@ var Grammar = {
     ]
   },
 
-  ExpressionList: {
-    productions: [
-      ['Expression', 'COMMA', 'ExpressionList'],
-      ['Expression']
-    ]
-  },
-
   Expression: {
     productions: [
       ['AssignmentExpression'],
@@ -361,21 +354,8 @@ var Grammar = {
 
   ArgumentList: {
     productions: [
-      ['Argument', 'COMMA', 'ArgumentList'],
-      ['Argument']
-    ]
-  },
-
-  Argument: {
-    productions: [
-      ['KeywordArgument'],
+      ['Expression', 'COMMA', 'ArgumentList'],
       ['Expression']
-    ]
-  },
-
-  KeywordArgument: {
-    productions: [
-      ['(IDENTIFIER)', 'COLON', 'Expression']
     ]
   },
 
@@ -763,7 +743,14 @@ var Grammar = {
 
   CaseClause: {
     productions: [
-      ['CASE', 'ExpressionList', 'COLON', 'BlockBody']
+      ['CASE', 'CaseExpressionList', 'COLON', 'BlockBody']
+    ]
+  },
+
+  CaseExpressionList: {
+    productions: [
+      ['Expression', 'COMMA', 'CaseExpressionList'],
+      ['Expression']
     ]
   },
 
