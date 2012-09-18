@@ -53,9 +53,9 @@ var Grammar = {
 
   Accessor: {
     productions: [
-      ['(GETTER)', 'VariableDeclarationList'],
-      ['(SETTER)', 'VariableDeclarationList'],
-      ['(ACCESSOR)', 'VariableDeclarationList']
+      ['(GETS)', 'VariableDeclarationList'],
+      ['(SETS)', 'VariableDeclarationList'],
+      ['(ACCESSES)', 'VariableDeclarationList']
     ]
   },
 
@@ -110,7 +110,7 @@ var Grammar = {
 
   AutoSetParam: {
     productions: [
-      ['AT', 'IDENTIFIER']
+      ['MEMBER', '(IDENTIFIER)']
     ]
   },
 
