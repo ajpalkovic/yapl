@@ -200,15 +200,12 @@
     },
 
     PropertyList: {
-      onParse: function(property, propertyList) {
-        propertyList = propertyList || {
-          node: 'PropertyList',
-          properties: []
-        };
-
-        propertyList.properties.splice(0, 0, property);
+      onParse: $.overload(function(property) {
+        return [property];
+      }, function(property, delimiter, propertyList) {
+        propertyList.splice(0, 0, property);
         return propertyList;
-      }
+      })
     },
 
     Property: {

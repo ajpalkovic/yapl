@@ -169,7 +169,6 @@ var Grammar = {
 
   ObjPropDelim: {
     productions: [
-      ['COMMA', 'NEWLINE'],
       ['COMMA']
     ]
   },
