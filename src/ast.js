@@ -227,18 +227,6 @@
       }
     },
 
-    ExpressionList: {
-      onParse: function(expression, expressionList) {
-        expressionList = expressionList || {
-          node: 'ExpressionList',
-          expressions: []
-        };
-
-        expressionList.expressions.splice(0, 0, expression);
-        return expressionList;
-      }
-    },
-
     AssignmentExpression: {
       onParse: function(leftHandSide, rightHandSide) {
         return {
@@ -412,19 +400,9 @@
       onParse: $.overload(function(argument) {
         return [argument];
       }, function(argument, argumentList) {
-        argumentList.arguments.splice(0, 0, argument);
+        argumentList.splice(0, 0, argument);
         return argumentList;
       })
-    },
-
-    KeywordArgument: {
-      onParse: function(name, value) {
-        return {
-          node: 'KeywordArgument',
-          name: name,
-          value: value
-        };
-      }
     },
 
     Operator: {
@@ -741,6 +719,18 @@
           expressionList: expressionList,
           blockBody: blockBody
         };
+      }
+    },
+
+    CaseExpressionList: {
+      onParse: function(expression, expressionList) {
+        expressionList = expressionList || {
+          node: 'CaseExpressionList',
+          expressions: []
+        };
+
+        expressionList.expressions.splice(0, 0, expression);
+        return expressionList;
       }
     },
 
