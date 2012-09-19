@@ -33,3 +33,25 @@ I fixed a couple more bugs in the parser and lexer:
     terminal (such as a \n), then it would capture the value of that optional token, as opposed to ignoring it.
   - the first character of a regular expression literal must not be a space character
     - I should probably make that more extensible to any whitespace character.
+
+### 9-18-2012
+I decided to remove the explicit keyword-argument syntax from the language.  Instead of the following:
+
+    function foo(first, second, third='there')
+      ...
+    end
+
+    foo first, second, third:'hello'
+
+there is no special syntax for keyword arguments.  If one of the parameters has an assignment expression
+like this:
+
+    foo first, second, third='hello'
+
+the assigned variable `third` corresponds to the formal parameter.  In the case where there is another variable
+in the scope of the function call with the same name as the formal parameter, that variable does not receive
+the assignment.
+
+  third = '3'
+  foo first, second, third='hello'
+  third // '3'
