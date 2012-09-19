@@ -50,8 +50,8 @@ like this:
 
 the assigned variable `third` corresponds to the formal parameter.  In the case where there is another variable
 in the scope of the function call with the same name as the formal parameter, that variable does not receive
-the assignment.
+the assignment:
 
-  third = '3'
-  foo first, second, third='hello'
-  third // '3'
+    third = '3'
+    foo first, second, third='hello'
+    third // '3'
