@@ -55,3 +55,15 @@ the assignment:
     third = '3'
     foo first, second, third='hello'
     third // '3'
+
+I decided to take this route after looking into how Python handles this particular case.  The following code snippet
+shows that Python takes a similar approach:
+
+    >>> def test(arg='hi'):
+    ...   pass
+    ...
+    >>> arg = 'hello'
+    >>> test(arg = 'there')
+    >>> arg
+    'hello'
+    >>>
