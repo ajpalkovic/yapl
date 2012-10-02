@@ -24,4 +24,36 @@
 
     return object;
   }
+
+  window.klass = $.overload(function(methods) {
+      return klass({}, methods);
+    }, 
+
+    function(parent, methods) {
+      return klass(window, parent, methods);
+    }, 
+
+    function(namespace, parent, methods) {
+      var name = methods.initialize ? methods.initialize.name : 'klass';
+      var klass = eval('(function ' + name + '() {this.initialize.apply(this, arguments);})');
+      
+      namespace[name] = klass;
+
+      if (parent) {
+        var subclass = function() { };
+        subclass.prototype = parent.prototype;
+        klass.prototype = new subclass;
+      }
+      
+      for(var name in methods) {
+        klass.prototype[name] = methods[name];
+      }
+      
+      klass.prototype.constructor = klass;
+        
+      if (!klass.prototype.initialize)
+        klass.prototype.initialize = function() {};
+      
+      return klass;
+    });
 })(jQuery);
