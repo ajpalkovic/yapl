@@ -96,7 +96,7 @@
         }
 
         if (!parseFailed) {
-          var node = Nodes[ruleName];
+          var node = ParseActions[ruleName];
 
           if (node) {
             var result = node.onParse.apply(this, parseResults);

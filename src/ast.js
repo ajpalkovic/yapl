@@ -6,39 +6,93 @@
     }
   }
 
-  var Nodes = {
+  window.nodes = {};
+
+  /**
+   * Base node class.
+   */
+  var Node = klass(nodes, {}, {
+    initialize: function Node() {
+      this.name = this.constructor.name;
+    },
+
+    toString: function() {
+      return this.name;
+    }
+  });
+
+  /**
+   * Node for a list of nodes.
+   */
+  var NodeList = klass(nodes, Node, {
+    initialize: function NodeList() {
+      Node.prototype.initialize.call(this);
+
+      this.elements = [];
+    },
+
+    add: function(element) {
+      this.elements.prepend(element);
+    },
+
+    getElements: function() {
+      return this.elements;
+    }
+  });
+
+  /**
+   * Node for the entire program.
+   */
+  var Program = klass(nodes, NodeList, {
+    initialize: function Program() {
+      NodeList.prototype.initialize.call(this);
+    }
+  });
+
+  /**
+   * Node for a class declaration.
+   */
+  var ClassDeclaration = klass(nodes, Node, {
+    initialize: function ClassDeclaration(className, parentClass, body) {
+      Node.prototype.initialize.call(this);
+
+      if (!body) {
+        body = parentClass;
+        parentClass = undefined;
+      }
+
+      this.className = className;
+      this.parentClass = parentClass;
+      this.body = body;
+
+      // TODO(tjclifton): Need to get the constructor or make one.
+    }
+  });
+
+  /**
+   * Node for the body of a class, probably needed because of scoping issues.
+   */
+  var ClassBody = klass(nodes, nodes.NodeList, {
+    initialize: function ClassBody() {
+      NodeList.prototype.initialize.call(this);
+    }
+  });
+
+  var ParseActions = {
     Program: {
       onParse: $.overload(function() {
-        return {
-          node: 'Program',
-          sourceElements: []
-        };
+        return new Program();
       }, function(sourceElement, program) {
-        program.sourceElements.splice(0, 0, sourceElement);
+        program.add(sourceElement);
         return program;
       })
     },
 
     ClassDeclaration: {
       onParse: $.overload(function(className, body) {
-        var constructor = findConstructor(className, body) || Nodes['FunctionDeclaration'].onParse(className);
-
-        return {
-          node: 'ClassDeclaration',
-          className: className,
-          body: body,
-          constructor: constructor
-        };
+        return new ClassDeclaration(className, body);
       }, function(className, parentClass, body) {
-        var constructor = findConstructor(className, body) || Nodes['FunctionDeclaration'].onParse(className);
-
-        return {
-          node: 'ClassDeclaration',
-          className: className,
-          parentClass: parentClass,
-          body: body,
-          constructor: constructor
-        };
+        return new ClassDeclaration(className, parentClass, body);
       })
     },
 
@@ -806,10 +860,10 @@
     },
   };
 
-  for (var className in Nodes) {
-    var methods = Nodes[className];
+  for (var className in ParseActions) {
+    var methods = ParseActions[className];
     methods.template = Templates[className];
   }
 
-  window.Nodes = Nodes;
+  window.ParseActions = ParseActions;
 }(jQuery);

@@ -19,15 +19,18 @@
           window.parser = new Parser();
 
           var resultText = undefined;
+          var error = undefined;
           try {
             window.result = window.parser.parse($('#code').val());
             resultText = JSON.stringify(result, undefined, 2);
           } catch (e) {
-            resultText = e;
+            resultText = error = e;
           }
 
           var astElement = $('#ast');
           astElement.text(resultText);
+
+          if (error) throw error;
         });
       });
     </script>
