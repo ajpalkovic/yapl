@@ -67,3 +67,133 @@ shows that Python takes a similar approach:
     >>> arg
     'hello'
     >>>
+
+### 10-1-2012
+Today I chatted a bit with AJ about some of the downsides of writing JavaScript.  I expressed my frustration with many of JavaScript's
+well-known flaws, such as lack of library support, a module system for organizing code, etc.  While talking, I also expressed my displeasure
+with the fact that if an application wants to use Object-Oriented design in a class-based system, constructing the hierarchy properly in
+JavaScript's prototype model requires each developer to write their own 'class creation function', or use existing implementations, such
+as the one found in Prototype.js.
+
+One of the current problems we discussed with Prototype's class-creation implementation is that all resulting objects are instances of the
+type 'klass'.  If we take a look at the generic implementation, we can see why:
+
+    makeClass(parent, methods) {
+      function klass() {
+        this.initialize.apply(this, arguments);
+      }
+      
+      if (parent) {
+        var subclass = function() { };
+        subclass.prototype = parent.prototype;
+        klass.prototype = new subclass;
+      }
+      
+      for(var name in methods) {
+        klass.prototype[name] = methods[name];
+      }
+      
+      klass.prototype.constructor = klass;
+        
+      if (!klass.prototype.initialize)
+        klass.prototype.initialize = function() {};
+      
+      return klass;
+    }
+
+The issue is that this common implementation wraps the "constructor" function of the class in another function to correctly set up the prototype of the class.  
+This function returned from the function, and when a new object is created, JavaScript uses the name of the callee constructor function (in this case 'klass')
+as the 'class name'.  While JavaScript has no notion of class names, the idea of having the correct name for an object is crucial for debugging, as
+the developer console will show the name of the constructor function ('klass') as the 'type' (not in the JavaScript sense) of the object.  Like so:
+
+    >>> function MyClass() {}
+    >>> var instance = new MyClass();
+    >>> instance
+    MyClass
+    >>>
+
+I decided to takle this common problem by relying on named function-expressions for the 'initialize'/constructor function of the class:
+
+    >>> var MyClass = makeClass({
+    >>>     initialize: function MyClass() {}
+    >>> });
+    >>>
+    >>> var x = new MyClass();
+    >>> x
+    klass
+
+But this is not enough, as the 'function MyClass' is actually wrapped by the 'function klass', as we discussed earlier.  I needed to essentially create a function at runtime
+with the same name as the function expression in the 'initialize' key.  To do this, I used a lot of hackery:
+
+    Function.create = function(name, arguments, body) {
+      return eval('(function ' + name + '(' + arguments + ') {' + body + '})');
+    };
+
+    function(namespace, parent, methods) {
+      var name = methods.initialize ? methods.initialize.name : 'klass';
+      var klass = Function.create(name, [], 'this.initialize.apply(this, arguments);');
+      
+      namespace[name] = klass;
+
+      if (parent) {
+        var subclass = function() { };
+        subclass.prototype = parent.prototype;
+        klass.prototype = new subclass;
+      }
+      
+      for(var name in methods) {
+        klass.prototype[name] = methods[name];
+      }
+      
+      klass.prototype.constructor = klass;
+        
+      if (!klass.prototype.initialize)
+        klass.prototype.initialize = function() {};
+      
+      return klass;
+    }
+
+This method is kind-of gross, but it works.  It allows the user to create classes with properly-named constructor functions.  I also added the capability to add the class
+to a namespace object, and overloaded the function with the simple overload function I wrote to produce this:
+    
+    window.klass = $.overload(function(methods) {
+      return klass({}, methods);
+    }, 
+
+    function(parent, methods) {
+      return klass(window, parent, methods);
+    }, 
+
+    function(namespace, parent, methods) {
+      var name = methods.initialize ? methods.initialize.name : 'klass';
+      var klass = Function.create(name, [], 'this.initialize.apply(this, arguments);');
+      
+      namespace[name] = klass;
+
+      if (parent) {
+        var subclass = function() { };
+        subclass.prototype = parent.prototype;
+        klass.prototype = new subclass;
+      }
+      
+      for(var name in methods) {
+        klass.prototype[name] = methods[name];
+      }
+      
+      klass.prototype.constructor = klass;
+        
+      if (!klass.prototype.initialize)
+        klass.prototype.initialize = function() {};
+      
+      return klass;
+    });
+
+In action:
+
+    >>> klass({
+    >>>   initialize: function MyClass() {}
+    >>> });
+    >>>
+    >>> var instance = new MyClass();
+    >>> instance
+    MyClass
