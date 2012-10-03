@@ -101,8 +101,8 @@ type 'klass'.  If we take a look at the generic implementation, we can see why:
       return klass;
     }
 
-The issue is that this common implementation wraps the "constructor" function of the class in another function to correctly set up the prototype of the class.  
-This function returned from the function, and when a new object is created, JavaScript uses the name of the callee constructor function (in this case 'klass')
+The issue is that this common implementation wraps the "constructor" function of the class in another function to correctly set up the prototype of the class. The make class
+function returns this wrapper function, and when a new object is created, JavaScript uses the name of the callee constructor function (in this case 'klass')
 as the 'class name'.  While JavaScript has no notion of class names, the idea of having the correct name for an object is crucial for debugging, as
 the developer console will show the name of the constructor function ('klass') as the 'type' (not in the JavaScript sense) of the object.  Like so:
 
