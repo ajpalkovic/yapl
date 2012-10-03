@@ -96,10 +96,10 @@
         }
 
         if (!parseFailed) {
-          var node = ParseActions[ruleName];
+          var action = ParseActions[rule.nodeType || ruleName];
 
-          if (node) {
-            var result = node.onParse.apply(this, parseResults);
+          if (action) {
+            var result = action.apply(this, parseResults);
           } else {
             var result = parseResults[0];
           }

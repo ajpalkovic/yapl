@@ -78,14 +78,6 @@ var Grammar = {
     ]
   },
 
-  // TODO: productions w/ identifier
-  ClassExpression: {
-    productions: [
-      ['CLASS', '(IDENTIFIER)', 'NEWLINE', 'ClassBody', 'END'],
-      ['CLASS', 'ClassBody', 'END']
-    ]
-  },
-
   Parameters: {
     productions: [
       ['OPEN_PAREN', 'CLOSE_PAREN'],
@@ -231,11 +223,11 @@ var Grammar = {
 
   UnaryExpression: {
     productions: [
-      ['LOGICAL_NOT', 'UnaryExpression'],
-      ['BITWISE_NOT', 'UnaryExpression'],
-      ['QUESTION', 'UnaryExpression'],
-      ['MINUS', 'UnaryExpression'],
-      ['PLUS', 'UnaryExpression'],
+      ['(LOGICAL_NOT)', 'UnaryExpression'],
+      ['(BITWISE_NOT)', 'UnaryExpression'],
+      ['(QUESTION)', 'UnaryExpression'],
+      ['(MINUS)', 'UnaryExpression'],
+      ['(PLUS)', 'UnaryExpression'],
       ['IncrementExpression']
     ]
   },
@@ -267,7 +259,6 @@ var Grammar = {
       ['NewExpression'],
       ['MemberExpression'],
       ['FunctionExpression'],
-      ['ClassExpression'],
       ['Closure']
     ]
   },
@@ -303,7 +294,9 @@ var Grammar = {
 
   Call: {
     productions: [
-      ['Arguments']
+      ['OPEN_PAREN', 'CLOSE_PAREN'],
+      ['OPEN_PAREN', 'ArgumentList', 'CLOSE_PAREN'],
+      ['ArgumentList']
     ],
 
     // This prevents calling a function with its arguments on the next
@@ -334,21 +327,13 @@ var Grammar = {
 
   BindExpression:  {
     productions: [
-      ['BIND', 'Call']
+      ['BIND', 'Arguments']
     ]
   },
 
   ArrayDereference: {
     productions: [
       ['OPEN_BRACKET', 'Expression', 'CLOSE_BRACKET']
-    ]
-  },
-
-  Arguments: {
-    productions: [
-      ['OPEN_PAREN', 'CLOSE_PAREN'],
-      ['OPEN_PAREN', 'ArgumentList', 'CLOSE_PAREN'],
-      ['ArgumentList']
     ]
   },
 
@@ -481,18 +466,18 @@ var Grammar = {
       ['FunctionDeclaration'],
       ['IfStatement'],
       ['UnlessStatement'],
-      ['OneLineIfStatement'],
-      ['OneLineUnlessStatement'],
       ['IterationStatement'],
       ['WithStatement'],
       ['SwitchStatement'],
-      ['LabelledStatement'],
+      ['LabeledStatement'],
       ['TryStatement']
     ]
   },
 
   SimpleStatement: {
     productions: [
+      ['OneLineIfStatement'],
+      ['OneLineUnlessStatement'],
       ['VariableStatement'],
       ['ExpressionStatement'],
       ['BreakStatement'],
@@ -559,7 +544,7 @@ var Grammar = {
 
   OneLineIfStatement: {
     productions: [
-      ['SimpleStatement', 'IF', 'Expression', 'EndSt']
+      ['ComplexStatement', 'IF', 'Expression']
     ]
   },
 
@@ -571,7 +556,7 @@ var Grammar = {
 
   OneLineUnlessStatement: {
     productions: [
-      ['SimpleStatement', 'UNLESS', 'Expression', 'EndSt']
+      ['ComplexStatement', 'UNLESS', 'Expression']
     ]
   },
 
@@ -613,27 +598,29 @@ var Grammar = {
 
   WhileLoop: {
     productions: [
-      ['WHILE', 'Expression', 'NEWLINE', 'BlockBody']
+      ['WHILE', 'Expression', 'NEWLINE', 'BlockBody', 'END']
     ]
   },
 
   UntilLoop: {
     productions: [
-      ['UNTIL', 'Expression', 'NEWLINE', 'BlockBody']
+      ['UNTIL', 'Expression', 'NEWLINE', 'BlockBody', 'END']
     ]
   },
 
-  DoWhileLoop: {
-    productions: [
-      ['DO', 'BlockBody', '!NEWLINE', 'WHILE', 'Expression', 'EndSt']
-    ]
-  },
+  // TODO(tjclifton): making these work will be a huge pain.
 
-  DoUntilLoop: {
-    productions: [
-      ['DO', 'BlockBody', '!NEWLINE', 'UNTIL', 'Expression', 'EndSt']
-    ]
-  },
+  // DoWhileLoop: {
+  //   productions: [
+  //     ['DO', 'BlockBody', '!NEWLINE', 'WHILE', 'Expression', 'EndSt']
+  //   ]
+  // },
+
+  // DoUntilLoop: {
+  //   productions: [
+  //     ['DO', 'BlockBody', '!NEWLINE', 'UNTIL', 'Expression', 'EndSt']
+  //   ]
+  // },
 
   ForLoop: {
     productions: [
@@ -693,22 +680,22 @@ var Grammar = {
 
   ContinueStatement: {
     productions: [
-      ['CONTINUE', 'IDENTIFIER'],
-      ['CONTINUE']
+      ['(CONTINUE)', '(IDENTIFIER)'],
+      ['(CONTINUE)']
     ]
   },
 
   BreakStatement: {
     productions: [
-      ['BREAK', 'IDENTIFIER'],
-      ['BREAK']
+      ['(BREAK)', '(IDENTIFIER)'],
+      ['(BREAK)']
     ]
   },
 
   ReturnStatement: {
     productions: [
-      ['RETURN', 'Expression'],
-      ['RETURN']
+      ['(RETURN)', '(Expression)'],
+      ['(RETURN)']
     ]
   },
 
@@ -726,22 +713,18 @@ var Grammar = {
 
   CaseBlock: {
     productions: [
-      ['CaseClauseList', 'DefaultClause', 'CaseClauseList'],
-      ['CaseClauseList', 'DefaultClause'],
-      ['DefaultClause', 'CaseClauseList'],
-      ['CaseClauseList'],
-      ['DefaultClause'],
+      ['CaseList', 'OptDefaultCase', 'CaseList']
     ]
   },
 
-  CaseClauseList: {
+  CaseList: {
     productions: [
-      ['CaseClause', 'CaseClauseList']
-      ['CaseClause']
+      ['Case', 'CaseList']
+      []
     ]
   },
 
-  CaseClause: {
+  Case: {
     productions: [
       ['CASE', 'CaseExpressionList', 'COLON', 'BlockBody']
     ]
@@ -754,13 +737,20 @@ var Grammar = {
     ]
   },
 
-  DefaultClause: {
+  OptDefaultCase: {
+    productions: [
+      ['DefaultCase'],
+      [],
+    ]
+  },
+
+  DefaultCase: {
     productions: [
       ['DEFAULT', 'COLON', 'BlockBody']
     ]
   },
 
-  LabelledStatement: {
+  LabeledStatement: {
     productions: [
       ['(IDENTIFIER)', 'COLON', 'Statement']
     ]
@@ -768,18 +758,27 @@ var Grammar = {
 
   ThrowStatement: {
     productions: [
-      ['THROW', 'Expression']
+      ['(THROW)', 'Expression']
     ]
   },
 
   TryStatement: {
     productions: [
-      ['TRY', 'BlockBody', 'Catch', 'Finally', 'END'],
-      ['TRY', 'BlockBody', 'Finally', 'END'],
-      ['TRY', 'BlockBody', 'Catch', 'END'],
-      ['TRY', 'Catch', 'Finally', 'END'],
-      ['TRY', 'Finally', 'END'],
-      ['TRY', 'Catch', 'END']
+      ['TRY', 'BlockBody', 'OptCatch', 'OptFinally', 'END'],
+    ]
+  },
+
+  OptCatch: {
+    productions: [
+      ['Catch'],
+      []
+    ]
+  },
+
+  OptFinally: {
+    productions: [
+      ['Finally'],
+      []
     ]
   },
 
@@ -798,7 +797,7 @@ var Grammar = {
 
   DebuggerStatement: {
     productions: [
-      ['DEBUGGER']
+      ['(DEBUGGER)']
     ]
   }
 };
