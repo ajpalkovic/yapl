@@ -101,7 +101,7 @@ type 'klass'.  If we take a look at the generic implementation, we can see why:
       return klass;
     }
 
-The issue is that this common implementation wraps the "constructor" function of the class in another function to correctly set up the prototype of the class. The make class
+The issue is that this common implementation wraps the "constructor" function of the class in another function to correctly set up the prototype of the class. The `makeClass`
 function returns this wrapper function, and when a new object is created, JavaScript uses the name of the callee constructor function (in this case 'klass')
 as the 'class name'.  While JavaScript has no notion of class names, the idea of having the correct name for an object is crucial for debugging, as
 the developer console will show the name of the constructor function ('klass') as the 'type' (not in the JavaScript sense) of the object.  Like so:
@@ -122,8 +122,8 @@ I decided to takle this common problem by relying on named function-expressions 
     >>> x
     klass
 
-But this is not enough, as the 'function MyClass' is actually wrapped by the 'function klass', as we discussed earlier.  I needed to essentially create a function at runtime
-with the same name as the function expression in the 'initialize' key.  To do this, I used a lot of hackery:
+But this is not enough, as the `function MyClass` is actually wrapped by the `function klass`, as we discussed earlier.  I needed to essentially create a function at runtime
+with the same name as the function expression in the `initialize` key.  To do this, I used a lot of hackery:
 
     Function.create = function(name, arguments, body) {
       return eval('(function ' + name + '(' + arguments + ') {' + body + '})');
