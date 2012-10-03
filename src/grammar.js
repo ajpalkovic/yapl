@@ -719,7 +719,7 @@ var Grammar = {
 
   CaseList: {
     productions: [
-      ['Case', 'CaseList']
+      ['Case', 'CaseList'],
       []
     ]
   },

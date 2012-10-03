@@ -365,7 +365,7 @@
   /**
    * Node for a function call expression.
    */
-  var Call = klass(node, Node, {
+  var Call = klass(nodes, Node, {
     initialize: function Call(arguments) {
       Node.prototype.initialize.call(this);
 
@@ -468,6 +468,7 @@
       this.ifBody = args.shift();
       this.elseIfList = args.shift();
       this.elseBody = args.shift();
+    }
   });
 
   /**
