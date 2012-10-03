@@ -463,6 +463,8 @@ var Grammar = {
 
   ComplexStatement: {
     productions: [
+      ['OneLineIfStatement'],
+      ['OneLineUnlessStatement'],
       ['FunctionDeclaration'],
       ['IfStatement'],
       ['UnlessStatement'],
@@ -476,15 +478,13 @@ var Grammar = {
 
   SimpleStatement: {
     productions: [
-      ['OneLineIfStatement'],
-      ['OneLineUnlessStatement'],
       ['VariableStatement'],
       ['ExpressionStatement'],
       ['BreakStatement'],
       ['ReturnStatement'],
       ['ContinueStatement'],
       ['ThrowStatement'],
-      ['DebuggerStatement']
+      ['DebuggerStatement'],
     ]
   },
 
@@ -544,7 +544,7 @@ var Grammar = {
 
   OneLineIfStatement: {
     productions: [
-      ['ComplexStatement', 'IF', 'Expression']
+      ['SimpleStatement', 'IF', 'Expression']
     ]
   },
 
@@ -556,7 +556,7 @@ var Grammar = {
 
   OneLineUnlessStatement: {
     productions: [
-      ['ComplexStatement', 'UNLESS', 'Expression']
+      ['SimpleStatement', 'UNLESS', 'Expression']
     ]
   },
 
