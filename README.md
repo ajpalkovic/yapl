@@ -112,7 +112,7 @@ the developer console will show the name of the constructor function ('klass') a
     MyClass
     >>>
 
-I decided to takle this common problem by relying on named function-expressions for the 'initialize'/constructor function of the class:
+I decided to takle this common problem by relying on named function-expressions for the initialize/constructor function of the class:
 
     >>> var MyClass = makeClass({
     >>>     initialize: function MyClass() {}
