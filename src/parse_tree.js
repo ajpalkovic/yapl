@@ -1,11 +1,4 @@
 !function($) {
-  function findConstructor(className, classBody) {
-    for (var i = 0; i < classBody.length; ++i) {
-      var classElement = classBody[i];
-      if (classElement.node === 'FunctionDeclaration' && classElement.name === className) return classElement;
-    }
-  }
-
   window.nodes = {};
 
   /**
@@ -33,6 +26,12 @@
 
     add: function(element) {
       this.elements.prepend(element);
+    },
+
+    toJs: function(context) {
+      for (var i = 0; i < this.elements.length; ++i) {
+        this.elements[i].toJs(context);
+      }
     },
 
     getElements: function() {
@@ -65,7 +64,28 @@
       this.parentClass = parentClass;
       this.body = body;
 
-      // TODO(tjclifton): Need to get the constructor or make one.
+      this.constructor = this.__findConstructor();
+    },
+
+    __findConstructor: function() {
+      var elements = this.body.getElements();
+
+      for (var i = 0; i < elements.length; ++i) {
+        var element = elements[i];
+
+        if (element instanceof FunctionDeclaration && element.name == this.className) {
+          // Remove the constructor from the body.
+          elements.splice(i, 1);
+
+          return element;
+        }
+      }
+
+      return new FunctionDeclaration(this.className, new ParameterList(), new FunctionBody());
+    },
+
+    toJs: function(context) {
+      
     }
   });
 
