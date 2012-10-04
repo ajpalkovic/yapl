@@ -5,7 +5,8 @@
 
     <script type="text/javascript" src="util.js"></script>
     <script type="text/javascript" src="templates.js"></script>
-    <script type="text/javascript" src="ast.js"></script>
+    <script type="text/javascript" src="parse_tree.js"></script>
+    <script type="text/javascript" src="parse_actions.js"></script>
     <script type="text/javascript" src="token.js"></script>
     <script type="text/javascript" src="lexer.js"></script>
     <script type="text/javascript" src="grammar.js"></script>
@@ -19,15 +20,18 @@
           window.parser = new Parser();
 
           var resultText = undefined;
+          var error = undefined;
           try {
             window.result = window.parser.parse($('#code').val());
             resultText = JSON.stringify(result, undefined, 2);
           } catch (e) {
-            resultText = e;
+            resultText = error = e;
           }
 
           var astElement = $('#ast');
           astElement.text(resultText);
+
+          if (error) throw error;
         });
       });
     </script>
