@@ -34,6 +34,7 @@
       Program: list(Program),
       ClassDeclaration: node(ClassDeclaration),
       ClassBody: list(ClassBody),
+      Method: node(Method),
       StaticMethod: node(StaticMethod),
       Accessor: node(Accessor),
       FunctionDeclaration: node(FunctionDeclaration),
@@ -93,6 +94,7 @@
       ArrayDereference: node(ArrayDereference),
       Call: node(Call),
       ArgumentList: list(ArgumentList),
+      PrimitiveLiteralExpression: node(PrimitiveLiteralExpression),
       Operator: node(Operator),
       StatementList: list(NodeList),
 

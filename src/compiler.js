@@ -1,128 +1,169 @@
-function Compiler() {
-  this.scopeChain = [];
-  this.currentScope = undefined;
-  this.indentLevel = [''];
+!function($) {
+  var Compiler = klass({
+    initialize: function Compiler() {
+      this.emitter = new Emitter();
+    },
 
-  this.pushScope('<<GLOBAL>>');
-  this.outputBuffer = [];
-};
+    toJs: function(parseTree) {
+      var context = new CompileContext(this.emitter);
+      parseTree.toJs(context);
 
-Compiler.prototype.compileTemplates = function() {
-  for (var templateName in Templates) {
-    var template = Templates[templateName];
+      return context.getEmitter().flush();
+    },
 
-    for (var i = 0; i < template.length; ++i) {
-      var fnString = template[i] + '';
-      Templates.templateFns[templateName][i] = this.interpolateTemplate(fnString);
-    }
-  }
-};
-
-Compiler.prototype.interpolateTemplate = function(templateFnString) {
-  function balanceInterpolation(index) {
-    for (var i = index; i < templateFnString.length; ++i) {
-      switch (templateFnString[i]) {
-        case '{':
-          var end = balanceInterpolation(i + 1);
-          i = end;
-        case '}':
-          return i;
-      }
-    }
-  }
-
-  var newTemplateFnString = '';
-  var endOfLastInterpolation = 0;
-
-  for (var i = 0; i < templateFnString.length; ++i) {
-    if (templateFnString[i] === '\\') {
-      i++;
-      continue;
-    }
-
-    if (templateFnString[i] === '#' && templateFnString[i + 1] === '{') {
-      var end = balanceInterpolation(i + 1);
-
-      var before = templateFnString.substring(endOfLastInterpolation, i);
-      var code = templateFnString.substring(i + 2, end);
-
-      newTemplateFnString += before + "', " + code + ", '";
-
-      endOfLastInterpolation = end + 1;
-    }
-  }
-
-  newTemplateFnString += templateFnString.substring(endOfLastInterpolation);
-  return eval('(' + newTemplateFnString + ')');
-};
-
-Compiler.prototype.pushScope = function(name) {
-  this.currentScope = {
-    name: name,
-    classes: {},
-    functions: {},
-    variables: {}
-  };
-
-  this.scopeChain.push(this.currentScope);
-};
-
-Compiler.prototype.popScope = function() {
-  if (this.scopeChain.length === 1) {
-    return;
-  }
-
-  this.scopeChain.pop();
-  this.currerntScope = this.scopeChain[this.scopeChain.length - 1];
-};
-
-Compiler.prototype.findSymbol = function(name) {
-  var symbol = undefined;
-  for (var i = this.scopeChain.length - 1; i >= 0; --i) {
-    symbol = this.scopeChain[i].symbols[name];
-    if (symbol) break;
-  }
-
-  return symbol;
-};
-
-Compiler.prototype.out = function(varargs) {
-  for (var i = 0, len = arguments.length; i < len; ++i) {
-    if (!arguments[i]) continue;
-
-    switch (typeof arguments[i]) {
-      case 'string':
-        this.outputBuffer.push(arguments[i]);
-        break;
-      case 'function':
-        arguments[i]();
-        break;
-      default:
-        if (arguments[i] instanceof Array) {
-          this.out.apply(this, arguments[i]);
-        } else {
-          arguments[i].compile();
+    interpolate: function(string) {
+      function balanceInterpolation(index) {
+        for (var i = index; i < string.length; ++i) {
+          switch (string[i]) {
+            case '{':
+              var end = balanceInterpolation(i + 1);
+              i = end;
+            case '}':
+              return i;
+          }
         }
+      }
+
+      var interpolatedString = '';
+      var endOfLastInterpolation = 0;
+
+      for (var i = 0; i < string.length; ++i) {
+        if (string[i] === '\\') {
+          i++;
+          continue;
+        }
+
+        if (string[i] === '#' && string[i + 1] === '{') {
+          var end = balanceInterpolation(i + 1);
+
+          var before = string.substring(endOfLastInterpolation, i);
+          var code = string.substring(i + 2, end);
+
+          interpolatedString += before + "', " + code + ", '";
+
+          endOfLastInterpolation = end + 1;
+        }
+      }
+
+      interpolatedString += string.substring(endOfLastInterpolation);
+      return;
     }
-  }
-};
+  });
 
-Compiler.prototype.flushOut = function() {
-  var str = this.outputBuffer.join('');
-  this.outputBuffer = [];
-  return str;
-};
+  var Emitter = klass({
+    initialize: function Emitter() {
+      this.outputBuffer = undefined;
+      this.lines = undefined;
+      this.indentLevel = undefined;
 
-Compiler.prototype.newline = function() {
-  this.outputBuffer.push('\n', this.indentLevel[this.indentLevel.length - 1]);
-};
+      this.reset();
+    },
 
-Compiler.prototype.indent = function() {
-  this.indentLevel.push(this.indentLevel[this.indentLevel.length - 1] + '  ');
-};
+    e: function(varargs) {
+      for (var i = 0, len = arguments.length; i < len; ++i) {
+        if (!arguments[i]) continue;
 
-Compiler.prototype.undent = function() {
-  this.indentLevel.pop();
-};
+        switch (typeof arguments[i]) {
+          case 'number':
+          case 'string':
+            this.outputBuffer.push(arguments[i]);
+            break;
+          case 'function':
+            arguments[i]();
+            break;
+          default:
+            if (arguments[i] instanceof Array) {
+              this.e.apply(this, arguments[i]);
+            }
+        }
+      }
 
-window.compiler = new Compiler();
+      return this;
+    },
+
+    reset: function() {
+      this.outputBuffer = [];
+      this.lines = [this.outputBuffer];
+      this.indentLevel = [''];
+    },
+
+    emitLines: function(lines) {
+      for (var i = 0; i < lines.length; ++i) {
+        var line = lines[i];
+
+        this.e(lines[i]);
+        this.nl();
+      }
+    },
+
+    flush: function() {
+      var output = [];
+      for (var i = 0; i < this.lines.length; ++i) {
+        var lineStr = this.lines[i].join('');
+        output.push(lineStr);
+      }
+
+      this.reset();
+
+      return output.join('\n');
+    },
+
+    nl: function() {
+      this.outputBuffer = [this.indentLevel.peek()];
+      this.lines.push(this.outputBuffer);
+      return this;
+    },
+
+    i: function() {
+      this.indentLevel.push(this.indentLevel.peek() + '  ');
+      this.outputBuffer.push(this.indentLevel.peek());
+      return this;
+    },
+
+    u: function() {
+      if (this.outputBuffer.peek() === this.indentLevel.peek()) {
+        this.outputBuffer.pop()
+        this.indentLevel.pop();
+
+        if (this.indentLevel.peek()) this.outputBuffer.push(this.indentLevel.peek());
+      } else {
+        this.indentLevel.pop();
+      }
+
+      return this;
+    }
+  });
+
+  var CompileContext = klass({
+    initialize: function CompileContext(emitter, parentContext) {
+      this.emitter = emitter;
+      this.parentContext = parentContext;
+
+      this.scope = $.extend({}, parentContext && parentContext.getScope());
+    },
+
+    subcontext: function() {
+      return new CompileContext(this.emitter, this);
+    },
+
+    put: function(name, value) {
+      this.scope[name] = value || true;
+    },
+
+    lookup: function(name) {
+      return this.scope[name];
+    },
+
+    getEmitter: function() {
+      return this.emitter;
+    },
+
+    getParentContext: function() {
+      return this.getParentContext;
+    },
+
+    getScope: function() {
+      return this.scope;
+    }
+  });
+}(jQuery);

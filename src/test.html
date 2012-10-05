@@ -18,32 +18,82 @@
       jQuery(document).ready(function($) {
         $('#submit').click(function() {
           window.parser = new Parser();
-
-          var resultText = undefined;
-          var error = undefined;
-          try {
-            window.result = window.parser.parse($('#code').val());
-            resultText = JSON.stringify(result, undefined, 2);
-          } catch (e) {
-            resultText = error = e;
-          }
+          window.compiler = new Compiler();
 
           var astElement = $('#ast');
-          astElement.text(resultText);
+          var jsOutputElement = $('#jsoutput');
 
-          if (error) throw error;
+          try {
+            result = parser.parse($('#code').val());
+
+            var astText = JSON.stringify(result, undefined, 2);
+            var jsOutputText = compiler.toJs(result);
+
+            astElement.text(astText);
+            jsOutputElement.text(jsOutputText);
+          } catch (e) {
+            astElement.text(e);
+            throw e;
+          }
         });
       });
     </script>
+
+    <style>
+      body {
+        margin: 0;
+      }
+
+      h1 {
+        color: #777777;
+        font-family: arial;
+        font-size: 1.5em;
+        height: 10%;
+      }
+
+      pre {
+        height: 80%;
+        overflow: auto;
+      }
+
+      .column {
+        border: 1px solid #CCC;
+        box-sizing: border-box;
+        display: inline-block;
+        height: 90%;
+        margin: 10px;
+        padding: 10px;
+        vertical-align: top;
+        width: 30%;
+      }
+
+      #code-form {
+        margin-bottom: 0em;
+      }
+
+      #code {
+        resize: none;
+        height: 400px;
+      }
+
+    </style>
   </head>
   <body>
-    <div>
-      <div style="float:left; width:50%;">
-        <textarea id="code" style="min-height: 500px; width: 100%"></textarea>
-        <input id="submit" type="button" value="Parse" />
+    <div id="content">
+      <div class="column">
+        <h1>Yapl</h1>
+        <form id="code-form">
+          <textarea id="code" style="width: 100%"></textarea>
+          <input id="submit" type="button" value="Parse" />
+        </form>
       </div>
-      <diV style="float:right; width:50%; padding-left: 20px; box-sizing: border-box">
+      <div class="column">
+        <h1>Parse Tree</h1>
         <pre id="ast"></pre>
+      </div>
+      <div class="column">
+        <h1>Generated JS</h1>
+        <pre id="jsoutput"></pre>
       </div>
     </div>
     <pre id="debug"></pre>

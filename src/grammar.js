@@ -33,15 +33,22 @@ var Grammar = {
     productions: [
       ['Accessor'],
       ['Statement'],
+      ['Method'],
       ['StaticMethod'],
       ['StaticVarDeclaration'],
       ['ClassDeclaration']
     ]
   },
 
+  Method: {
+    productions: [
+      ['DEF', '(IDENTIFIER)', 'Parameters', 'FunctionBody', 'END']
+    ]
+  },
+
   StaticMethod: {
     productions: [
-      ['STATIC', 'FunctionDeclaration']
+      ['STATIC', 'Method']
     ]
   },
 
@@ -348,18 +355,24 @@ var Grammar = {
     productions: [
       ['(THIS)'],
       ['(SUPER)'],
-      ['(TRUE)'],
-      ['(FALSE)'],
-      ['(IDENTIFIER)'],
-      ['MemberIdentifier'],
-      ['(NUMERIC_LITERAL)'],
       ['(STRING_LITERAL)'],
       ['(REGEX_LITERAL)'],
       ['(SYMBOL)'],
       ['(REGEX)'],
+      ['PrimitiveLiteralExpression'],
+      ['MemberIdentifier'],
       ['ObjectLiteral'],
       ['ArrayLiteral'],
       ['NestedExpression']
+    ]
+  },
+
+  PrimitiveLiteralExpression: {
+    productions: [
+      ['(TRUE)'],
+      ['(FALSE)'],
+      ['(IDENTIFIER)'],
+      ['(NUMERIC_LITERAL)']
     ]
   },
 

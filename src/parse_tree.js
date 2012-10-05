@@ -11,6 +11,10 @@
 
     toString: function() {
       return this.nodeName;
+    },
+
+    toJs: function(context) {
+      context.getEmitter().emit('<<"', this.nodeName, '" has no toJs>>');
     }
   });
 
@@ -36,6 +40,51 @@
 
     getElements: function() {
       return this.elements;
+    }
+  });
+
+  /**
+   * List of nodes delimited by some delimiter.
+   */
+  var DelimitedNodeList = klass(nodes, NodeList, {
+    initialize: function DelimitedNodeList() {
+      this.delimiter = Array.prototype.shift.call(arguments);
+
+      NodeList.prototype.initialize.apply(this, arguments);
+    },
+
+    toJs: function(context) {
+      var elements = this.getElements();
+
+      for (var i = 0; i < elements.length; ++i) {
+        var element = elements[i];
+        element.toJs(context);
+
+        if (i < elements.length - 1) context.getEmitter().e(this.delimiter);
+      }
+    }
+  });
+
+  var CommaNodeList = klass(nodes, DelimitedNodeList, {
+    initialize: function CommaNodeList() {
+      Array.prototype.splice.call(arguments, 0, 0, ', ');
+
+      DelimitedNodeList.prototype.initialize.apply(this, arguments);
+    }
+  });
+
+  var NewlineNodeList = klass(nodes, NodeList, {
+    initialize: function NewlineNodeList() {
+      NodeList.prototype.initialize.apply(this, arguments);
+    },
+
+    toJs: function(context) {
+      var elements = this.getElements();
+
+      for (var i = 0; i < elements.length; ++i) {
+        elements[i].toJs(context);
+        context.getEmitter().nl();
+      }
     }
   });
 
@@ -69,32 +118,42 @@
 
     __findConstructor: function() {
       var elements = this.body.getElements();
+      var constructorIndex = -1;
 
       for (var i = 0; i < elements.length; ++i) {
         var element = elements[i];
 
         if (element instanceof FunctionDeclaration && element.name == this.className) {
-          // Remove the constructor from the body.
-          elements.splice(i, 1);
-
-          return element;
+          constructorIndex = i;
+          break;
         }
       }
 
-      return new FunctionDeclaration(this.className, new ParameterList(), new FunctionBody());
+      if (constructorIndex < 0) return new FunctionDeclaration(this.className, new ParameterList(), new FunctionBody());
+
+      return elements.splice(constructorIndex, 1)[0];
     },
 
     toJs: function(context) {
-      
+      var emitter = context.getEmitter();
+      var constructorDecl = VariableStatement.of(this.className, this.constructor);
+
+      emitter.e('!function() {').nl().i();
+      constructorDecl.toJs(context);
+
+      // TODO(tjclifton) class context related stuff.
+      var newContext = context.subcontext();
+
+      emitter.u().e('}();');
     }
   });
 
   /**
    * Node for the body of a class, probably needed because of scoping issues.
    */
-  var ClassBody = klass(nodes, NodeList, {
+  var ClassBody = klass(nodes, NewlineNodeList, {
     initialize: function ClassBody() {
-      NodeList.prototype.initialize.call(this);
+      NewlineNodeList.prototype.initialize.call(this);
     }
   });
 
@@ -108,6 +167,16 @@
       this.name = name;
       this.parameters = parameters;
       this.body = body;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+      emitter.e('function ', this.name, '(', this.parameters.toJs.bind(this.parameters, context), ') {').nl().i();
+
+      context.put(this.name, this);
+      this.body.toJs(context.subcontext());
+
+      emitter.u().nl().e('}');
     }
   });
 
@@ -123,12 +192,25 @@
   });
 
   /**
-   * Node for a method that won't be placed on the prototype of the 
+   * Node that represents a method of a class.
+   */
+  var Method = klass(nodes, Node, {
+    initialize: function Method(name, parameters, body) {
+      this.name = name;
+      this.parameters = parameters;
+      this.body = body;
+    }
+  });
+
+  /**
+   * Node for a method that won't be placed on the prototype of the
    * JS function, but on the function itself.
    */
-  var StaticMethod = klass(nodes, FunctionDeclaration, {
-    initialize: function StaticMethod() {
-      FunctionDeclaration.prototype.initialize.call(this);
+  var StaticMethod = klass(nodes, Node, {
+    initialize: function StaticMethod(method) {
+      Node.prototype.initialize.call(this);
+
+      this.method = method;
     }
   });
 
@@ -145,7 +227,7 @@
   });
 
   /**
-   * Node for a closure, which is basically an anonymous function with 
+   * Node for a closure, which is basically an anonymous function with
    * lexically scoped local varaibles.
    */
   var Closure = klass(nodes, FunctionExpression, {
@@ -157,9 +239,9 @@
   /**
    * Node list for a series of parameters for a function.
    */
-  var ParameterList = klass(nodes, NodeList, {
-    initialize: function ParameterList(firstParam) {
-      NodeList.prototype.initialize.call(this, firstParam);
+  var ParameterList = klass(nodes, CommaNodeList, {
+    initialize: function ParameterList() {
+      CommaNodeList.prototype.initialize.apply(this, arguments);
     }
   });
 
@@ -417,9 +499,9 @@
   /**
    * Node for a series of function arguments.
    */
-  var ArgumentList = klass(nodes, NodeList, {
+  var ArgumentList = klass(nodes, CommaNodeList, {
     initialize: function ArgumentList(firstElement) {
-      NodeList.prototype.initialize.call(this, firstElement);
+      CommaNodeList.prototype.initialize.call(this, firstElement);
     }
   });
 
@@ -435,11 +517,30 @@
   });
 
   /**
+   * Node for any primitive JavaScript literal value.
+   */
+  var PrimitiveLiteralExpression = klass(nodes, Node, {
+    initialize: function PrimitiveLiteralExpression(value) {
+      Node.prototype.initialize.call(this);
+
+      this.value = value;
+    },
+
+    toJs: function(context) {
+      context.getEmitter().e(this.value);
+    }
+  });
+
+  /**
    * Node for a statement that ends in a statement-terminating character.
    */
   var TerminatedStatement = klass(nodes, Node, {
     initialize: function TerminatedStatement() {
       Node.prototype.initialize.call(this);
+    },
+
+    toJs: function(context) {
+      context.getEmitter().e(';').nl();
     }
   });
 
@@ -451,15 +552,31 @@
       TerminatedStatement.prototype.initialize.call(this);
 
       this.variableDeclarationList = variableDeclarationList;
+    },
+
+    toJs: function(context) {
+      context.getEmitter().e('var ', this.variableDeclarationList.toJs.bind(this.variableDeclarationList, context));
+
+      TerminatedStatement.prototype.toJs.call(this, context);
     }
   });
 
   /**
+   * Convenience function for creating a single variable assignment statement.
+   */
+  VariableStatement.of = function(name, value) {
+    var decl = new VariableDeclaration(name, value);
+    var list = new VariableDeclarationList(decl);
+
+    return new VariableStatement(list);
+  };
+
+  /**
    * Node for a series of variable declarations in a variable statement.
    */
-  var VariableDeclarationList = klass(nodes, NodeList, {
+  var VariableDeclarationList = klass(nodes, CommaNodeList, {
     initialize: function VariableDeclarationList(firstVariable) {
-      NodeList.prototype.initialize.call(this, firstVariable);
+      CommaNodeList.prototype.initialize.call(this, firstVariable);
     }
   });
 
@@ -472,6 +589,11 @@
 
       this.name = name;
       this.value = value;
+    },
+
+    toJs: function(context) {
+      context.getEmitter().e(this.name, ' = ', this.value.toJs.bind(this.value, context));
+      context.put(this.name);
     }
   });
 

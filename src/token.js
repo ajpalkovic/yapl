@@ -55,6 +55,7 @@
   // Language reserved words
   var reserved = [
     ['function', 'FUNCTION'],
+    ['def', 'DEF'],
     ['var', 'VAR'],
     ['if', 'IF'],
     ['instanceof', 'INSTANCEOF'],
