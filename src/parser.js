@@ -157,7 +157,7 @@
       var advance = tokensMatch || !lexedToken.optional;
 
       return {
-        value: tokensMatch && capture && (lexedToken.value || lexedToken.type),
+        value: tokensMatch && capture && /*(lexedToken.value || lexedToken.type)*/ lexedToken,
         matched: matched,
         advance: advance
       };

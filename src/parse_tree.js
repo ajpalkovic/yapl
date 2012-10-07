@@ -6,15 +6,14 @@
    */
   var Node = klass(nodes, {}, {
     initialize: function Node() {
-      this.nodeName = this.constructor.name;
     },
 
     toString: function() {
-      return this.nodeName;
+      return this.constructor.name;
     },
 
     toJs: function(context) {
-      context.getEmitter().emit('<<"', this.nodeName, '" has no toJs>>');
+      context.getEmitter().e('<<"', this.constructor.name, '" has no toJs>>');
     }
   });
 
@@ -34,7 +33,13 @@
 
     toJs: function(context) {
       for (var i = 0; i < this.elements.length; ++i) {
-        this.elements[i].toJs(context);
+        var element = this.elements[i];
+
+        if (element.toJs) {
+          element.toJs(context);
+        } else {
+          emitter.e(element);
+        }
       }
     },
 
@@ -55,12 +60,18 @@
 
     toJs: function(context) {
       var elements = this.getElements();
+      var emitter = context.getEmitter();
 
       for (var i = 0; i < elements.length; ++i) {
         var element = elements[i];
-        element.toJs(context);
 
-        if (i < elements.length - 1) context.getEmitter().e(this.delimiter);
+        if (element.toJs) {
+          element.toJs(context);
+        } else {
+          emitter.e(element);
+        }
+
+        if (i < elements.length - 1) emitter.e(this.delimiter);
       }
     }
   });
@@ -80,10 +91,18 @@
 
     toJs: function(context) {
       var elements = this.getElements();
+      var emitter = context.getEmitter();
 
       for (var i = 0; i < elements.length; ++i) {
-        elements[i].toJs(context);
-        context.getEmitter().nl();
+        var element = elements[i];
+
+        if (element.toJs) {
+          element.toJs(context);
+        } else {
+          emitter.e(element);
+        }
+
+        emitter.nl();
       }
     }
   });
@@ -113,36 +132,53 @@
       this.parentClass = parentClass;
       this.body = body;
 
-      this.constructor = this.__findConstructor();
+      this.constructor = new FunctionDeclaration(this.className, new ParameterList(), new FunctionBody());
+      this.methods = this.__extractAll(Method);
+      this.instanceVars = this.__extractAll(VariableStatement);
+
+      // Find the constructor if there is one.
+      for (var i = 0; i < this.methods.length; ++i) {
+        if (this.methods[i].name == this.className) {
+          this.constructor = this.methods[i];
+          break;
+        }
+      }
     },
 
-    __findConstructor: function() {
+    __extractAll: function(NodeType) {
       var elements = this.body.getElements();
-      var constructorIndex = -1;
+      var extractedElements = new NewlineNodeList();
 
       for (var i = 0; i < elements.length; ++i) {
         var element = elements[i];
 
-        if (element instanceof FunctionDeclaration && element.name == this.className) {
-          constructorIndex = i;
-          break;
+        if (element instanceof NodeType) {
+          extractedElements.add(element);
+          elements.splice(i, 1);
+          i--;
         }
       }
 
-      if (constructorIndex < 0) return new FunctionDeclaration(this.className, new ParameterList(), new FunctionBody());
+      return extractedElements;
+    },
 
-      return elements.splice(constructorIndex, 1)[0];
+    getClassName: function() {
+      return this.className;
     },
 
     toJs: function(context) {
       var emitter = context.getEmitter();
       var constructorDecl = VariableStatement.of(this.className, this.constructor);
 
-      emitter.e('!function() {').nl().i();
-      constructorDecl.toJs(context);
+      var classContext = context.subcontext();
+      classContext.put(this.className);
 
-      // TODO(tjclifton) class context related stuff.
-      var newContext = context.subcontext();
+      emitter.e('!function() {').nl().i();
+      this.body.toJs(classContext);
+
+      classContext.put('this', this);
+      constructorDecl.toJs(classContext);
+      this.methods.toJs(classContext);
 
       emitter.u().e('}();');
     }
@@ -173,7 +209,7 @@
       var emitter = context.getEmitter();
       emitter.e('function ', this.name, '(', this.parameters.toJs.bind(this.parameters, context), ') {').nl().i();
 
-      context.put(this.name, this);
+      context.put(this.name.value, this);
       this.body.toJs(context.subcontext());
 
       emitter.u().nl().e('}');
@@ -199,6 +235,21 @@
       this.name = name;
       this.parameters = parameters;
       this.body = body;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+      var classDeclaration = context.lookup('this');
+      var methodContext = context.subcontext();
+
+      emitter.e(classDeclaration.getClassName(), '.prototype.', this.name, ' = function(');
+      this.parameters.toJs(methodContext);
+      emitter.e(') {').i().nl();
+
+      methodContext.put(this.name.value);
+      this.body.toJs(methodContext);
+
+      emitter.u().nl().e('};');
     }
   });
 
@@ -239,9 +290,24 @@
   /**
    * Node list for a series of parameters for a function.
    */
-  var ParameterList = klass(nodes, CommaNodeList, {
+  var ParameterList = klass(nodes, NodeList, {
     initialize: function ParameterList() {
-      CommaNodeList.prototype.initialize.apply(this, arguments);
+      NodeList.prototype.initialize.apply(this, arguments);
+    },
+
+    toJs: function(context) {
+      var elements = this.getElements();
+      var emitter = context.getEmitter();
+
+      for (var i = 0; i < elements.length; ++i) {
+        var element = elements[i];
+
+        if (typeof element === 'object') {
+          context.put(element.value);
+        } else {
+          element.toJs(context);
+        }
+      }
     }
   });
 
@@ -528,6 +594,21 @@
 
     toJs: function(context) {
       context.getEmitter().e(this.value);
+    }
+  });
+
+  /**
+   * Node for identifiers that are not in some type of declaration.
+   */
+  var Reference = klass(nodes, Node, {
+    initialize: function Reference(name) {
+      this.name = name;
+    },
+
+    toJs: function(context) {
+      if (!context.lookup(this.name.value)) throw new errors.ReferenceError(this.name.line, this.name.value);
+
+      context.getEmitter().e(this.name.value);
     }
   });
 

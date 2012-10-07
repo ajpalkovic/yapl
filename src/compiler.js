@@ -64,6 +64,8 @@
         if (!arguments[i]) continue;
 
         switch (typeof arguments[i]) {
+          case 'object':
+            arguments[i] = arguments[i].value;
           case 'number':
           case 'string':
             this.outputBuffer.push(arguments[i]);
@@ -139,7 +141,7 @@
       this.emitter = emitter;
       this.parentContext = parentContext;
 
-      this.scope = $.extend({}, parentContext && parentContext.getScope());
+      this.fields = $.extend({}, parentContext && parentContext.getFields());
     },
 
     subcontext: function() {
@@ -147,11 +149,11 @@
     },
 
     put: function(name, value) {
-      this.scope[name] = value || true;
+      this.fields[name] = value || true;
     },
 
     lookup: function(name) {
-      return this.scope[name];
+      return this.fields[name];
     },
 
     getEmitter: function() {
@@ -162,8 +164,27 @@
       return this.getParentContext;
     },
 
-    getScope: function() {
-      return this.scope;
+    getFields: function() {
+      return this.fields;
+    }
+  });
+
+  errors = {};
+
+  var Error = klass(errors, {}, {
+    initialize: function Error(line, message) {
+      this.line = line;
+      this.message = message;
+    },
+
+    toString: function() {
+      return this.constructor.name + '(' + this.line + '): ' + this.message;
+    }
+  });
+
+  var ReferenceError = klass(errors, Error, {
+    initialize: function ReferenceError(line, reference) {
+      Error.prototype.initialize.call(this, line, reference + ' is not defined');
     }
   });
 }(jQuery);

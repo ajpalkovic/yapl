@@ -13,7 +13,7 @@
      * Returns the next token in the lexer, and advances it.
      */
     next: function(newlines) {
-      this.lastPos = (this.currentPos < this.tokens.length) ? 
+      this.lastPos = (this.currentPos < this.tokens.length) ?
           Math.max(this.currentPos, this.lastPos) : this.lastPos;
 
       return this._get(this.currentPos++);
@@ -45,7 +45,7 @@
      */
     _lex: function(string) {
       var tokens = [];
-      var line = 0;
+      var line = 1;
 
       while (string.length > 0) {
         var match = string.match(Tokens.regex);

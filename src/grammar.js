@@ -87,8 +87,14 @@ var Grammar = {
 
   Parameters: {
     productions: [
-      ['OPEN_PAREN', 'CLOSE_PAREN'],
+      ['OPEN_PAREN', 'EmptyList', 'CLOSE_PAREN'],
       ['OPEN_PAREN', 'ParameterList', 'CLOSE_PAREN']
+    ]
+  },
+
+  EmptyList: {
+    productions: [
+      []
     ]
   },
 
@@ -359,6 +365,7 @@ var Grammar = {
       ['(REGEX_LITERAL)'],
       ['(SYMBOL)'],
       ['(REGEX)'],
+      ['Reference'],
       ['PrimitiveLiteralExpression'],
       ['MemberIdentifier'],
       ['ObjectLiteral'],
@@ -367,11 +374,16 @@ var Grammar = {
     ]
   },
 
+  Reference: {
+    productions: [
+      ['(IDENTIFIER)']
+    ]
+  },
+
   PrimitiveLiteralExpression: {
     productions: [
       ['(TRUE)'],
       ['(FALSE)'],
-      ['(IDENTIFIER)'],
       ['(NUMERIC_LITERAL)']
     ]
   },
