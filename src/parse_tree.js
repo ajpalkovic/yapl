@@ -698,16 +698,18 @@
    * Node for an expression that binds the function to some scope with
    * curried arguments.
    */
-  var BindExpression = klass(nodes, Call, {
+  var BindExpression = klass(nodes, Node, {
     initialize: function BindExpression(arguments) {
-      Call.prototype.initialize.call(this, arguments);
+      Node.prototype.initialize.call(this);
+
+      this.arguments = arguments;
     },
 
     toJs: function(context) {
       var emitter = context.getEmitter();
       emitter.e('.bind');
 
-      Call.prototype.toJs.call(this, context);
+      this.arguments.toJs(context);
     }
   });
 

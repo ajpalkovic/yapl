@@ -13,8 +13,6 @@
         context.put(names[i]);
       }
 
-      console.log(context.fields);
-
       parseTree.toJs(context);
 
       return context.getEmitter().flush();
