@@ -168,7 +168,7 @@ var Grammar = {
   ObjectLiteral: {
     productions: [
       ['OPEN_BRACE', 'PropertyList', 'CLOSE_BRACE'],
-      ['OPEN_BRACE', 'CLOSE_BRACE']
+      ['OPEN_BRACE', 'EmptyList', 'CLOSE_BRACE']
     ]
   },
 
@@ -291,7 +291,7 @@ var Grammar = {
 
   MemberExpression:  {
     productions: [
-      ['PrimaryExpressionNoIdentifierReference', 'MemberPart'],
+      ['PrimaryExpression', 'MemberPart'],
       ['PrimaryExpression']
     ]
   },
@@ -361,24 +361,6 @@ var Grammar = {
     productions: [
       ['Expression', 'COMMA', 'ArgumentList'],
       ['Expression']
-    ]
-  },
-
-  PrimaryExpressionNoIdentifierReference:  {
-    productions: [
-      ['(THIS)'],
-      ['(SUPER)'],
-      ['(STRING_LITERAL)'],
-      ['(REGEX_LITERAL)'],
-      ['(SYMBOL)'],
-      ['(REGEX)'],
-      ['Reference'],
-      ['FunctionReference'],
-      ['PrimitiveLiteralExpression'],
-      ['MemberIdentifier'],
-      ['ObjectLiteral'],
-      ['ArrayLiteral'],
-      ['NestedExpression']
     ]
   },
 
@@ -506,7 +488,7 @@ var Grammar = {
   StatementList:  {
     productions: [
       ['Statement', 'StatementList'],
-      ['Statement']
+      []
     ]
   },
 
@@ -625,8 +607,7 @@ var Grammar = {
 
   BlockBody: {
     productions: [
-      ['StatementList'],
-      []
+      ['StatementList']
     ]
   },
 
@@ -757,7 +738,7 @@ var Grammar = {
 
   ReturnStatement: {
     productions: [
-      ['(RETURN)', '(Expression)'],
+      ['(RETURN)', 'Expression'],
       ['(RETURN)']
     ]
   },

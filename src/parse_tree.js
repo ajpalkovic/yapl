@@ -2,6 +2,8 @@
   window.nodes = {};
 
   var THIS = 'this';
+  var METHOD = '<<method>>';
+  var CLASS = '<<class>>';
 
   /**
    * Base node class.
@@ -199,7 +201,11 @@
 
     toJs: function(context) {
       var emitter = context.getEmitter();
-      var constructorDecl = VariableStatement.of(this.className, this.constructor);
+
+      var chain = new MemberPart(new PropertyAccess(this.className));
+      chain.add('this');
+
+      var constructorDecl = new AssignmentExpression(chain, this.constructor);
 
       context.put(this.className.value);
       var classContext = context.subcontext();
@@ -270,6 +276,7 @@
       var emitter = context.getEmitter();
       var classDeclaration = context.lookup(THIS);
       var methodContext = context.subcontext();
+      methodContext.put(METHOD, this);
 
       emitter.e(classDeclaration.getClassName(), '.prototype.', this.getName().value, ' = function(');
       this.getParameters().toJs(methodContext);
@@ -298,6 +305,7 @@
       var emitter = context.getEmitter();
       var classDeclaration = context.lookup(THIS);
       var methodContext = context.subcontext();
+      methodContext.put(METHOD, this);
 
       emitter.e(classDeclaration.getClassName(), '.', this.method.getName().value, ' = function(');
       this.method.getParameters().toJs(methodContext);
@@ -346,10 +354,11 @@
       for (var i = 0; i < elements.length; ++i) {
         var element = elements[i];
 
-        if (typeof element === 'object') {
-          context.put(element.value);
-        } else {
+        if (element.toJs) {
           element.toJs(context);
+        } else {
+          context.put(element.value);
+          emitter.e(element);
         }
       }
     }
@@ -364,6 +373,15 @@
       Node.prototype.initialize.call(this);
 
       this.name = name;
+    },
+
+    // TODO(tjclifton): actually implement this
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+      var method = context.lookup(METHOD);
+      var methodName = method.getName();
+
+      emitter.e(this.name.value);
     }
   });
 
@@ -382,9 +400,9 @@
   /**
    * Node for the body of a function.
    */
-  var FunctionBody = klass(nodes, NodeList, {
+  var FunctionBody = klass(nodes, NewlineNodeList, {
     initialize: function FunctionBody() {
-      NodeList.prototype.initialize.call(this);
+      NewlineNodeList.prototype.initialize.call(this);
     }
   });
 
@@ -394,6 +412,10 @@
   var MemberIdentifier = klass(nodes, NodeList, {
     initialize: function MemberIdentifier(name) {
       this.name = name;
+    },
+
+    toJs: function(context) {
+      context.getEmitter().e('this.', this.name);
     }
   });
 
@@ -405,6 +427,14 @@
       Node.prototype.initialize.call(this);
 
       this.elementList = elementList;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      emitter.e('[');
+      this.elementList.toJs(context);
+      emitter.e(']');
     }
   });
 
@@ -415,10 +445,15 @@
     initialize: function ObjectLiteral(properties) {
       Node.prototype.initialize.call(this);
 
-      // TODO(tjclifton): yea so this shouldn't happen... make the
-      //    grammar better so that we can just expect a blank list,
-      //    not undefined...
-      this.properties = properties || new PropertyList();
+      this.properties = properties;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      emitter.e('{').i().nl();
+      this.properties.toJs(context);
+      emitter.u().nl().e('}');
     }
   });
 
@@ -428,6 +463,21 @@
   var PropertyList = klass(nodes, NodeList, {
     initialize: function PropertyList(firstProperty) {
       NodeList.prototype.initialize.call(this, firstProperty);
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+      var elements = this.getElements();
+
+      for (var i = 0; i < elements.length; ++i) {
+        var element = elements[i];
+
+        element.toJs(context);
+
+        if (i < elements.length - 1) {
+          emitter.e(',').nl();
+        }
+      }
     }
   });
 
@@ -441,6 +491,17 @@
 
       this.name = name;
       this.value = value;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      emitter.e(this.name, ':');
+      if (this.value) {
+        this.value.toJs(context);
+      }
+
+      emitter.e('true');
     }
   });
 
@@ -454,6 +515,22 @@
       this.leftHandSide = leftHandSide;
       this.operator = operator;
       this.rightHandSide = rightHandSide;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      this.leftHandSide.toJs(context);
+      emitter.e(' ');
+
+      if (this.operator.toJs) {
+        this.operator.toJs(context);
+      } else {
+        emitter.e(this.operator);
+      }
+
+      emitter.e(' ');
+      this.rightHandSide.toJs(context);
     }
   });
 
@@ -476,6 +553,16 @@
       this.condition = condition;
       this.trueValue = trueValue;
       this.falseValue = falseValue;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      this.condition.toJs(context);
+      emitter.e('?');
+      this.trueValue.toJs(context);
+      emitter.e(':');
+      this.falseValue.toJs(context);
     }
   });
 
@@ -506,6 +593,13 @@
 
       this.operator = operator;
       this.value = value;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      emitter.e(this.operator);
+      this.value.toJs(context);
     }
   });
 
@@ -529,6 +623,13 @@
 
       this.operator = operator;
       this.value = value;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      this.value.toJs(context);
+      emitter.e(this.operator);
     }
   });
 
@@ -540,6 +641,13 @@
       Node.prototype.initialize.call(this);
 
       this.value = value;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      emitter.e('new ');
+      this.value.toJs(context);
     }
   });
 
@@ -563,7 +671,7 @@
     },
 
     toJs: function(context) {
-      context.getEmitter().e('.', this.name.value);
+      context.getEmitter().e('.', this.name);
     },
   });
 
@@ -593,6 +701,13 @@
   var BindExpression = klass(nodes, Call, {
     initialize: function BindExpression(arguments) {
       Call.prototype.initialize.call(this, arguments);
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+      emitter.e('.bind');
+
+      Call.prototype.toJs.call(this, context);
     }
   });
 
@@ -604,6 +719,14 @@
       Node.prototype.initialize.call(this);
 
       this.index = index;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      emitter.e('[');
+      this.index.toJs(context);
+      emitter.e(']');
     }
   });
 
@@ -624,6 +747,11 @@
       Node.prototype.initialize.call(this);
 
       this.value = value;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+      emitter.e(this.value);
     }
   });
 
@@ -638,7 +766,8 @@
     },
 
     toJs: function(context) {
-      context.getEmitter().e(this.value);
+      var emitter = context.getEmitter();
+      emitter.e(this.value);
     }
   });
 
@@ -658,10 +787,7 @@
 
     toJs: function(context) {
       var node = context.lookup(this.name.value);
-      if (node) {
-        context.getEmitter().e(this.name.value);
-        return;
-      }
+      if (node) return;
 
       throw new errors.ReferenceError(this.name.line, this.name.value);
     }
@@ -701,7 +827,7 @@
     toJs: function(context) {
       Reference.prototype.toJs.call(this, context);
 
-      context.getEmitter().e(this.name.value);
+      context.getEmitter().e(this.name);
     }
   });
 
@@ -741,7 +867,11 @@
     },
 
     toJs: function(context) {
-      context.getEmitter().e('var ', this.variableDeclarationList.toJs.bind(this.variableDeclarationList, context));    }
+      var emitter = context.getEmitter();
+
+      emitter.e('var ');
+      this.variableDeclarationList.toJs(context);
+    }
   });
 
   /**
@@ -776,7 +906,7 @@
 
     toJs: function(context) {
       context.getEmitter().e(this.name, ' = ', this.value.toJs.bind(this.value, context));
-      context.put(this.name);
+      context.put(this.name.value);
     }
   });
 
@@ -793,6 +923,21 @@
       this.ifBody = args.shift();
       this.elseIfList = args.shift();
       this.elseBody = args.shift();
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      emitter.e('if (');
+      this.condition.toJs(context);
+      emitter.e(') {').i().nl();
+
+      this.ifBody.toJs(context);
+
+      emitter.u().nl().e('}');
+
+      if (this.elseIfList) this.elseIfList.toJs(context);
+      if (this.elseBody) this.elseBody.toJs(context);
     }
   });
 
@@ -832,18 +977,30 @@
       Node.prototype.initialize.call(this);
 
       this.body = body;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      emitter.e(' else {').i().nl();
+      this.body.toJs(context);
+      emitter.u().nl().e('}');
     }
   });
 
   /**
    * Node that represents an else-if case of an if-statement.
    */
-  var ElseIf = klass(nodes, Node, {
+  var ElseIf = klass(nodes, IfStatement, {
     initialize: function ElseIf(condition, body) {
-      Node.prototype.initialize.call(this);
+      IfStatement.prototype.initialize.call(this, condition, body);
+    },
 
-      this.condition = condition;
-      this.body = body;
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+      emitter.e(' else ');
+
+      IfStatement.prototype.toJs.call(this, context);
     }
   });
 
@@ -856,6 +1013,18 @@
 
       this.condition = condition;
       this.body = body;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      emitter.e('while (');
+      this.condition.toJs(context);
+      emitter.e(') {').i().nl();
+
+      this.body.toJs(context);
+
+      emitter.u().nl().e('}');
     }
   });
 
@@ -866,18 +1035,6 @@
     initialize: function UntilLoop(condition, body) {
       var negatedCondition = new UnaryExpression('!', condition);
       WhileLoop.prototype.initialize.call(this, negatedCondition, body);
-    }
-  });
-
-  /**
-   * Node that represents a for-loop with varying types of structure.
-   */
-  var ForLoop = klass(nodes, Node, {
-    initialize: function ForLoop(structure, body) {
-      Node.prototype.initialize.call(this);
-
-      this.structure = structure;
-      this.body = body;
     }
   });
 
@@ -938,6 +1095,13 @@
 
       this.keyword = keyword;
       this.value = value;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      emitter.e(this.keyword, ' ');
+      if (this.value) this.value.toJs(context);
     }
   });
 

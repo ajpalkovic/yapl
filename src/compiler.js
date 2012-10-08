@@ -6,6 +6,15 @@
 
     toJs: function(parseTree) {
       var context = new CompileContext(this.emitter);
+
+      // Just so we can use global things in JS.
+      var names = Object.getOwnPropertyNames(window);
+      for (var i = 0; i < names.length; ++i) {
+        context.put(names[i]);
+      }
+
+      console.log(context.fields);
+
       parseTree.toJs(context);
 
       return context.getEmitter().flush();

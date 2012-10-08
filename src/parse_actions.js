@@ -126,7 +126,6 @@
       UntilLoop: node(UntilLoop),
       // DoWhileLoop: node(DoWhileLoop),
       // DoUntilLoop: node(DoUntilLoop),
-      ForLoop: node(ForLoop),
       StandardForStructure: node(StandardForStructure),
       ForInStructure: node(ForInStructure),
       MultipleForInStructure: node(MultipleForInStructure),
