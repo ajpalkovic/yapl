@@ -17,8 +17,15 @@ var Grammar = {
 
   ClassDeclaration: {
     productions: [
-      ['CLASS', '(IDENTIFIER)', 'EXTENDS', 'MemberExpression', 'NEWLINE', 'ClassBody', 'END'],
+      ['CLASS', '(IDENTIFIER)', 'EXTENDS', 'ParentClass', 'NEWLINE', 'ClassBody', 'END'],
       ['CLASS', '(IDENTIFIER)', 'NEWLINE', 'ClassBody', 'END']
+    ]
+  },
+
+  ParentClass: {
+    productions: [
+      ['Reference', 'DOT', 'ParentClass'],
+      ['Reference']
     ]
   },
 
@@ -284,7 +291,7 @@ var Grammar = {
 
   MemberExpression:  {
     productions: [
-      ['PrimaryExpression', 'MemberPart'],
+      ['PrimaryExpressionNoIdentifierReference', 'MemberPart'],
       ['PrimaryExpression']
     ]
   },
@@ -307,7 +314,7 @@ var Grammar = {
 
   Call: {
     productions: [
-      ['OPEN_PAREN', 'CLOSE_PAREN'],
+      ['OPEN_PAREN', 'EmptyList', 'CLOSE_PAREN'],
       ['OPEN_PAREN', 'ArgumentList', 'CLOSE_PAREN'],
       ['ArgumentList']
     ],
@@ -340,7 +347,7 @@ var Grammar = {
 
   BindExpression:  {
     productions: [
-      ['BIND', 'Arguments']
+      ['BIND', 'Call']
     ]
   },
 
@@ -357,7 +364,7 @@ var Grammar = {
     ]
   },
 
-  PrimaryExpression:  {
+  PrimaryExpressionNoIdentifierReference:  {
     productions: [
       ['(THIS)'],
       ['(SUPER)'],
@@ -366,6 +373,25 @@ var Grammar = {
       ['(SYMBOL)'],
       ['(REGEX)'],
       ['Reference'],
+      ['FunctionReference'],
+      ['PrimitiveLiteralExpression'],
+      ['MemberIdentifier'],
+      ['ObjectLiteral'],
+      ['ArrayLiteral'],
+      ['NestedExpression']
+    ]
+  },
+
+  PrimaryExpression:  {
+    productions: [
+      ['(THIS)'],
+      ['(SUPER)'],
+      ['(STRING_LITERAL)'],
+      ['(REGEX_LITERAL)'],
+      ['(SYMBOL)'],
+      ['(REGEX)'],
+      ['IdentifierReference'],
+      ['FunctionReference'],
       ['PrimitiveLiteralExpression'],
       ['MemberIdentifier'],
       ['ObjectLiteral'],
@@ -377,6 +403,18 @@ var Grammar = {
   Reference: {
     productions: [
       ['(IDENTIFIER)']
+    ]
+  },
+
+  IdentifierReference: {
+    productions: [
+      ['(IDENTIFIER)']
+    ]
+  },
+
+  FunctionReference: {
+    productions: [
+      ['BITWISE_AND', '(IDENTIFIER)']
     ]
   },
 
@@ -826,3 +864,4 @@ var Grammar = {
     ]
   }
 };
+

@@ -1,6 +1,8 @@
 !function($) {
   window.nodes = {};
 
+  var THIS = 'this';
+
   /**
    * Base node class.
    */
@@ -38,7 +40,7 @@
         if (element.toJs) {
           element.toJs(context);
         } else {
-          emitter.e(element);
+          context.getEmitter().e(element);
         }
       }
     },
@@ -108,11 +110,37 @@
   });
 
   /**
+   * Node class for any node that is 'callable'.
+   */
+
+  var Callable = klass(nodes, Node, {
+    initialize: function Callable(name, parameters, body) {
+      Node.prototype.initialize.call(this);
+
+      this.name = name;
+      this.parameters = parameters;
+      this.body = body;
+    },
+
+    getName: function() {
+      return this.name;
+    },
+
+    getParameters: function() {
+      return this.parameters;
+    },
+
+    getBody: function() {
+      return this.body;
+    }
+  });
+
+  /**
    * Node for the entire program.
    */
-  var Program = klass(nodes, NodeList, {
+  var Program = klass(nodes, NewlineNodeList, {
     initialize: function Program() {
-      NodeList.prototype.initialize.call(this);
+      NewlineNodeList.prototype.initialize.call(this);
     }
   });
 
@@ -132,8 +160,11 @@
       this.parentClass = parentClass;
       this.body = body;
 
-      this.constructor = new FunctionDeclaration(this.className, new ParameterList(), new FunctionBody());
+      this.constructor = TerminatedStatement.of(
+        new FunctionDeclaration(this.className, new ParameterList(), new FunctionBody()));
+
       this.methods = this.__extractAll(Method);
+      this.staticMethods = this.__extractAll(StaticMethod);
       this.instanceVars = this.__extractAll(VariableStatement);
 
       // Find the constructor if there is one.
@@ -170,15 +201,17 @@
       var emitter = context.getEmitter();
       var constructorDecl = VariableStatement.of(this.className, this.constructor);
 
+      context.put(this.className.value);
       var classContext = context.subcontext();
-      classContext.put(this.className);
 
       emitter.e('!function() {').nl().i();
       this.body.toJs(classContext);
 
-      classContext.put('this', this);
-      constructorDecl.toJs(classContext);
+      classContext.put(THIS, this);
+
+      this.methods.add(constructorDecl);
       this.methods.toJs(classContext);
+      this.staticMethods.toJs(classContext);
 
       emitter.u().e('}();');
     }
@@ -196,21 +229,17 @@
   /**
    * Node for a function declaration (within or outside of a class).
    */
-  var FunctionDeclaration = klass(nodes, Node, {
+  var FunctionDeclaration = klass(nodes, Callable, {
     initialize: function FunctionDeclaration(name, parameters, body) {
-      Node.prototype.initialize.call(this);
-
-      this.name = name;
-      this.parameters = parameters;
-      this.body = body;
+      Callable.prototype.initialize.call(this, name, parameters, body);
     },
 
     toJs: function(context) {
       var emitter = context.getEmitter();
-      emitter.e('function ', this.name, '(', this.parameters.toJs.bind(this.parameters, context), ') {').nl().i();
+      emitter.e('function ', this.getName(), '(', this.getParameters().toJs.bind(this.parameters, context), ') {').nl().i();
 
-      context.put(this.name.value, this);
-      this.body.toJs(context.subcontext());
+      context.put(this.getName().value, this);
+      this.getBody().toJs(context.subcontext());
 
       emitter.u().nl().e('}');
     }
@@ -230,24 +259,23 @@
   /**
    * Node that represents a method of a class.
    */
-  var Method = klass(nodes, Node, {
+  var Method = klass(nodes, Callable, {
     initialize: function Method(name, parameters, body) {
-      this.name = name;
-      this.parameters = parameters;
-      this.body = body;
+      Callable.prototype.initialize.call(this, name, parameters, body);
     },
 
     toJs: function(context) {
+      context.put(this.getName());
+
       var emitter = context.getEmitter();
-      var classDeclaration = context.lookup('this');
+      var classDeclaration = context.lookup(THIS);
       var methodContext = context.subcontext();
 
-      emitter.e(classDeclaration.getClassName(), '.prototype.', this.name, ' = function(');
-      this.parameters.toJs(methodContext);
+      emitter.e(classDeclaration.getClassName(), '.prototype.', this.getName().value, ' = function(');
+      this.getParameters().toJs(methodContext);
       emitter.e(') {').i().nl();
 
-      methodContext.put(this.name.value);
-      this.body.toJs(methodContext);
+      this.getBody().toJs(methodContext);
 
       emitter.u().nl().e('};');
     }
@@ -257,11 +285,27 @@
    * Node for a method that won't be placed on the prototype of the
    * JS function, but on the function itself.
    */
-  var StaticMethod = klass(nodes, Node, {
+  var StaticMethod = klass(nodes, Callable, {
     initialize: function StaticMethod(method) {
-      Node.prototype.initialize.call(this);
+      Callable.prototype.initialize.call(this);
 
       this.method = method;
+    },
+
+    toJs: function(context) {
+      context.put(this.getName());
+
+      var emitter = context.getEmitter();
+      var classDeclaration = context.lookup(THIS);
+      var methodContext = context.subcontext();
+
+      emitter.e(classDeclaration.getClassName(), '.', this.method.getName().value, ' = function(');
+      this.method.getParameters().toJs(methodContext);
+      emitter.e(') {').i().nl();
+
+      this.method.getBody().toJs(methodContext);
+
+      emitter.u().nl().e('};');
     }
   });
 
@@ -500,17 +544,6 @@
   });
 
   /**
-   * Node that represents some form of expression with chaining.
-   */
-  var MemberExpression = klass(nodes, Node, {
-    initialize: function MemberExpression(memberChain) {
-      Node.prototype.initialize.call(this);
-
-      this.memberChain = memberChain;
-    }
-  });
-
-  /**
    * Node that represents a chain of members.
    */
   var MemberPart = klass(nodes, NodeList, {
@@ -527,7 +560,11 @@
       Node.prototype.initialize.call(this);
 
       this.name = name;
-    }
+    },
+
+    toJs: function(context) {
+      context.getEmitter().e('.', this.name.value);
+    },
   });
 
   /**
@@ -537,7 +574,15 @@
     initialize: function Call(arguments) {
       Node.prototype.initialize.call(this);
 
-      this.arguments = arguments || new ArgumentList();
+      this.arguments = arguments;
+    },
+
+    toJs: function(context) {
+      var emitter = context.getEmitter();
+
+      emitter.e('(');
+      this.arguments.toJs(context);
+      emitter.e(')');
     }
   });
 
@@ -602,11 +647,59 @@
    */
   var Reference = klass(nodes, Node, {
     initialize: function Reference(name) {
+      Node.prototype.initialize.call(this);
+
       this.name = name;
     },
 
+    getName: function() {
+      return this.name
+    },
+
     toJs: function(context) {
-      if (!context.lookup(this.name.value)) throw new errors.ReferenceError(this.name.line, this.name.value);
+      var node = context.lookup(this.name.value);
+      if (node) {
+        context.getEmitter().e(this.name.value);
+        return;
+      }
+
+      throw new errors.ReferenceError(this.name.line, this.name.value);
+    }
+  });
+
+  /**
+   * Node for identifiers that are primary expressions that need to be converted to
+   * call expressions if necessary.
+   */
+  var IdentifierReference = klass(nodes, Reference, {
+    initialize: function IdentifierReference(name) {
+      Reference.prototype.initialize.call(this, name);
+    },
+
+    toJs: function(context) {
+      Reference.prototype.toJs.call(this, context);
+
+      var node = context.lookup(this.getName());
+      if (node instanceof Callable) {
+        var chain = new MemberPart(new Call(new NodeList()));
+        chain.add(node.getName());
+        chain.toJs(context);
+      } else {
+        context.getEmitter().e(this.getName());
+      }
+    }
+  });
+
+  /**
+   * Node that encompasses a first-class use of a function by its name.
+   */
+  var FunctionReference = klass(nodes, Reference, {
+    initialize: function FunctionReference(name) {
+      Reference.prototype.initialize.call(this, name);
+    },
+
+    toJs: function(context) {
+      Reference.prototype.toJs.call(this, context);
 
       context.getEmitter().e(this.name.value);
     }
@@ -616,30 +709,39 @@
    * Node for a statement that ends in a statement-terminating character.
    */
   var TerminatedStatement = klass(nodes, Node, {
-    initialize: function TerminatedStatement() {
+    initialize: function TerminatedStatement(statement) {
       Node.prototype.initialize.call(this);
+
+      this.statement = statement;
     },
 
     toJs: function(context) {
-      context.getEmitter().e(';').nl();
+      if (!this.statement) {
+        context.getEmitter().nl();
+        return;
+      }
+
+      this.statement.toJs(context);
+      context.getEmitter().e(';');
     }
   });
+
+  TerminatedStatement.of = function(statement) {
+    return new TerminatedStatement(statement);
+  };
 
   /**
    * Node for a statement that declares a variable.
    */
-  var VariableStatement = klass(nodes, TerminatedStatement, {
+  var VariableStatement = klass(nodes, Node, {
     initialize: function VariableStatement(variableDeclarationList) {
-      TerminatedStatement.prototype.initialize.call(this);
+      Node.prototype.initialize.call(this);
 
       this.variableDeclarationList = variableDeclarationList;
     },
 
     toJs: function(context) {
-      context.getEmitter().e('var ', this.variableDeclarationList.toJs.bind(this.variableDeclarationList, context));
-
-      TerminatedStatement.prototype.toJs.call(this, context);
-    }
+      context.getEmitter().e('var ', this.variableDeclarationList.toJs.bind(this.variableDeclarationList, context));    }
   });
 
   /**

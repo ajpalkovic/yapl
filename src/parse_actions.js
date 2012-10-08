@@ -86,7 +86,7 @@
         return primaryExpression
       }, function(primaryExpression, memberPart) {
         memberPart.add(primaryExpression);
-        return new MemberExpression(memberPart);
+        return memberPart;
       }),
 
       MemberPart: list(MemberPart),
@@ -96,8 +96,11 @@
       Call: node(Call),
       ArgumentList: list(ArgumentList),
       Reference: node(Reference),
+      IdentifierReference: node(IdentifierReference),
+      FunctionReference: node(FunctionReference),
       PrimitiveLiteralExpression: node(PrimitiveLiteralExpression),
       Operator: node(Operator),
+      TerminatedStatement: node(TerminatedStatement),
       StatementList: list(NodeList),
 
       // EndSt: {
