@@ -17,7 +17,7 @@
     },
 
     toJs: function(context) {
-      context.getEmitter().e('<<"', this.constructor.name, '" has no toJs>>');
+      context.e('<<"', this.constructor.name, '" has no toJs>>');
     }
   });
 
@@ -35,20 +35,16 @@
       this.elements.prepend(element);
     },
 
+    getElements: function() {
+      return this.elements;
+    },
+
     toJs: function(context) {
       for (var i = 0; i < this.elements.length; ++i) {
         var element = this.elements[i];
 
-        if (element.toJs) {
-          element.toJs(context);
-        } else {
-          context.getEmitter().e(element);
-        }
+        context.e(element);
       }
-    },
-
-    getElements: function() {
-      return this.elements;
     }
   });
 
@@ -64,18 +60,13 @@
 
     toJs: function(context) {
       var elements = this.getElements();
-      var emitter = context.getEmitter();
 
       for (var i = 0; i < elements.length; ++i) {
         var element = elements[i];
 
-        if (element.toJs) {
-          element.toJs(context);
-        } else {
-          emitter.e(element);
-        }
+        context.e(element);
 
-        if (i < elements.length - 1) emitter.e(this.delimiter);
+        if (i < elements.length - 1) context.e(this.delimiter);
       }
     }
   });
@@ -95,18 +86,13 @@
 
     toJs: function(context) {
       var elements = this.getElements();
-      var emitter = context.getEmitter();
 
       for (var i = 0; i < elements.length; ++i) {
         var element = elements[i];
 
-        if (element.toJs) {
-          element.toJs(context);
-        } else {
-          emitter.e(element);
-        }
+        context.e(element);
 
-        emitter.nl();
+        if (i < elements.length - 1) context.e().nl();
       }
     }
   });
@@ -150,7 +136,7 @@
    * Node for a class declaration.
    */
   var ClassDeclaration = klass(nodes, Node, {
-    initialize: function ClassDeclaration(className, parentClass, body) {
+    initialize: function ClassDeclaration(name, parentClass, body) {
       Node.prototype.initialize.call(this);
 
       if (!body) {
@@ -158,21 +144,27 @@
         parentClass = undefined;
       }
 
-      this.className = className;
+      this.name = name;
       this.parentClass = parentClass;
       this.body = body;
 
       this.constructor = TerminatedStatement.of(
-        new FunctionDeclaration(this.className, new ParameterList(), new FunctionBody()));
+        new FunctionDeclaration(this.name, new ParameterList(), new FunctionBody()));
 
       this.methods = this.__extractAll(Method);
       this.staticMethods = this.__extractAll(StaticMethod);
       this.instanceVars = this.__extractAll(VariableStatement);
 
       // Find the constructor if there is one.
-      for (var i = 0; i < this.methods.length; ++i) {
-        if (this.methods[i].name == this.className) {
-          this.constructor = this.methods[i];
+      var elements = this.methods.getElements();
+
+      for (var i = 0; i < elements.length; ++i) {
+        if (elements[i].name.value === this.name.value) {
+          var constructorMethod = elements.splice(i, 1)[0];
+
+          this.constructor.statement.parameters = constructorMethod.getParameters();
+          this.constructor.statement.body = constructorMethod.getBody();
+
           break;
         }
       }
@@ -195,31 +187,21 @@
       return extractedElements;
     },
 
-    getClassName: function() {
-      return this.className;
-    },
-
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      var chain = new MemberPart(new PropertyAccess(this.className));
+      var chain = new MemberPart(new PropertyAccess(this.name));
       chain.add('this');
 
       var constructorDecl = new AssignmentExpression(chain, this.constructor);
-
-      context.put(this.className.value);
-      var classContext = context.subcontext();
-
-      emitter.e('!function() {').nl().i();
-      this.body.toJs(classContext);
-
-      classContext.put(THIS, this);
-
       this.methods.add(constructorDecl);
-      this.methods.toJs(classContext);
-      this.staticMethods.toJs(classContext);
 
-      emitter.u().e('}();');
+      var newContext = context.subcontext();
+      newContext.classContext = this;
+
+      newContext.e('!function() {').blk()
+        .e(this.body)
+        .e(this.methods)
+        .e(this.staticMethods)
+      .end().e('}();');
     }
   });
 
@@ -241,13 +223,9 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-      emitter.e('function ', this.getName(), '(', this.getParameters().toJs.bind(this.parameters, context), ') {').nl().i();
-
-      context.put(this.getName().value, this);
-      this.getBody().toJs(context.subcontext());
-
-      emitter.u().nl().e('}');
+      context.e('function ', this.getName(), '(', this.parameters, ') {').blk()
+        .e(this.getBody())
+      .end().e('}');
     }
   });
 
@@ -271,20 +249,11 @@
     },
 
     toJs: function(context) {
-      context.put(this.getName());
+      var classDecl = context.classContext;
 
-      var emitter = context.getEmitter();
-      var classDeclaration = context.lookup(THIS);
-      var methodContext = context.subcontext();
-      methodContext.put(METHOD, this);
-
-      emitter.e(classDeclaration.getClassName(), '.prototype.', this.getName().value, ' = function(');
-      this.getParameters().toJs(methodContext);
-      emitter.e(') {').i().nl();
-
-      this.getBody().toJs(methodContext);
-
-      emitter.u().nl().e('};');
+      context.e(classDecl.name,'.prototype.', this.getName(), ' = function(', this.getParameters(), ') {').blk()
+        .e(this.getBody())
+      .end().e('};');
     }
   });
 
@@ -300,20 +269,15 @@
     },
 
     toJs: function(context) {
-      context.put(this.getName());
+      var classDecl = context.classContext;
+      var name = this.method.getName();
+      var parameters = this.method.getParameters();
+      var body = this.method.getBody();
 
-      var emitter = context.getEmitter();
-      var classDeclaration = context.lookup(THIS);
-      var methodContext = context.subcontext();
-      methodContext.put(METHOD, this);
 
-      emitter.e(classDeclaration.getClassName(), '.', this.method.getName().value, ' = function(');
-      this.method.getParameters().toJs(methodContext);
-      emitter.e(') {').i().nl();
-
-      this.method.getBody().toJs(methodContext);
-
-      emitter.u().nl().e('};');
+      context.e(classDecl.name, '.', name, ' = function(', parameters, ') {').blk()
+        .e(body)
+      .end().e('};');
     }
   });
 
@@ -349,17 +313,11 @@
 
     toJs: function(context) {
       var elements = this.getElements();
-      var emitter = context.getEmitter();
 
       for (var i = 0; i < elements.length; ++i) {
         var element = elements[i];
 
-        if (element.toJs) {
-          element.toJs(context);
-        } else {
-          context.put(element.value);
-          emitter.e(element);
-        }
+        context.e(element);
       }
     }
   });
@@ -373,15 +331,6 @@
       Node.prototype.initialize.call(this);
 
       this.name = name;
-    },
-
-    // TODO(tjclifton): actually implement this
-    toJs: function(context) {
-      var emitter = context.getEmitter();
-      var method = context.lookup(METHOD);
-      var methodName = method.getName();
-
-      emitter.e(this.name.value);
     }
   });
 
@@ -415,7 +364,7 @@
     },
 
     toJs: function(context) {
-      context.getEmitter().e('this.', this.name);
+      context.e('this.', this.name);
     }
   });
 
@@ -430,11 +379,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      emitter.e('[');
-      this.elementList.toJs(context);
-      emitter.e(']');
+      context.e('[', this.elementList, ']');
     }
   });
 
@@ -449,11 +394,9 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      emitter.e('{').i().nl();
-      this.properties.toJs(context);
-      emitter.u().nl().e('}');
+      context.e('{').blk()
+        .e(this.properties)
+      .end().e('}');
     }
   });
 
@@ -466,7 +409,6 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
       var elements = this.getElements();
 
       for (var i = 0; i < elements.length; ++i) {
@@ -474,9 +416,7 @@
 
         element.toJs(context);
 
-        if (i < elements.length - 1) {
-          emitter.e(',').nl();
-        }
+        if (i < elements.length - 1) context.e(',').nl();
       }
     }
   });
@@ -494,14 +434,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      emitter.e(this.name, ':');
-      if (this.value) {
-        this.value.toJs(context);
-      }
-
-      emitter.e('true');
+      context.e(this.name, ':', this.value || 'true');
     }
   });
 
@@ -518,19 +451,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      this.leftHandSide.toJs(context);
-      emitter.e(' ');
-
-      if (this.operator.toJs) {
-        this.operator.toJs(context);
-      } else {
-        emitter.e(this.operator);
-      }
-
-      emitter.e(' ');
-      this.rightHandSide.toJs(context);
+      context.e(this.leftHandSide, ' ', this.operator, ' ', this.rightHandSide);
     }
   });
 
@@ -556,13 +477,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      this.condition.toJs(context);
-      emitter.e('?');
-      this.trueValue.toJs(context);
-      emitter.e(':');
-      this.falseValue.toJs(context);
+      context.e(this.condition, ' ? ', this.trueValue, ' : ', this.falseValue);
     }
   });
 
@@ -596,10 +511,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      emitter.e(this.operator);
-      this.value.toJs(context);
+      context.e(this.operator, this.value);
     }
   });
 
@@ -626,10 +538,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      this.value.toJs(context);
-      emitter.e(this.operator);
+      context.e(this.value, this.operator);
     }
   });
 
@@ -644,10 +553,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      emitter.e('new ');
-      this.value.toJs(context);
+      context.e('new ', this.value);
     }
   });
 
@@ -657,6 +563,19 @@
   var MemberPart = klass(nodes, NodeList, {
     initialize: function MemberPart(firstMember) {
       NodeList.prototype.initialize.call(this, firstMember);
+    },
+
+    toJs: function(context) {
+      var elements = this.getElements();
+      var memberContext = context;
+
+      for (var i = 0; i < elements.length; ++i) {
+        var element = elements[i];
+        memberContext = memberContext.subcontext();
+
+        memberContext.e(element);
+        memberContext.previousNode = memberContext.previousNode || element;
+      }
     }
   });
 
@@ -671,7 +590,7 @@
     },
 
     toJs: function(context) {
-      context.getEmitter().e('.', this.name);
+      context.e('.', this.name);
     },
   });
 
@@ -686,11 +605,30 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
+      context.e('(', this.arguments, ')');
+    }
+  });
 
-      emitter.e('(');
-      this.arguments.toJs(context);
-      emitter.e(')');
+  /**
+   * Node for loading a series of property lookups "safely" i.e., short circuiting to false
+   * if one of the properties in the chain is undefined.
+   */
+  var ConditionalLoad = klass(nodes, Node, {
+    initialize: function ConditionalLoad(propertyName) {
+      Node.prototype.initialize.call(this, propertyName);
+
+      this.propertyName = propertyName;
+    },
+
+    toJs: function(context) {
+      var previous = context.previousNode;
+
+      var chain = new MemberPart(new PropertyAccess(this.propertyName));
+      chain.add(previous);
+
+      context.previousNode = chain;
+
+      context.e(' && ', chain);
     }
   });
 
@@ -706,10 +644,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-      emitter.e('.bind');
-
-      this.arguments.toJs(context);
+      context.e('.bind', this.arguments);
     }
   });
 
@@ -724,11 +659,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      emitter.e('[');
-      this.index.toJs(context);
-      emitter.e(']');
+      context.e('[', this.index, ']');
     }
   });
 
@@ -752,8 +683,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-      emitter.e(this.value);
+      context.e(this.value);
     }
   });
 
@@ -768,8 +698,22 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-      emitter.e(this.value);
+      context.e(this.value);
+    }
+  });
+
+  /**
+   * Node for an expression surrounded by parentheses.
+   */
+  var NestedExpression = klass(nodes, Node, {
+    initialize: function NestedExpression(expression) {
+      Node.prototype.initialize.call(this);
+
+      this.expression = expression;
+    },
+
+    toJs: function(context) {
+      context.e('(', this.expression, ')');
     }
   });
 
@@ -788,10 +732,7 @@
     },
 
     toJs: function(context) {
-      var node = context.lookup(this.name.value);
-      if (node) return;
-
-      throw new errors.ReferenceError(this.name.line, this.name.value);
+      context.e(this.name);
     }
   });
 
@@ -807,14 +748,14 @@
     toJs: function(context) {
       Reference.prototype.toJs.call(this, context);
 
-      var node = context.lookup(this.getName());
-      if (node instanceof Callable) {
-        var chain = new MemberPart(new Call(new NodeList()));
-        chain.add(node.getName());
-        chain.toJs(context);
-      } else {
-        context.getEmitter().e(this.getName());
-      }
+      // var node = context.lookup(this.getName());
+      // if (node instanceof Callable) {
+      //   var chain = new MemberPart(new Call(new NodeList()));
+      //   chain.add(node.getName());
+      //   chain.toJs(context);
+      // } else {
+      //   context.getEmitter().e(this.getName());
+      // }
     }
   });
 
@@ -828,8 +769,6 @@
 
     toJs: function(context) {
       Reference.prototype.toJs.call(this, context);
-
-      context.getEmitter().e(this.name);
     }
   });
 
@@ -844,19 +783,22 @@
     },
 
     toJs: function(context) {
-      if (!this.statement) {
-        context.getEmitter().nl();
-        return;
-      }
-
-      this.statement.toJs(context);
-      context.getEmitter().e(';');
+      context.e(this.statement, ';');
     }
   });
 
   TerminatedStatement.of = function(statement) {
     return new TerminatedStatement(statement);
   };
+
+  /**
+   * Node for a blank statement.
+   */
+  var EmptyStatement = klass(nodes, Node, {
+    initialize: function EmptyStatement() {},
+
+    toJs: function(context) {}
+  });
 
   /**
    * Node for a statement that declares a variable.
@@ -869,10 +811,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      emitter.e('var ');
-      this.variableDeclarationList.toJs(context);
+      context.e('var ', this.variableDeclarationList);
     }
   });
 
@@ -907,8 +846,7 @@
     },
 
     toJs: function(context) {
-      context.getEmitter().e(this.name, ' = ', this.value.toJs.bind(this.value, context));
-      context.put(this.name.value);
+      context.e(this.name, ' = ', this.value);
     }
   });
 
@@ -928,18 +866,11 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      emitter.e('if (');
-      this.condition.toJs(context);
-      emitter.e(') {').i().nl();
-
-      this.ifBody.toJs(context);
-
-      emitter.u().nl().e('}');
-
-      if (this.elseIfList) this.elseIfList.toJs(context);
-      if (this.elseBody) this.elseBody.toJs(context);
+      context.e('if (', this.condition, ') {').blk()
+        .e(this.ifBody)
+      .end().e('}')
+        .e(this.elseIfList)
+        .e(this.elseBody);
     }
   });
 
@@ -982,11 +913,9 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      emitter.e(' else {').i().nl();
-      this.body.toJs(context);
-      emitter.u().nl().e('}');
+      context.e(' else {').blk()
+        .e(this.body)
+      .end().e('}');
     }
   });
 
@@ -999,8 +928,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-      emitter.e(' else ');
+      context.e(' else ');
 
       IfStatement.prototype.toJs.call(this, context);
     }
@@ -1018,15 +946,9 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      emitter.e('while (');
-      this.condition.toJs(context);
-      emitter.e(') {').i().nl();
-
-      this.body.toJs(context);
-
-      emitter.u().nl().e('}');
+      context.e('while (', this.condition, ') {').blk()
+        .e(this.body)
+      .end().e('}');
     }
   });
 
@@ -1100,10 +1022,7 @@
     },
 
     toJs: function(context) {
-      var emitter = context.getEmitter();
-
-      emitter.e(this.keyword, ' ');
-      if (this.value) this.value.toJs(context);
+      context.e(this.keyword, ' ', this.value);
     }
   });
 

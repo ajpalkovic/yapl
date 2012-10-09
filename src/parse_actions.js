@@ -93,15 +93,18 @@
       PropertyAccess: node(PropertyAccess),
       BindExpression: node(BindExpression),
       ArrayDereference: node(ArrayDereference),
+      ConditionalLoad: node(ConditionalLoad),
       Call: node(Call),
       ArgumentList: list(ArgumentList),
       Reference: node(Reference),
       IdentifierReference: node(IdentifierReference),
       FunctionReference: node(FunctionReference),
       PrimitiveLiteralExpression: node(PrimitiveLiteralExpression),
+      NestedExpression: node(NestedExpression),
       Operator: node(Operator),
       TerminatedStatement: node(TerminatedStatement),
       StatementList: list(NodeList),
+      EmptyStatement: node(EmptyStatement),
 
       // EndSt: {
       //   onParse: function(type) {

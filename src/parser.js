@@ -45,8 +45,16 @@
       // is in the lookahead map positively, then we have fufilled the lookahead condition.
       // If it is in the map but negatively, then it fails.  If there was not another token in
       // the stream, we can just say it passed and let the later logic handle it.
-      var nextToken = this.lexer.peek();
-      var lookaheadFufilled = !nextToken || (!rule.lookahead || (rule.lookahead[nextToken.type] != false));
+      // We check both the next optional/non-optional tokens so that in case one of the rules wants
+      // to prohibit an optional token, the next optional token won't be skipped.
+      var nextNonOptional = this.lexer.findNext(true);
+      var nextOptional = this.lexer.findNext(false);
+      var lookaheadFufilled = true;
+
+      if (rule.lookahead) {
+        if (nextNonOptional) lookaheadFufilled = rule.lookahead[nextNonOptional.type] !== false;
+        if (nextOptional) lookaheadFufilled = lookaheadFufilled && rule.lookahead[nextOptional.type] !== false;
+      }
 
       // If the lookahead wasn't fufilled, then we consider the parsing a failure.
       var cacheEntry = undefined;
@@ -168,8 +176,14 @@
      * token.
      */
     passesNegativeLookahead: function(negativeToken) {
-      var nextToken = this.lexer.peek();
-      return !nextToken || nextToken.type !== negativeToken;
+      var nextNonOptional = this.lexer.findNext(true);
+      var nextOptional = this.lexer.findNext(false);
+
+      if (nextNonOptional) return nextNonOptional.type !== negativeToken;
+      if (nextOptional) return nextOptional.type !== negativeToken;
+
+      // No more tokens in the lexer.
+      return true
     },
 
     /**
@@ -177,7 +191,7 @@
      */
     error: function() {
       var last = this.lexer.last();
-      throw ['ParseError: Unexpected', last.type, 'at line', last.line + 1].join(' ');
+      throw ['ParseError: Unexpected', last.type, 'at line', last.line].join(' ');
     }
   });
 }(jQuery);

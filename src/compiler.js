@@ -8,14 +8,14 @@
       var context = new CompileContext(this.emitter);
 
       // Just so we can use global things in JS.
-      var names = Object.getOwnPropertyNames(window);
-      for (var i = 0; i < names.length; ++i) {
-        context.put(names[i]);
-      }
+      // var names = Object.getOwnPropertyNames(window);
+      // for (var i = 0; i < names.length; ++i) {
+      //   context.put(names[i]);
+      // }
 
       parseTree.toJs(context);
 
-      return context.getEmitter().flush();
+      return context.emitter.flush();
     },
 
     interpolate: function(string) {
@@ -58,17 +58,25 @@
   });
 
   var Emitter = klass({
-    initialize: function Emitter() {
-      this.outputBuffer = undefined;
-      this.lines = undefined;
-      this.indentLevel = undefined;
-
-      this.reset();
+    initialize: function Emitter(outputBuffer, lines, indentLevel, context) {
+      this.outputBuffer = outputBuffer || [];
+      this.lines = lines || [this.outputBuffer];
+      this.indentLevel = indentLevel || [''];
+      this.context = context;
     },
 
-    e: function(varargs) {
+    fromContext: function(context) {
+      return new Emitter(this.outputBuffer, this.lines, this.indentLevel, context);
+    },
+
+    e: function() {
       for (var i = 0, len = arguments.length; i < len; ++i) {
         if (!arguments[i]) continue;
+
+        if (arguments[i] instanceof nodes.Node) {
+          arguments[i].toJs(this.context);
+          continue;
+        }
 
         switch (typeof arguments[i]) {
           case 'object':
@@ -117,6 +125,18 @@
       return output.join('\n');
     },
 
+    blk: function() {
+      this.i();
+      this.nl();
+      return this;
+    },
+
+    end: function() {
+      this.u();
+      this.nl();
+      return this;
+    },
+
     nl: function() {
       this.outputBuffer = [this.indentLevel.peek()];
       this.lines.push(this.outputBuffer);
@@ -145,34 +165,20 @@
 
   var CompileContext = klass({
     initialize: function CompileContext(emitter, parentContext) {
-      this.emitter = emitter;
+      this.emitter = emitter.fromContext(this);
       this.parentContext = parentContext;
 
-      this.fields = $.extend({}, parentContext && parentContext.getFields());
+      this.classContext = parentContext && parentContext.classContext;
+      this.previousNode = parentContext && parentContext.previousNode;
+    },
+
+    e: function() {
+      this.emitter.e.apply(this.emitter, arguments);
+      return this.emitter;
     },
 
     subcontext: function() {
       return new CompileContext(this.emitter, this);
-    },
-
-    put: function(name, value) {
-      this.fields[name] = value || true;
-    },
-
-    lookup: function(name) {
-      return this.fields[name];
-    },
-
-    getEmitter: function() {
-      return this.emitter;
-    },
-
-    getParentContext: function() {
-      return this.getParentContext;
-    },
-
-    getFields: function() {
-      return this.fields;
     }
   });
 

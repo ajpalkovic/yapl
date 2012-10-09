@@ -10,7 +10,6 @@ var Grammar = {
     productions: [
       ['Statement'],
       ['ClassDeclaration'],
-      ['FunctionDeclaration'],
       ['Closure']
     ]
   },
@@ -243,11 +242,7 @@ var Grammar = {
 
   UnaryExpression: {
     productions: [
-      ['(LOGICAL_NOT)', 'UnaryExpression'],
-      ['(BITWISE_NOT)', 'UnaryExpression'],
-      ['(QUESTION)', 'UnaryExpression'],
-      ['(MINUS)', 'UnaryExpression'],
-      ['(PLUS)', 'UnaryExpression'],
+      ['UnaryOperator', 'UnaryExpression'],
       ['IncrementExpression']
     ]
   },
@@ -307,8 +302,15 @@ var Grammar = {
     productions: [
       ['ArrayDereference'],
       ['PropertyAccess'],
+      ['ConditionalLoad'],
       ['Call'],
       ['BindExpression']
+    ]
+  },
+
+  ConditionalLoad: {
+    productions: [
+      ['QUESTION', 'PrimaryExpression']
     ]
   },
 
@@ -460,7 +462,6 @@ var Grammar = {
     productions: [
       ['(LOGICAL_NOT)'],
       ['(BITWISE_NOT)'],
-      ['(QUESTION)'],
       ['(DELETE)'],
       ['(TYPEOF)'],
       ['(MINUS)'],
@@ -501,7 +502,7 @@ var Grammar = {
 
   TerminatedStatement: {
     productions: [
-      ['SimpleStatement', 'EndSt'],
+      ['SimpleStatementNoFunction', 'EndSt'],
       ['EmptyStatement']
     ]
   },
@@ -519,6 +520,22 @@ var Grammar = {
       ['LabeledStatement'],
       ['TryStatement']
     ]
+  },
+
+  SimpleStatementNoFunction: {
+    productions: [
+      ['VariableStatement'],
+      ['ExpressionStatement'],
+      ['BreakStatement'],
+      ['ReturnStatement'],
+      ['ContinueStatement'],
+      ['ThrowStatement'],
+      ['DebuggerStatement'],
+    ],
+
+    lookahead: {
+      'FUNCTION': false
+    }
   },
 
   SimpleStatement: {
@@ -550,12 +567,7 @@ var Grammar = {
   ExpressionStatement: {
     productions: [
       ['Expression']
-    ],
-
-    lookahead: {
-      'FUNCTION': false,
-      'CLASS': false
-    }
+    ]
   },
 
   VariableStatement:  {

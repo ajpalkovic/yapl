@@ -12,32 +12,40 @@
     /**
      * Returns the next token in the lexer, and advances it.
      */
-    next: function(newlines) {
+    next: function() {
       this.lastPos = (this.currentPos < this.tokens.length) ?
           Math.max(this.currentPos, this.lastPos) : this.lastPos;
 
-      return this._get(this.currentPos++);
+      return this.get(this.currentPos++);
     },
 
     /**
      * Returns the next token in the lexer, without advancing it.
      */
     peek: function() {
-      return this._get(this.currentPos);
+      return this.get(this.currentPos);
     },
 
     /**
      * Returns the last token the lexer has reached.
      */
     last: function() {
-      return this._get(this.lastPos);
+      return this.get(this.lastPos);
     },
 
     /**
      * Returns the token at the specified index.
      */
-    _get: function(index) {
+    get: function(index) {
       return this.tokens[index];
+    },
+
+    findNext: function(skipOptional) {
+      var current = this.currentPos;
+      var token;
+      while ((token = this.get(current++)) && skipOptional && token.optional);
+
+      return token;
     },
 
     /**
