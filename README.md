@@ -208,3 +208,6 @@ I did a lot over the last week, probably too much to go into in detail.  Here is
   - Changed some syntax around
   - Fixed a bug where line numbers were off by one
   - Added some simple Compile errors with accurate line #s
+
+I still need to write another Compiler pass to process symbols and perform static analysis of the
+parse tree.
