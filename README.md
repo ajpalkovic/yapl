@@ -82,22 +82,22 @@ type 'klass'.  If we take a look at the generic implementation, we can see why:
       function klass() {
         this.initialize.apply(this, arguments);
       }
-      
+
       if (parent) {
         var subclass = function() { };
         subclass.prototype = parent.prototype;
         klass.prototype = new subclass;
       }
-      
+
       for(var name in methods) {
         klass.prototype[name] = methods[name];
       }
-      
+
       klass.prototype.constructor = klass;
-        
+
       if (!klass.prototype.initialize)
         klass.prototype.initialize = function() {};
-      
+
       return klass;
     }
 
@@ -132,7 +132,7 @@ with the same name as the function expression in the `initialize` key.  To do th
     function(namespace, parent, methods) {
       var name = methods.initialize ? methods.initialize.name : 'klass';
       var klass = Function.create(name, [], 'this.initialize.apply(this, arguments);');
-      
+
       namespace[name] = klass;
 
       if (parent) {
@@ -140,34 +140,34 @@ with the same name as the function expression in the `initialize` key.  To do th
         subclass.prototype = parent.prototype;
         klass.prototype = new subclass;
       }
-      
+
       for(var name in methods) {
         klass.prototype[name] = methods[name];
       }
-      
+
       klass.prototype.constructor = klass;
-        
+
       if (!klass.prototype.initialize)
         klass.prototype.initialize = function() {};
-      
+
       return klass;
     }
 
 This method is kind-of gross, but it works.  It allows the user to create classes with properly-named constructor functions.  I also added the capability to add the class
 to a namespace object, and overloaded the function with the simple overload function I wrote to produce this:
-    
+
     window.klass = $.overload(function(methods) {
       return klass({}, methods);
-    }, 
+    },
 
     function(parent, methods) {
       return klass(window, parent, methods);
-    }, 
+    },
 
     function(namespace, parent, methods) {
       var name = methods.initialize ? methods.initialize.name : 'klass';
       var klass = Function.create(name, [], 'this.initialize.apply(this, arguments);');
-      
+
       namespace[name] = klass;
 
       if (parent) {
@@ -175,16 +175,16 @@ to a namespace object, and overloaded the function with the simple overload func
         subclass.prototype = parent.prototype;
         klass.prototype = new subclass;
       }
-      
+
       for(var name in methods) {
         klass.prototype[name] = methods[name];
       }
-      
+
       klass.prototype.constructor = klass;
-        
+
       if (!klass.prototype.initialize)
         klass.prototype.initialize = function() {};
-      
+
       return klass;
     });
 
@@ -197,3 +197,14 @@ In action:
     >>> var instance = new MyClass();
     >>> instance
     MyClass
+
+### 10-2-12 through 10-9-12
+I did a lot over the last week, probably too much to go into in detail.  Here is a quick summary:
+  - Wrote all of the Parse Tree Nodes
+  - Wrote most of the JavaScript compiling methods
+  - Fixed some syntax ambiguities (like ConditionalLoad)
+  - Rewrote the parser actions
+  - Restructured the compiler to be more modular
+  - Changed some syntax around
+  - Fixed a bug where line numbers were off by one
+  - Added some simple Compile errors with accurate line #s
