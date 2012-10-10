@@ -160,7 +160,7 @@
 
     __extractAll: function(NodeType) {
       var elements = this.body.getElements();
-      var extractedElements = new NewlineNodeList();
+      var extractedElements = new ClassBody();
 
       for (var i = 0; i < elements.length; ++i) {
         var element = elements[i];
@@ -179,12 +179,12 @@
       var thisProperty = new PropertyAccess('this', this.name);
       var constructorDecl = new AssignmentExpression(thisProperty, this.constructor);
 
-      this.methods.add(constructorDecl);
-
-      newContext.e('!function() {').blk()
-        .e(this.body.toJs.bind(this.body, this))
-        .e(this.methods)
-        .e(this.staticMethods)
+      // TODO(tjclifton): need to get three separate bodies into one, but w/ same order.
+      context.e('!function() {').blk()
+        .e(this.body)
+        .e(constructorDecl).nl()
+        .e(this.methods.toJs.bind(this.methods, this))
+        .e(this.staticMethods.toJs.bind(this.staticMethods, this))
       .end().e('}();');
     }
   });
@@ -201,7 +201,9 @@
       var elements = this.getElements();
 
       for (var i = 0; i < elements.length; ++i) {
+        elements[i].toJs(classDeclaration, context);
 
+        if (i < elements.length - 1) context.e().nl();
       }
     }
   });

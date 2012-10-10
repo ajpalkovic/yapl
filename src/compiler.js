@@ -86,7 +86,8 @@
             this.outputBuffer.push(arguments[i]);
             break;
           case 'function':
-            arguments[i]();
+            // We always pass the context.
+            arguments[i](this.context);
             break;
           default:
             if (arguments[i] instanceof Array) {
@@ -167,7 +168,7 @@
     initialize: function Scope(parentScope) {
       this.parentScope = parentScope;
       this.fields = $.extend({}, false, parentScope);
-    };
+    },
 
     subscope: function() {
       return new Scope(this);
@@ -204,7 +205,7 @@
   var CompileContext = klass({
     initialize: function CompileContext(emitter) {
       this.emitter = emitter.fromContext(this);
-      this.scope = new Scope();
+      this.scope = new Scope()
     },
 
     e: function() {
