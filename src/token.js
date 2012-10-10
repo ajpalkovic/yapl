@@ -131,6 +131,7 @@
     ['<<', 'LSHIFT'],
     ['>>', 'RSHIFT'],
     ['**', 'EXPONENTIATION'],
+    ['..', 'DOT_DOT'],
     ['(', 'OPEN_PAREN'],
     [')', 'CLOSE_PAREN'],
     ['[', 'OPEN_BRACKET'],

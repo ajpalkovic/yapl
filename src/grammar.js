@@ -310,7 +310,7 @@ var Grammar = {
 
   ConditionalLoad: {
     productions: [
-      ['QUESTION', 'PrimaryExpression']
+      ['DOT_DOT', 'PrimaryExpression']
     ]
   },
 

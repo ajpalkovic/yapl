@@ -912,7 +912,7 @@
    */
   var OneLineIfStatement = klass(nodes, IfStatement, {
     initialize: function OneLineIfStatement(statement, condition) {
-      IfStatement.prototype.initialize.call(this, condition, statement);
+      IfStatement.prototype.initialize.call(this, condition, new TerminatedStatement(statement));
     }
   });
 
@@ -921,7 +921,7 @@
    */
   var UnlessStatement = klass(nodes, IfStatement, {
     initialize: function UnlessStatement(condition, body) {
-      var negatedCondition = new UnaryExpression('!', condition);
+      var negatedCondition = new UnaryExpression('!', new NestedExpression(condition));
       IfStatement.prototype.initialize.call(this, negatedCondition, body);
     }
   });
@@ -931,7 +931,7 @@
    */
   var OneLineUnlessStatement = klass(nodes, UnlessStatement, {
     initialize: function OneLineUnlessStatement(statement, condition) {
-      UnlessStatement.prototype.initialize.call(this, condition, statement);
+      UnlessStatement.prototype.initialize.call(this, condition, new TerminatedStatement(statement));
     }
   });
 
@@ -990,7 +990,7 @@
    */
   var UntilLoop = klass(nodes, WhileLoop, {
     initialize: function UntilLoop(condition, body) {
-      var negatedCondition = new UnaryExpression('!', condition);
+      var negatedCondition = new UnaryExpression('!', new NestedExpression(condition));
       WhileLoop.prototype.initialize.call(this, negatedCondition, body);
     }
   });
