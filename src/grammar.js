@@ -209,7 +209,7 @@ var Grammar = {
 
   AssignmentExpression: {
     productions: [
-      ['SimpleExpression', 'ASSIGN', 'Expression']
+      ['LeftHandSideExpression', 'ASSIGN', 'Expression']
     ]
   },
 
@@ -286,14 +286,14 @@ var Grammar = {
 
   MemberExpression:  {
     productions: [
-      ['PrimaryExpression', 'MemberPart'],
+      ['PrimaryExpression', 'MemberChain'],
       ['PrimaryExpression']
     ]
   },
 
-  MemberPart: {
+  MemberChain: {
     productions: [
-      ['Member', 'MemberPart'],
+      ['Member', 'MemberChain'],
       ['Member']
     ]
   },

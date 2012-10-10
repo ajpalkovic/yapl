@@ -167,9 +167,6 @@
     initialize: function CompileContext(emitter, parentContext) {
       this.emitter = emitter.fromContext(this);
       this.parentContext = parentContext;
-
-      this.classContext = parentContext && parentContext.classContext;
-      this.previousNode = parentContext && parentContext.previousNode;
     },
 
     e: function() {

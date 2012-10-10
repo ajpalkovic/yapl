@@ -84,12 +84,26 @@
 
       MemberExpression: $.overload(function(primaryExpression) {
         return primaryExpression
-      }, function(primaryExpression, memberPart) {
-        memberPart.add(primaryExpression);
-        return memberPart;
+      }, function(primaryExpression, memberChain) {
+        memberChain.add(primaryExpression);
+
+        // Make the hierarchy from the flattened chain.
+        var elements = memberChain.getElements();
+        while (elements.length > 1) {
+          // a.b[1].c()[1].d
+
+          var member = elements[0];
+          var compoundExpression = elements[1];
+
+          compoundExpression.member = member;
+
+          elements.splice(0, 2, compoundExpression);
+        }
+
+        return elements[0];
       }),
 
-      MemberPart: list(MemberPart),
+      MemberChain: list(MemberChain),
       PropertyAccess: node(PropertyAccess),
       BindExpression: node(BindExpression),
       ArrayDereference: node(ArrayDereference),

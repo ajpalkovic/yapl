@@ -195,10 +195,9 @@
       this.methods.add(constructorDecl);
 
       var newContext = context.subcontext();
-      newContext.classContext = this;
 
       newContext.e('!function() {').blk()
-        .e(this.body)
+        .e(this.body.toJs.bind(this.body, this))
         .e(this.methods)
         .e(this.staticMethods)
       .end().e('}();');
@@ -208,9 +207,17 @@
   /**
    * Node for the body of a class, probably needed because of scoping issues.
    */
-  var ClassBody = klass(nodes, NewlineNodeList, {
+  var ClassBody = klass(nodes, NodeList, {
     initialize: function ClassBody() {
-      NewlineNodeList.prototype.initialize.call(this);
+      NodeList.prototype.initialize.call(this);
+    },
+
+    toJs: function(classDeclaration, context) {
+      var elements = this.getElements();
+
+      for (var i = 0; i < elements.length; ++i) {
+
+      }
     }
   });
 
@@ -248,10 +255,8 @@
       Callable.prototype.initialize.call(this, name, parameters, body);
     },
 
-    toJs: function(context) {
-      var classDecl = context.classContext;
-
-      context.e(classDecl.name,'.prototype.', this.getName(), ' = function(', this.getParameters(), ') {').blk()
+    toJs: function(classDeclaration, context) {
+      context.e(classDeclaration.name,'.prototype.', this.getName(), ' = function(', this.getParameters(), ') {').blk()
         .e(this.getBody())
       .end().e('};');
     }
@@ -268,14 +273,13 @@
       this.method = method;
     },
 
-    toJs: function(context) {
-      var classDecl = context.classContext;
+    toJs: function(classDeclaration, context) {
       var name = this.method.getName();
       var parameters = this.method.getParameters();
       var body = this.method.getBody();
 
 
-      context.e(classDecl.name, '.', name, ' = function(', parameters, ') {').blk()
+      context.e(classDeclaration.name, '.', name, ' = function(', parameters, ') {').blk()
         .e(body)
       .end().e('};');
     }
@@ -558,54 +562,54 @@
   });
 
   /**
-   * Node that represents a chain of members.
+   * Chain of members that is used to store the members before they are put in a
+   * tree.
    */
-  var MemberPart = klass(nodes, NodeList, {
-    initialize: function MemberPart(firstMember) {
-      NodeList.prototype.initialize.call(this, firstMember);
-    },
+  var MemberChain = klass(nodes, NodeList, {
+    initialize: function MemberChain(member) {
+      NodeList.prototype.initialize.call(this, member);
+    }
+  });
 
-    toJs: function(context) {
-      var elements = this.getElements();
-      var memberContext = context;
-
-      for (var i = 0; i < elements.length; ++i) {
-        var element = elements[i];
-        memberContext = memberContext.subcontext();
-
-        memberContext.e(element);
-        memberContext.previousNode = memberContext.previousNode || element;
+  /**
+   * Node for an expression that is a series of chained/compounded operations on members
+   * of the chain itself.
+   */
+  var CompoundExpression = klass(nodes, Node, {
+    initialize: function Member(member, memberPart) {
+      if (!memberPart) {
+        memberPart = member;
+        member = undefined;
       }
+
+      this.member = member;
+      this.memberPart = memberPart;
     }
   });
 
   /**
    * Node for a property access on an object.
    */
-  var PropertyAccess = klass(nodes, Node, {
-    initialize: function PropertyAccess(name) {
-      Node.prototype.initialize.call(this);
-
-      this.name = name;
+  var PropertyAccess = klass(nodes, CompoundExpression, {
+    initialize: function PropertyAccess(member, name) {
+      CompoundExpression.prototype.initialize.call(this, member, name);
     },
 
     toJs: function(context) {
-      context.e('.', this.name);
+      context.e(this.member, '.', this.memberPart);
     },
   });
 
   /**
    * Node for a function call expression.
    */
-  var Call = klass(nodes, Node, {
-    initialize: function Call(arguments) {
-      Node.prototype.initialize.call(this);
-
-      this.arguments = arguments;
+  var Call = klass(nodes, CompoundExpression, {
+    initialize: function Call(member, args) {
+      CompoundExpression.prototype.initialize.call(this, member, args);
     },
 
     toJs: function(context) {
-      context.e('(', this.arguments, ')');
+      context.e(this.member, '(', this.memberPart, ')');
     }
   });
 
@@ -613,22 +617,55 @@
    * Node for loading a series of property lookups "safely" i.e., short circuiting to false
    * if one of the properties in the chain is undefined.
    */
-  var ConditionalLoad = klass(nodes, Node, {
-    initialize: function ConditionalLoad(propertyName) {
-      Node.prototype.initialize.call(this, propertyName);
+  var ConditionalLoad = klass(nodes, CompoundExpression, {
+    initialize: function ConditionalLoad(member, propertyName) {
+      CompoundExpression.prototype.initialize.call(this, member, propertyName);
+    },
 
-      this.propertyName = propertyName;
+    safeLoad: function() {
+      var nonConditionalLoad = undefined;
+      var validPropertyAccess = undefined;
+
+      // If we have more safe loads to do (chained conditional loads)
+      if (this.member.safeLoad) {
+        // We recursively safe load the previous conditional load
+        nonConditionalLoad = this.member.safeLoad();
+
+        // And we know that the right hand side of the safe load is our
+        // valid property access upon which we can tack another property load
+        // without error.
+        //
+        //   nonConditionalLoad
+        //     |--------|
+        // eg. (a && a.b) && a.b.c
+        //           |--|    |--|
+        //         validPropertyAccess
+        validPropertyAccess = nonConditionalLoad.rightHandSide;
+      } else {
+        // In the base case, where there are no more loads to recursively perform,
+        // our non-conditional load and valid property access are one and the same.
+        //
+        //   nonConditionalLoad
+        //     |
+        // eg. a && a.b
+        //          |
+        //        validPropertyAccess
+        nonConditionalLoad = this.member;
+        validPropertyAccess = this.member;
+      }
+
+      // Now make a new valid property access with the old valid property access as the
+      // property accesses upon which we tack our next property load.
+      validPropertyAccess = new PropertyAccess(validPropertyAccess, this.memberPart);
+      // And we create a new 'check' that is evaluated at runtime and will short circuit if
+      // the last property in nonConditional load does not exist.
+      nonConditionalLoad = new BinaryExpression(nonConditionalLoad, new Operator('&&'), validPropertyAccess);
+
+      return nonConditionalLoad;
     },
 
     toJs: function(context) {
-      var previous = context.previousNode;
-
-      var chain = new MemberPart(new PropertyAccess(this.propertyName));
-      chain.add(previous);
-
-      context.previousNode = chain;
-
-      context.e(' && ', chain);
+      context.e(this.safeLoad());
     }
   });
 
@@ -636,30 +673,26 @@
    * Node for an expression that binds the function to some scope with
    * curried arguments.
    */
-  var BindExpression = klass(nodes, Node, {
-    initialize: function BindExpression(arguments) {
-      Node.prototype.initialize.call(this);
-
-      this.arguments = arguments;
+  var BindExpression = klass(nodes, CompoundExpression, {
+    initialize: function BindExpression(member, args) {
+      CompoundExpression.prototype.initialize.call(this, member, args);
     },
 
     toJs: function(context) {
-      context.e('.bind', this.arguments);
+      context.e(this.member, '.bind', this.memberPart);
     }
   });
 
   /**
    * Node for an array dereference.
    */
-  var ArrayDereference = klass(nodes, Node, {
-    initialize: function ArrayDereference(index) {
-      Node.prototype.initialize.call(this);
-
-      this.index = index;
+  var ArrayDereference = klass(nodes, CompoundExpression, {
+    initialize: function ArrayDereference(member, index) {
+      CompoundExpression.prototype.initialize.call(this, member, index);
     },
 
     toJs: function(context) {
-      context.e('[', this.index, ']');
+      context.e(this.member, '[', this.memberPart, ']');
     }
   });
 
