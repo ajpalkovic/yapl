@@ -98,7 +98,7 @@
     ['closure', 'CLOSURE'],
     ['at', 'AT'],
     ['like', 'LIKE'],
-    ['unlike', 'UNLIKE'],
+    ['unlike', 'UNLIKE']
   ];
 
   //  Note: tokens that are substrings of other tokens must be placed below those tokens

@@ -108,18 +108,6 @@
       this.name = name;
       this.parameters = parameters;
       this.body = body;
-    },
-
-    getName: function() {
-      return this.name;
-    },
-
-    getParameters: function() {
-      return this.parameters;
-    },
-
-    getBody: function() {
-      return this.body;
     }
   });
 
@@ -162,8 +150,8 @@
         if (elements[i].name.value === this.name.value) {
           var constructorMethod = elements.splice(i, 1)[0];
 
-          this.constructor.statement.parameters = constructorMethod.getParameters();
-          this.constructor.statement.body = constructorMethod.getBody();
+          this.constructor.statement.parameters = constructorMethod.parameters;
+          this.constructor.statement.body = constructorMethod.body;
 
           break;
         }
@@ -188,13 +176,10 @@
     },
 
     toJs: function(context) {
-      var chain = new MemberPart(new PropertyAccess(this.name));
-      chain.add('this');
+      var thisProperty = new PropertyAccess('this', this.name);
+      var constructorDecl = new AssignmentExpression(thisProperty, this.constructor);
 
-      var constructorDecl = new AssignmentExpression(chain, this.constructor);
       this.methods.add(constructorDecl);
-
-      var newContext = context.subcontext();
 
       newContext.e('!function() {').blk()
         .e(this.body.toJs.bind(this.body, this))
@@ -230,8 +215,8 @@
     },
 
     toJs: function(context) {
-      context.e('function ', this.getName(), '(', this.parameters, ') {').blk()
-        .e(this.getBody())
+      context.e('function ', this.name, '(', this.parameters, ') {').blk()
+        .e(this.body)
       .end().e('}');
     }
   });
@@ -256,8 +241,8 @@
     },
 
     toJs: function(classDeclaration, context) {
-      context.e(classDeclaration.name,'.prototype.', this.getName(), ' = function(', this.getParameters(), ') {').blk()
-        .e(this.getBody())
+      context.e(classDeclaration.name,'.prototype.', this.name, ' = function(', this.parameters, ') {').blk()
+        .e(this.body)
       .end().e('};');
     }
   });
@@ -274,9 +259,9 @@
     },
 
     toJs: function(classDeclaration, context) {
-      var name = this.method.getName();
-      var parameters = this.method.getParameters();
-      var body = this.method.getBody();
+      var name = this.method.name;
+      var parameters = this.method.parameters;
+      var body = this.method.body;
 
 
       context.e(classDeclaration.name, '.', name, ' = function(', parameters, ') {').blk()
@@ -781,13 +766,13 @@
     toJs: function(context) {
       Reference.prototype.toJs.call(this, context);
 
-      // var node = context.lookup(this.getName());
+      // var node = context.lookup(this.name);
       // if (node instanceof Callable) {
       //   var chain = new MemberPart(new Call(new NodeList()));
-      //   chain.add(node.getName());
+      //   chain.add(node.name);
       //   chain.toJs(context);
       // } else {
-      //   context.getEmitter().e(this.getName());
+      //   context.getEmitter().e(this.name);
       // }
     }
   });
@@ -1018,6 +1003,10 @@
       this.key = key;
       this.collection = collection;
       this.index = index;
+    },
+
+    toJs: function(context) {
+
     }
   });
 

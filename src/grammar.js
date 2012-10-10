@@ -686,7 +686,7 @@ var Grammar = {
 
   ForLoopStructure: {
     productions: [
-      ['StandardForStructure'],
+      // ['StandardForStructure'],
       ['ForInStructure'],
       ['MultipleForInStructure'],
       ['InflectedForStructure']
@@ -695,7 +695,7 @@ var Grammar = {
 
   StandardForStructure: {
     productions: [
-      ['ForLoopInitializer', 'SEMI', 'OptionalExpression', 'SEMI', 'OptionalExpression']
+      ['ForLoopInitializer', 'FROM', 'OptionalExpression', 'TO', 'OptionalExpression']
     ]
   },
 

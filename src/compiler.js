@@ -163,19 +163,53 @@
     }
   });
 
+  var Scope = klass({
+    initialize: function Scope(parentScope) {
+      this.parentScope = parentScope;
+      this.fields = $.extend({}, false, parentScope);
+    };
+
+    subscope: function() {
+      return new Scope(this);
+    },
+
+    hasSymbol: function(symbol) {
+      symbol = symbol.value || symbol;
+
+      return !!this.fields[symbol];
+    },
+
+    set: function(symbol, value) {
+      symbol = symbol.value || symbol;
+
+      this.fields[symbol] = value;
+    },
+
+    lookup: function(symbol) {
+      symbol = symbol.value || symbol;
+
+      if (!this.hasSymbol(symbol)) throw new errors.ReferenceError(symbol);
+
+      return this.fields[symbol];
+    },
+
+    update: function(symbol, value) {
+      symbol = symbol.value || symbol;
+      this.lookup(symbol);
+
+      this.fields[symbol] = value;
+    }
+  });
+
   var CompileContext = klass({
-    initialize: function CompileContext(emitter, parentContext) {
+    initialize: function CompileContext(emitter) {
       this.emitter = emitter.fromContext(this);
-      this.parentContext = parentContext;
+      this.scope = new Scope();
     },
 
     e: function() {
       this.emitter.e.apply(this.emitter, arguments);
       return this.emitter;
-    },
-
-    subcontext: function() {
-      return new CompileContext(this.emitter, this);
     }
   });
 
