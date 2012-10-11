@@ -313,10 +313,10 @@ the rule `Call` to:
       ]
     }
 
-[would fix the issues above][1], but doesn't fix the previous cases.  I think I need to add syntactic predicates
+would fix the issues above[1], but doesn't fix the previous cases.  I think I need to add syntactic predicates
 to the parser, which should be an interesting challenge.
 
-  [1]: Actually, it doesn't.  Unless `Call` is parsed before anything else, expressions such as `x [1]` still
-       are parsed as `x[1];`, because whitespace is optional.  This means that I will have to keep the whitespace
-       in the lexer, but during semantic analysis check to see if `x` is a function, and then perform the
-       whitespace checks.
+[1] Actually, it doesn't.  Unless `Call` is parsed before anything else, expressions such as `x [1]` still
+    are parsed as `x[1];`, because whitespace is optional.  This means that I will have to keep the whitespace
+    in the lexer, but during semantic analysis check to see if `x` is a function, and then perform the
+    whitespace checks.
