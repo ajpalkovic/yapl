@@ -211,3 +211,107 @@ I did a lot over the last week, probably too much to go into in detail.  Here is
 
 I still need to write another Compiler pass to process symbols and perform static analysis of the
 parse tree.
+
+### 10-11-12
+Syntax woes.  Paren-less function calls are the bane of my existence; [they create enormous syntax ambiguities
+in the language](http://petercai.com/ruby-too-smart-for-its-own-good/, "Ruby Ambiguities").
+
+For example, I was just minding my own business, testing out some basic arithmetic expressions:
+
+    x + 3 - y
+
+when I saw the generated JavaScript:
+
+    x(+3(-y));
+
+Yea... It makes complete sense, but it really makes things more difficult.  So I thought "how does Ruby solve this
+particular problem?":
+
+    irb(main):001:0> def x()
+    irb(main):002:1>   5
+    irb(main):003:1> end
+    => nil
+    irb(main):004:0> y = 1
+    => 1
+    irb(main):005:0> x + 3 - 1
+    => 7
+
+So Ruby gets the picture, but to be fair, let's add an argument to `x` to see if Ruby thinks `+ 3 - 1` should be
+the argument:
+
+
+    irb(main):001:0> def x(a)
+    irb(main):002:1>   5
+    irb(main):003:1> end
+    => nil
+    irb(main):004:0> y = 1
+    => 1
+    irb(main):005:0> x + 3 - 1
+    ArgumentError: wrong number of arguments (0 for 1)
+            from (irb):1:in 'x'
+            from (irb):5
+            from C:/Ruby192/bin/irb:12:in '<main>'
+
+Nope, Ruby still tried to add the return value of `x` to `3`.  So then how is Ruby assuming that the `+ 3 - 1`
+shouldn't be parsed as `(+3) - 1`?  The answer:
+
+    irb(main):001:0> def x(a)
+    irb(main):002:1>   5
+    irb(main):003:1> end
+    => nil
+    irb(main):004:0> y = 1
+    => 1
+    irb(main):005:0> x +3 - 1
+    => 5
+
+Ruby actually cares about whitespace after unary operators to disambiguate these situations.  I can't enable
+optional whitespace tokens in the lexer because it doesn't solve the problem.  If I changed `UnaryExpression` to:
+
+    UnaryExpression: {
+      productions: [
+        ['UnaryOperator', '!WHITESPACE', 'UnaryExpression'],
+        ['IncrementExpression']
+      ]
+    }
+
+Strings such as `x = + 3` would fail to parse.  Ruby doesn't see a problem with that statement:
+
+    irb(main):009:0> x = + 3
+    => 3
+
+So that means the issue of whitespace after unary operators matters in the context of function arguments:
+
+    irb(main):004:0> x+ 3
+    ArgumentError: wrong number of arguments (0 for 1)
+            from (irb):1:in `x'
+            from (irb):4
+            from C:/Ruby192/bin/irb:12:in `<main>'
+
+    irb(main):005:0> x+3
+    ArgumentError: wrong number of arguments (0 for 1)
+            from (irb):1:in `x'
+            from (irb):5
+            from C:/Ruby192/bin/irb:12:in `<main>'
+
+    irb(main):006:0> x[1]
+    ArgumentError: wrong number of arguments (0 for 1)
+            from (irb):1:in `x'
+            from (irb):6
+            from C:/Ruby192/bin/irb:12:in `<main>'
+
+    irb(main):007:0> x [1]
+    => 5
+
+So it seems there also has to be whitespace after the function call itself to initiate the call.  Changing
+the rule `Call` to:
+
+    Call: {
+      productions: [
+        ['OPEN_PAREN', 'EmptyList', 'CLOSE_PAREN'],
+        ['OPEN_PAREN', 'ArgumentList', 'CLOSE_PAREN'],
+        ['WHITESPACE', 'ArgumentList']
+      ]
+    }
+
+would fix the issues above, but doesn't fix the previous cases.  I think I need to add syntactic predicates
+to the parser, which should be an interesting challenge.
