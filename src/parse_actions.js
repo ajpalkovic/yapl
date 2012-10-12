@@ -68,8 +68,14 @@
 
       Term: $.overload(function(expression) {
         return expression;
-      }, function(unaryExpression, additiveExpression, expression) {
-        return new Term(unaryExpression, additiveExpression, expression);
+      }, function(exponentiationExpression, additiveExpression, expression) {
+        return new Term(exponentiationExpression, additiveExpression, expression);
+      }),
+
+      ExponentiationExpression: $.overload(function(expression) {
+        return expression;
+      }, function(unaryExpression, expression) {
+        return new ExponentiationExpression(unaryExpression, expression);
       }),
 
       UnaryExpression: $.overload(function(expression) {

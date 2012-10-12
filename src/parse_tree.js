@@ -71,6 +71,9 @@
     }
   });
 
+  /**
+   * List of nodes delimited by a comma.
+   */
   var CommaNodeList = klass(nodes, DelimitedNodeList, {
     initialize: function CommaNodeList() {
       Array.prototype.splice.call(arguments, 0, 0, ', ');
@@ -79,6 +82,9 @@
     }
   });
 
+  /**
+   * List of nodes delimited by a newline.
+   */
   var NewlineNodeList = klass(nodes, NodeList, {
     initialize: function NewlineNodeList() {
       NodeList.prototype.initialize.apply(this, arguments);
@@ -100,7 +106,6 @@
   /**
    * Node class for any node that is 'callable'.
    */
-
   var Callable = klass(nodes, Node, {
     initialize: function Callable(name, parameters, body) {
       Node.prototype.initialize.call(this);
@@ -442,7 +447,49 @@
     },
 
     toJs: function(context) {
-      context.e(this.leftHandSide, ' ', this.operator, ' ', this.rightHandSide);
+      function makePow() {
+        var powFunction = new PropertyAccess('Math', 'pow');
+        var arguments = new ArgumentList(this.rightHandSide);
+        arguments.add(this.leftHandSide);
+
+        return new Call(powFunction, arguments);
+      }
+
+      var mappingFunctions = {
+        COMPARE_TO: function() {
+          var lessThan = new SimpleExpression(this.leftHandSide, Operator.make('<'), this.rightHandSide);
+          var greaterThan = new SimpleExpression(this.leftHandSide, Operator.make('>'), this.rightHandSide);
+          var innerConditional = new ConditionalExpression(lessThan, '-1', '0');
+          var outerConditional = new ConditionalExpression(greaterThan, '1', innerConditional);
+
+          return outerConditional;
+        },
+
+        CONDITIONAL_EQUALS: function() {
+          var orNode = new SimpleExpression(this.leftHandSide, Operator.make('||'), this.rightHandSide);
+          var assignment = new AssignmentExpression(this.leftHandSide, orNode);
+
+          return assignment;
+        },
+
+        EXPONENTIATION_EQUALS: function() {
+          var assignment = new AssignmentExpression(this.leftHandSide, makePow.call(this));
+
+          return assignment;
+        },
+
+        EXPONENTIATION: function() {
+          return makePow.call(this);
+        }
+      };
+
+      var mappingFn = mappingFunctions[this.operator.token.type];
+
+      if (mappingFn) {
+        context.e(mappingFn.call(this));
+      } else {
+        context.e(this.leftHandSide, ' ', this.operator, ' ', this.rightHandSide);
+      }
     }
   });
 
@@ -450,8 +497,8 @@
    * Node that represents an assignment.
    */
   var AssignmentExpression = klass(nodes, BinaryExpression, {
-    initialize: function AssignmentExpression(receiver, value) {
-      BinaryExpression.prototype.initialize.call(this, receiver, '=', value);
+    initialize: function AssignmentExpression(receiver, operator, value) {
+      BinaryExpression.prototype.initialize.call(this, receiver, operator, value);
     }
   });
 
@@ -482,11 +529,29 @@
   });
 
   /**
-   * Node for an expression with an additive operator.
+   * Node for an expression with an multiplicative operator.
    */
   var AdditiveExpression = klass(nodes, BinaryExpression, {
     initialize: function AdditiveExpression(leftHandSide, operator, rightHandSide) {
       BinaryExpression.prototype.initialize.call(this, leftHandSide, operator, rightHandSide);
+    }
+  });
+
+  /**
+   * Node for an expression with an additive operator.
+   */
+  var Term = klass(nodes, BinaryExpression, {
+    initialize: function Term(leftHandSide, operator, rightHandSide) {
+      BinaryExpression.prototype.initialize.call(this, leftHandSide, operator, rightHandSide);
+    }
+  });
+
+  /**
+   * Node for an expression that is raised to some other expression.
+   */
+  var ExponentiationExpression = klass(nodes, BinaryExpression, {
+    initialize: function ExponentiationExpression(leftHandSide, rightHandSide) {
+      BinaryExpression.prototype.initialize.call(this, leftHandSide, Operator.make('**'), rightHandSide);
     }
   });
 
@@ -646,7 +711,7 @@
       validPropertyAccess = new PropertyAccess(validPropertyAccess, this.memberPart);
       // And we create a new 'check' that is evaluated at runtime and will short circuit if
       // the last property in nonConditional load does not exist.
-      nonConditionalLoad = new BinaryExpression(nonConditionalLoad, new Operator('&&'), validPropertyAccess);
+      nonConditionalLoad = new SimpleExpression(nonConditionalLoad, Operator.make('&&'), validPropertyAccess);
 
       return nonConditionalLoad;
     },
@@ -696,16 +761,36 @@
    * Node for any operator.
    */
   var Operator = klass(nodes, Node, {
-    initialize: function Operator(value) {
+    initialize: function Operator(token) {
       Node.prototype.initialize.call(this);
 
-      this.value = value;
+      this.token = token;
     },
 
     toJs: function(context) {
-      context.e(this.value);
+      context.e(this.token.value);
     }
   });
+
+  Operator.tokenCache = {
+    '+': new Operator({
+      type: 'PLUS',
+      value: '+'
+    }),
+
+    '-': new Operator({
+      type: 'MINUS',
+      value: '-'
+    })
+  };
+
+  Operator.make = function(value) {
+    if (!Operator.tokenCache[value]) {
+      Operator.tokenCache[value] = new Operator(Tokens.types[value]());
+    }
+
+    return Operator.tokenCache[value];
+  };
 
   /**
    * Node for any primitive JavaScript literal value.

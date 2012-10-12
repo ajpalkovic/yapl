@@ -49,7 +49,8 @@
     IDENTIFIER: '((?:[a-zA-Z_\\$][_a-zA-Z0-9\\$]*))',
     STRING_LITERAL: '(\'|")',
     FORWARD_SLASH: '\\/',
-    WHITESPACE: '((?:[^\\S\\n]+))' // Does not match newlines
+    WHITESPACE: '((?:[^\\S\\n]+))', // Does not match newlines
+    PLUS_OR_MINUS: '(\\+|-)',
   };
 
   // Language reserved words
@@ -139,8 +140,8 @@
     ['{', 'OPEN_BRACE'],
     ['}', 'CLOSE_BRACE'],
     ['.', 'DOT'],
-    ['+', 'PLUS'],
-    ['-', 'MINUS'],
+    // ['+', 'PLUS'],
+    // ['-', 'MINUS'],
     ['*', 'ASTERISK'],
     ['%', 'MODULUS'],
     ['?', 'QUESTION'],
@@ -383,7 +384,7 @@
 
             return regexToken || {
               token: {
-                type: 'FORWARD_SLASH'
+                type: 'FORWARD_SLASH',
               },
 
               position: 1
@@ -399,9 +400,31 @@
         return {
           token: {
             type: 'WHITESPACE',
-            ignore: true
+            ignore: true,
           },
           position: matches[0].length
+        };
+      }
+    ],
+
+    [
+      regexes.PLUS_OR_MINUS,
+      function(matches, string) {
+        var types = {
+          '+': 'PLUS',
+          '-': 'MINUS'
+        };
+
+        var isBinary = !!string.match(/^(\+|-)\s+/);
+        var type = types[matches[0]];
+
+        return {
+          token: {
+            type: type,
+            value: matches[1],
+            isBinary: isBinary
+          },
+          position: 1
         };
       }
     ]

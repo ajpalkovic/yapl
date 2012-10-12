@@ -209,7 +209,7 @@ var Grammar = {
 
   AssignmentExpression: {
     productions: [
-      ['LeftHandSideExpression', 'ASSIGN', 'Expression']
+      ['LeftHandSideExpression', 'AssignmentOperator', 'Expression']
     ]
   },
 
@@ -221,23 +221,30 @@ var Grammar = {
 
   SimpleExpression: {
     productions: [
-      ['AdditiveExpression', 'RelativeOperator', 'Expression'],
+      ['AdditiveExpression', 'RelativeOperator', 'SimpleExpression'],
       ['AdditiveExpression']
     ]
   },
 
   AdditiveExpression: {
     productions: [
-      ['Term', 'MultiplicativeOperator', 'Expression'],
+      ['Term', 'MultiplicativeOperator', 'AdditiveExpression'],
       ['Term']
     ]
   },
 
   Term: {
     productions: [
-      ['UnaryExpression', 'AdditiveOperator', 'Expression'],
-      ['UnaryExpression']
+      ['ExponentiationExpression', 'AdditiveOperator', 'Term'],
+      ['ExponentiationExpression']
     ]
+  },
+
+  ExponentiationExpression: {
+    productions: [
+      ['UnaryExpression', 'EXPONENTIATION', 'ExponentiationExpression'],
+      ['UnaryExpression']
+    ],
   },
 
   UnaryExpression: {
@@ -424,7 +431,7 @@ var Grammar = {
       ['(MOD_EQUALS)'],
       ['(PLUS_EQUALS)'],
       ['(MINUS_EQUALS)'],
-      ['(EXPONENTIATION_EQUALS)']
+      ['(EXPONENTIATION_EQUALS)'],
       ['(CONDITIONAL_EQUALS)'],
       ['(SHIFTL_EQUALS)'],
       ['(SHIFTR_EQUALS)'],
@@ -432,7 +439,7 @@ var Grammar = {
       ['(AND_EQUALS)'],
       ['(XOR_EQUALS)'],
       ['(OR_EQUALS)'],
-      ['(ASSIGN)'],
+      ['(ASSIGN)']
     ]
   },
 
@@ -464,8 +471,8 @@ var Grammar = {
       ['(BITWISE_NOT)'],
       ['(DELETE)'],
       ['(TYPEOF)'],
-      ['(MINUS)'],
-      ['(PLUS)']
+      ['(PLUS)'],
+      ['(MINUS)']
     ]
   },
 
