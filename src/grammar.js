@@ -16,8 +16,8 @@ var Grammar = {
 
   ClassDeclaration: {
     productions: [
-      ['CLASS', '(IDENTIFIER)', 'EXTENDS', 'ParentClass', 'NEWLINE', 'ClassBody', 'END'],
-      ['CLASS', '(IDENTIFIER)', 'NEWLINE', 'ClassBody', 'END']
+      ['CLASS', '(IDENTIFIER)', 'EXTENDS', 'ParentClass', 'EmptyStatement', 'ClassBody', 'END'],
+      ['CLASS', '(IDENTIFIER)', 'EmptyStatement', 'ClassBody', 'END']
     ]
   },
 
@@ -93,6 +93,7 @@ var Grammar = {
 
   Parameters: {
     productions: [
+      ['EmptyList', 'EmptyStatement'],
       ['OPEN_PAREN', 'EmptyList', 'CLOSE_PAREN'],
       ['OPEN_PAREN', 'ParameterList', 'CLOSE_PAREN']
     ]
@@ -325,7 +326,7 @@ var Grammar = {
     productions: [
       ['OPEN_PAREN', 'EmptyList', 'CLOSE_PAREN'],
       ['OPEN_PAREN', 'ArgumentList', 'CLOSE_PAREN'],
-      ['ArgumentList']
+      // ['ArgumentList']
     ],
 
     // This prevents calling a function with its arguments on the next
@@ -503,14 +504,14 @@ var Grammar = {
   Statement: {
     productions: [
       ['TerminatedStatement'],
-      ['ComplexStatement']
+      ['ComplexStatement'],
+      ['EmptyStatement']
     ]
   },
 
   TerminatedStatement: {
     productions: [
-      ['SimpleStatementNoFunction', 'EndSt'],
-      ['EmptyStatement']
+      ['SimpleStatementNoFunction', 'EndSt']
     ]
   },
 
@@ -559,6 +560,7 @@ var Grammar = {
 
   EmptyStatement: {
     productions: [
+      ['NEWLINE'],
       ['SEMI']
     ]
   },

@@ -4,7 +4,6 @@
     <script type="text/javascript" src="../lib/prototype.js"></script>
 
     <script type="text/javascript" src="util.js"></script>
-    <script type="text/javascript" src="templates.js"></script>
     <script type="text/javascript" src="parse_tree.js"></script>
     <script type="text/javascript" src="parse_actions.js"></script>
     <script type="text/javascript" src="token.js"></script>
@@ -15,26 +14,41 @@
 
     <script type="text/javascript">
       jQuery.noConflict();
+
+      function parse($) {
+        window.parser = new Parser();
+        window.compiler = new Compiler();
+
+        var astElement = $('#ast');
+        var jsOutputElement = $('#jsoutput');
+
+        try {
+          result = parser.parse($('#code').val());
+
+          var astText = JSON.stringify(result, undefined, 2);
+          var jsOutputText = compiler.toJs(result);
+
+          astElement.text(astText);
+          jsOutputElement.text(jsOutputText);
+        } catch (e) {
+          astElement.text(e);
+          throw e;
+        }
+      }
+
+      var THRESHOLD = 200;
+      var timerId = 0;
+
       jQuery(document).ready(function($) {
-        $('#submit').click(function() {
-          window.parser = new Parser();
-          window.compiler = new Compiler();
+        $('#submit').click(parse.bind(this, $));
 
-          var astElement = $('#ast');
-          var jsOutputElement = $('#jsoutput');
+        $('#code').keydown(function() {
+          clearTimeout(timerId);
 
-          try {
-            result = parser.parse($('#code').val());
-
-            var astText = JSON.stringify(result, undefined, 2);
-            var jsOutputText = compiler.toJs(result);
-
-            astElement.text(astText);
-            jsOutputElement.text(jsOutputText);
-          } catch (e) {
-            astElement.text(e);
-            throw e;
-          }
+          timerId = setTimeout(function() {
+            clearTimeout(timerId);
+            parse($);
+          }, THRESHOLD);
         });
       });
     </script>

@@ -182,11 +182,11 @@
 
     toJs: function(context) {
       var thisProperty = new PropertyAccess('this', this.name);
-      var constructorDecl = new AssignmentExpression(thisProperty, this.constructor);
+      var constructorDecl = new AssignmentExpression(thisProperty, Operator.make('='), this.constructor);
 
       // TODO(tjclifton): need to get three separate bodies into one, but w/ same order.
       context.e('!function() {').blk()
-        .e(this.body)
+        .e(this.body.toJs.bind(this.body, this))
         .e(constructorDecl).nl()
         .e(this.methods.toJs.bind(this.methods, this))
         .e(this.staticMethods.toJs.bind(this.staticMethods, this))
@@ -467,13 +467,13 @@
 
         CONDITIONAL_EQUALS: function() {
           var orNode = new SimpleExpression(this.leftHandSide, Operator.make('||'), this.rightHandSide);
-          var assignment = new AssignmentExpression(this.leftHandSide, orNode);
+          var assignment = new AssignmentExpression(this.leftHandSide, Operator.make('='), orNode);
 
           return assignment;
         },
 
         EXPONENTIATION_EQUALS: function() {
-          var assignment = new AssignmentExpression(this.leftHandSide, makePow.call(this));
+          var assignment = new AssignmentExpression(this.leftHandSide, Operator.make('='), makePow.call(this));
 
           return assignment;
         },
@@ -705,6 +705,8 @@
         nonConditionalLoad = this.member;
         validPropertyAccess = this.member;
       }
+
+      console.log(this.memberPart);
 
       // Now make a new valid property access with the old valid property access as the
       // property accesses upon which we tack our next property load.
