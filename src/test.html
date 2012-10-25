@@ -4,12 +4,14 @@
     <script type="text/javascript" src="../lib/prototype.js"></script>
 
     <script type="text/javascript" src="util.js"></script>
-    <script type="text/javascript" src="parse_tree.js"></script>
-    <script type="text/javascript" src="parse_actions.js"></script>
     <script type="text/javascript" src="token.js"></script>
     <script type="text/javascript" src="lexer.js"></script>
     <script type="text/javascript" src="grammar.js"></script>
+    <script type="text/javascript" src="parse_tree.js"></script>
+    <script type="text/javascript" src="parse_actions.js"></script>
     <script type="text/javascript" src="parser.js"></script>
+    <script type="text/javascript" src="compiler/pass.js"></script>
+    <script type="text/javascript" src="compiler/conditional_load_pass.js"></script>
     <script type="text/javascript" src="compiler/compiler.js"></script>
 
     <script type="text/javascript">
@@ -25,11 +27,14 @@
         try {
           result = parser.parse($('#code').val());
 
-          var astText = JSON.stringify(result, undefined, 2);
-          var jsOutputText = compiler.toJs(result);
+          //var astText = JSON.stringify(result, undefined, 2);
+          var astText = result + "";
+          var x = new pass.ConditionalLoadTransformer();
+          var tree = x.run(result);
+          //var jsOutputText = compiler.toJs(result);
 
           astElement.text(astText);
-          jsOutputElement.text(jsOutputText);
+          jsOutputElement.text(tree);
         } catch (e) {
           astElement.text(e);
           throw e;

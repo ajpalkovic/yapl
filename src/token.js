@@ -1,4 +1,13 @@
 !function($) {
+  var Token = klass({
+    initialize: function Token(options) {
+      this.value = options.value;
+      this.type = options.type;
+      this.optional = options.optional;
+      this.ignore = options.ignore;
+    }
+  });
+
 
   /**
    *  Basically this function takes an array of 'tokens', which are really just 2-element
@@ -32,12 +41,15 @@
     for (var i = 0, len = tokens.length; i < len; ++i) {
       (function(value) {
         lookup[value[0]] = (typeof value[1] === 'function') ? value[1] : function() {
-          return {
+          return Token[value[1]] = new Token({
             value: value[0],
             type: value[1],
             optional: (value[2] === true)
-          };
+          });
         };
+
+        // Make sure to create every token so they can be accessed statically.
+        lookup[value[0]]();
       })(tokens[i]);
     }
 
@@ -193,10 +205,10 @@
         }
 
         return {
-          token: {
+          token: new Token({
             type: 'NUMERIC_LITERAL',
             value: number
-          },
+          }),
 
           position: matches[0].length
         };
@@ -207,10 +219,10 @@
     [
       regexes.IDENTIFIER,
       function(matches, string, tokens) {
-        var token = {
+        var token = new Token({
           type: 'IDENTIFIER',
           value: matches[0]
-        };
+        });
 
         return {
           token: token,
@@ -242,10 +254,10 @@
         if (!endQuotePos) return undefined;
 
         return {
-          token: {
+          token: new Token({
             type: 'STRING_LITERAL',
             value: string.substring(0, endQuotePos + 1)
-          },
+          }),
 
           position: endQuotePos + 1
         };
@@ -320,10 +332,10 @@
               var endOfRegex = i + (matches ? matches[1].length : 0) + 1;
 
               return {
-                token: {
+                token: new Token({
                   type: 'REGEX_LITERAL',
                   value: string.substring(0, endOfRegex)
-                },
+                }),
 
                 position: endOfRegex
               };
@@ -345,11 +357,11 @@
             var comment = string.substring(0, end);
 
             return {
-              token: {
+              token: new Token({
                 type: 'SINGLE_LINE_COMMENT',
                 ignore: true,
                 value: comment
-              },
+              }),
 
               position: comment.length
             };
@@ -361,11 +373,11 @@
             var commentEnd = findMultiCommentEnd(0) || string.length;
 
             return {
-              token: {
+              token: new Token({
                 type: 'MULTI_LINE_COMMENT',
                 ignore: true,
                 value: string.substring(0, commentEnd + 1)
-              },
+              }),
 
               position: commentEnd + 1
             };
@@ -383,9 +395,9 @@
             var regexToken = !invalidWhitespace && matchRegex();
 
             return regexToken || {
-              token: {
+              token: new Token({
                 type: 'FORWARD_SLASH',
-              },
+              }),
 
               position: 1
             };
@@ -460,9 +472,7 @@
   tokens.push(['<<EOF>>', '<<EOF>>']);
   var typeLookup = prepare(tokens, prepare(reserved));
 
-  window.Tokens = {
-    regex: compiledRe,
-    types: typeLookup,
-    identify: identify
-  };
+  Token.regex = compiledRe;
+  Token.typeLookup = typeLookup;
+  Token.identify = identify;
 }(jQuery);

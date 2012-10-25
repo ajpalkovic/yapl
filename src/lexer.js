@@ -56,15 +56,15 @@
       var line = 1;
 
       while (string.length > 0) {
-        var match = string.match(Tokens.regex);
+        var match = string.match(Token.regex);
         var endOfMatch;
         var token = undefined;
 
         if (match) {
-          token = Tokens.types[match[0]]();
+          token = Token.typeLookup[match[0]]();
           endOfMatch = match[0].length;
         } else {
-          var result = Tokens.identify(string, tokens);
+          var result = Token.identify(string, tokens);
 
           if (result) {
             token = result.token;
@@ -84,7 +84,7 @@
         string = string.substring(endOfMatch);
       }
       // We add an end-of-file token to the end of the stream.
-      var eofTokens = Tokens.types['<<EOF>>']();
+      var eofTokens = Token.typeLookup['<<EOF>>']();
       eofTokens.line = line;
       tokens.push(eofTokens);
 

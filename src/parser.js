@@ -83,10 +83,9 @@
 
           if (Grammar[expectedTokenType]) {
             var parseResult = this._parse(expectedTokenType, this.lexer.currentPos);
-            var capture = !expectedTokenType.match(/^\?\:/);
 
-            if (parseResult && capture) parseResults.push(parseResult);
-            parseFailed = !parseResult;
+            if (parseResult !== undefined) parseResults.push(parseResult);
+            parseFailed = parseResult === undefined;
           } else {
             var matchResult = this._match(expectedTokenType);
             if (matchResult) {
@@ -118,7 +117,7 @@
           // position again.
           return {
             nextPos: this.lexer.currentPos,
-            result: result || {}
+            result: result || null
           };
         } else {
           // We need to reset the lexer to where we were when

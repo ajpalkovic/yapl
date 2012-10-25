@@ -560,8 +560,8 @@ var Grammar = {
 
   EmptyStatement: {
     productions: [
-      ['NEWLINE'],
-      ['SEMI']
+      ['(NEWLINE)'],
+      ['(SEMI)']
     ]
   },
 
