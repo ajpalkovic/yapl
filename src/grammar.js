@@ -324,8 +324,8 @@ var Grammar = {
 
   Call: {
     productions: [
-      ['OPEN_PAREN_CALL', 'EmptyList', 'CLOSE_PAREN'],
-      ['OPEN_PAREN_CALL', 'ArgumentList', 'CLOSE_PAREN'],
+      ['OPEN_PAREN_NO_EXPR', 'EmptyList', 'CLOSE_PAREN'],
+      ['OPEN_PAREN_NO_EXPR', 'ArgumentList', 'CLOSE_PAREN'],
       ['WHITESPACE', 'ArgumentList']
     ],
 
@@ -363,7 +363,7 @@ var Grammar = {
 
   ArrayDereference: {
     productions: [
-      ['OPEN_BRACKET', 'Expression', 'CLOSE_BRACKET']
+      ['OPEN_BRACKET_NO_EXPR', 'Expression', 'CLOSE_BRACKET']
     ]
   },
 

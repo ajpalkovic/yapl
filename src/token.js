@@ -482,7 +482,7 @@
       }
     ],
 
-    // OPEN_PAREN or OPEN_PAREN_ARG / OPEN_BRACKET or OPEN_BRACKET_DEREF
+    // OPEN_PAREN or OPEN_PAREN_NO_EXPR / OPEN_BRACKET or OPEN_BRACKET_NO_EXPR
     [
       regexes.OPEN_PAREN_OR_BRACKET,
       function(matches, string, tokens) {
@@ -502,7 +502,7 @@
           });
         } else {
           var token = new Token({
-            type: 'OPEN_PAREN_CALL',
+            type: types[matches[1]] + '_NO_EXPR',
             value: matches[1]
           });
         }
