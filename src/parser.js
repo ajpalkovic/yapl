@@ -17,7 +17,7 @@
       this.cache = {};
 
       this.lexer = new Lexer(input);
-      var tree = this._parse('Program', 0);
+      var tree = this._parse('Program', 0, {});
 
       if (!tree) {
         this.error();
@@ -29,7 +29,7 @@
     /**
      * Parses an individual rule of the grammar.
      */
-    _parse: function(currentRule, startPos) {
+    _parse: function(currentRule, startPos, redefinitions) {
       var cached = (this.cache[currentRule] || (this.cache[currentRule] = []))[startPos];
 
       if (cached) {
@@ -58,7 +58,7 @@
 
       // If the lookahead wasn't fufilled, then we consider the parsing a failure.
       var cacheEntry = undefined;
-      if (lookaheadFufilled) cacheEntry = this._parseRule(currentRule, rule, startPos);
+      if (lookaheadFufilled) cacheEntry = this._parseRule(currentRule, rule, startPos, redefinitions);
 
       cacheEntry = cacheEntry || {
         nextPos: startPos,
@@ -71,9 +71,16 @@
     /**
      *  Mutually recursively parses the grammar with _parse.
      */
-    _parseRule: function(ruleName, rule, startPos) {
-      for (var i = 0, numProds = rule.productions.length; i < numProds; ++i) {
-        var production = rule.productions[i];
+    _parseRule: function(ruleName, rule, startPos, redefinitions) {
+      var productions = redefinitions[ruleName] || rule.productions;
+
+      if (rule.redefinitions) {
+        redefinitions = Object.clone(redefinitions);
+        $.extend(redefinitions, rule.redefinitions);
+      }
+
+      for (var i = 0, numProds = productions.length; i < numProds; ++i) {
+        var production = productions[i];
 
         var parseFailed = false;
         var parseResults = [];
@@ -82,7 +89,7 @@
           var expectedTokenType = production[j];
 
           if (Grammar[expectedTokenType]) {
-            var parseResult = this._parse(expectedTokenType, this.lexer.currentPos);
+            var parseResult = this._parse(expectedTokenType, this.lexer.currentPos, redefinitions);
 
             if (parseResult !== undefined) parseResults.push(parseResult);
             parseFailed = parseResult === undefined;

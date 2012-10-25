@@ -58,12 +58,13 @@
 
   var regexes = {
     NUMERIC_LITERAL: '(?:((?:0[0-7]+))|((?:0x[a-fA-F0-9]+))|((?:(?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))(?:[eE]\\d+)?))',
+    DOT: '(\\.)',
     IDENTIFIER: '((?:[a-zA-Z_\\$][_a-zA-Z0-9\\$]*))',
     STRING_LITERAL: '(\'|")',
     FORWARD_SLASH: '\\/',
     WHITESPACE: '((?:[^\\S\\n]+))', // Does not match newlines
     PLUS_OR_MINUS: '(\\+|-)',
-    OPEN_PAREN: '(\\()'
+    OPEN_PAREN_OR_BRACKET: '(\\(|\\[)',
   };
 
   // Language reserved words
@@ -148,11 +149,11 @@
     ['..', 'DOT_DOT'],
     // ['(', 'OPEN_PAREN'],
     [')', 'CLOSE_PAREN'],
-    ['[', 'OPEN_BRACKET'],
+    // ['[', 'OPEN_BRACKET'],
     [']', 'CLOSE_BRACKET'],
     ['{', 'OPEN_BRACE'],
     ['}', 'CLOSE_BRACE'],
-    ['.', 'DOT'],
+    // ['.', 'DOT'],
     // ['+', 'PLUS'],
     // ['-', 'MINUS'],
     ['*', 'ASTERISK'],
@@ -184,6 +185,15 @@
     'STRING_LITERAL': true
   };
 
+  // These are tokens types that can be followed by an OPEN_PAREN
+  // that would signal a function call, and not an expression.
+  var preceedingCallTokenTypes = [
+    'IDENTIFIER',
+    'CLOSE_BRACKET',
+    'CLOSE_PAREN',
+    'BIND'
+  ];
+
   var advanced = [
 
     // NUMERIC_LITERAL
@@ -192,26 +202,49 @@
       function(matches, string, tokens) {
         var number = 0;
 
-        if (matches[1]) {
-          // It was an octal number
-          number = parseInt(matches[0], 8);
-        } else if (matches[2]) {
-          number = parseInt(matches[0], 16);
-          // It has a hex number
-        } else if (matches[3]) {
-          // It was a decimal number
-          number = parseFloat(matches[0]);
-        } else {
-          return undefined;
-        }
+        // if (matches[1]) {
+        //   // It was an octal number
+        //   number = parseInt(matches[0], 8);
+        // } else if (matches[2]) {
+        //   number = parseInt(matches[0], 16);
+        //   // It has a hex number
+        // } else if (matches[3]) {
+        //   // It was a decimal number
+        //   number = parseFloat(matches[0]);
+        // } else {
+        //   return undefined;
+        // }
 
         return {
           token: new Token({
             type: 'NUMERIC_LITERAL',
-            value: number
+            value: matches[0]
           }),
 
           position: matches[0].length
+        };
+      }
+    ],
+
+    // DOT
+    //
+    // This has to be run after the NUMERIC_LITERAL regex, so order matters.
+    // This way we correctly identify strings such as:
+    //    .1
+    //    a .1
+    //
+    // as decimal values and not parse failures or property accesses.
+    //
+    // Note: ruby actually disallows this behavior, so I might get rid of this.
+    [
+      regexes.DOT,
+      function(matches, string) {
+        return {
+          token: new Token({
+            type: 'DOT',
+            value: matches[0]
+          }),
+          position: 1
         };
       }
     ],
@@ -393,11 +426,18 @@
           // it can be a valid ECMA 262 regex literal (see http://bclary.com/2004/11/07/#a-7.8.5),
           // or it can simply be the division operator.  Let's find out...
           default:
-            var regexToken = !invalidWhitespace && matchRegex();
+            if (!invalidWhitespace) {
+              var regexToken = matchRegex();
+
+              if (regexToken.position <= string.length && string[regexToken.position] === ' ') {
+                regexToken = undefined;
+              }
+            }
 
             return regexToken || {
               token: new Token({
                 type: 'FORWARD_SLASH',
+                value: '/'
               }),
 
               position: 1
@@ -430,44 +470,39 @@
         };
 
         var isBinary = !!string.match(/^(\+|-)\s+/);
-        var type = types[matches[0]];
+        var type = (!isBinary ? 'UNARY_' : '') + types[matches[0]];
 
         return {
           token: new Token({
             type: type,
-            value: matches[1],
-            isBinary: isBinary
+            value: matches[1]
           }),
           position: 1
         };
       }
     ],
 
-    // OPEN_PAREN or OPEN_PAREN_ARG
+    // OPEN_PAREN or OPEN_PAREN_ARG / OPEN_BRACKET or OPEN_BRACKET_DEREF
     [
-      regexes.OPEN_PAREN,
+      regexes.OPEN_PAREN_OR_BRACKET,
       function(matches, string, tokens) {
-        // These are tokens types that can be followed by an OPEN_PAREN
-        // that would signal a function call, and not an expression.
-        var preceedingCallTokenTypes = [
-          'IDENTIFIER',
-          'CLOSE_BRACKET',
-          'CLOSE_PAREN',
-          'BIND'
-        ];
+        var types = {
+          '(': 'OPEN_PAREN',
+          '[': 'OPEN_BRACKET'
+        };
 
-        function isExpressionParen() {
+        function isStartOfExpression() {
           return tokens.length === 0 || !preceedingCallTokenTypes.include(tokens.last().type);
         }
 
-        if (isExpressionParen()) {
+        if (isStartOfExpression()) {
           var token = new Token({
-            type: 'OPEN_PAREN',
+            type: types[matches[1]],
             value: matches[1]
           });
         } else {
           var token = new Token({
-            type: 'OPEN_PAREN_ARG',
+            type: 'OPEN_PAREN_CALL',
             value: matches[1]
           });
         }

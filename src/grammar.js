@@ -324,8 +324,8 @@ var Grammar = {
 
   Call: {
     productions: [
-      ['OPEN_PAREN_ARG', 'EmptyList', 'CLOSE_PAREN'],
-      ['OPEN_PAREN_ARG', 'ArgumentList', 'CLOSE_PAREN'],
+      ['OPEN_PAREN_CALL', 'EmptyList', 'CLOSE_PAREN'],
+      ['OPEN_PAREN_CALL', 'ArgumentList', 'CLOSE_PAREN'],
       ['WHITESPACE', 'ArgumentList']
     ],
 
@@ -371,7 +371,18 @@ var Grammar = {
     productions: [
       ['Expression', 'COMMA', 'ArgumentList'],
       ['Expression']
-    ]
+    ],
+
+    redefinitions: {
+      UnaryOperator: [
+        ['(LOGICAL_NOT)'],
+        ['(BITWISE_NOT)'],
+        ['(DELETE)'],
+        ['(TYPEOF)'],
+        ['(UNARY_PLUS)'],
+        ['(UNARY_MINUS)']
+      ]
+    }
   },
 
   PrimaryExpression:  {
@@ -473,7 +484,9 @@ var Grammar = {
       ['(DELETE)'],
       ['(TYPEOF)'],
       ['(PLUS)'],
-      ['(MINUS)']
+      ['(UNARY_PLUS)'],
+      ['(MINUS)'],
+      ['(UNARY_MINUS)']
     ]
   },
 
@@ -481,7 +494,9 @@ var Grammar = {
     nodeType: 'Operator',
     productions: [
       ['(PLUS)'],
-      ['(MINUS)']
+      ['(UNARY_PLUS)'],
+      ['(MINUS)'],
+      ['(UNARY_MINUS)']
     ]
   },
 
