@@ -63,6 +63,7 @@
     FORWARD_SLASH: '\\/',
     WHITESPACE: '((?:[^\\S\\n]+))', // Does not match newlines
     PLUS_OR_MINUS: '(\\+|-)',
+    OPEN_PAREN: '(\\()'
   };
 
   // Language reserved words
@@ -145,7 +146,7 @@
     ['>>', 'RSHIFT'],
     ['**', 'EXPONENTIATION'],
     ['..', 'DOT_DOT'],
-    ['(', 'OPEN_PAREN'],
+    // ['(', 'OPEN_PAREN'],
     [')', 'CLOSE_PAREN'],
     ['[', 'OPEN_BRACKET'],
     [']', 'CLOSE_BRACKET'],
@@ -410,15 +411,16 @@
       regexes.WHITESPACE,
       function(matches, string) {
         return {
-          token: {
+          token: new Token({
             type: 'WHITESPACE',
-            ignore: true,
-          },
+            optional: true
+          }),
           position: matches[0].length
         };
       }
     ],
 
+    // PLUS or MINUS or UNARY_PLUS or UNARY_MINUS
     [
       regexes.PLUS_OR_MINUS,
       function(matches, string) {
@@ -431,11 +433,47 @@
         var type = types[matches[0]];
 
         return {
-          token: {
+          token: new Token({
             type: type,
             value: matches[1],
             isBinary: isBinary
-          },
+          }),
+          position: 1
+        };
+      }
+    ],
+
+    // OPEN_PAREN or OPEN_PAREN_ARG
+    [
+      regexes.OPEN_PAREN,
+      function(matches, string, tokens) {
+        // These are tokens types that can be followed by an OPEN_PAREN
+        // that would signal a function call, and not an expression.
+        var preceedingCallTokenTypes = [
+          'IDENTIFIER',
+          'CLOSE_BRACKET',
+          'CLOSE_PAREN',
+          'BIND'
+        ];
+
+        function isExpressionParen() {
+          return tokens.length === 0 || !preceedingCallTokenTypes.include(tokens.last().type);
+        }
+
+        if (isExpressionParen()) {
+          var token = new Token({
+            type: 'OPEN_PAREN',
+            value: matches[1]
+          });
+        } else {
+          var token = new Token({
+            type: 'OPEN_PAREN_ARG',
+            value: matches[1]
+          });
+        }
+
+        return {
+          token: token,
           position: 1
         };
       }

@@ -324,9 +324,9 @@ var Grammar = {
 
   Call: {
     productions: [
-      ['OPEN_PAREN', 'EmptyList', 'CLOSE_PAREN'],
-      ['OPEN_PAREN', 'ArgumentList', 'CLOSE_PAREN'],
-      // ['ArgumentList']
+      ['OPEN_PAREN_ARG', 'EmptyList', 'CLOSE_PAREN'],
+      ['OPEN_PAREN_ARG', 'ArgumentList', 'CLOSE_PAREN'],
+      ['WHITESPACE', 'ArgumentList']
     ],
 
     // This prevents calling a function with its arguments on the next
