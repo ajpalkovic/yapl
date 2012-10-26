@@ -30,6 +30,86 @@
     };
   };
 
+  $.each = function( obj, callback, args ) {
+    var name,
+      i = 0,
+      length = obj.length,
+      isObj = length === undefined || jQuery.isFunction( obj );
+
+    if ( args ) {
+      if ( isObj ) {
+        for ( name in obj ) {
+          if ( callback.apply( obj[ name ], args ) === false ) {
+            break;
+          }
+        }
+      } else {
+        for ( ; i < length; ) {
+          if ( callback.apply( obj[ i++ ], args ) === false ) {
+            break;
+          }
+        }
+      }
+
+    // A special, fast, case for the most common use of each
+    } else {
+      if ( isObj ) {
+        for ( name in obj ) {
+          if ( callback.call( obj[ name ], name, obj[ name ] ) === false ) {
+            break;
+          }
+        }
+      } else {
+        for ( ; i < length; ) {
+          // CONSISTENT W/ PROTOTYPE!!!!
+          if ( callback.call( obj[i], obj[i] , i++) === false ) {
+            break;
+          }
+        }
+      }
+    }
+
+    return obj;
+  };
+
+  $.makeNode = function(type, children, childNames) {
+    type = type[0].toLowerCase() + type.substring(1).gsub(/([A-Z])/, function(match) {
+      return '_' + match[0].toLowerCase();
+    })
+
+    children = children || [];
+    childNames = childNames || [];
+
+    var node = $('<' + type + '>');
+    var merged = children.zip(childNames);
+
+    merged.each(function(childAndName, i) {
+      childAndName[0] = childAndName[0] instanceof Token ? $.makeTokenNode(childAndName[0]) : childAndName[0];
+
+      if (childAndName[0] && childAndName[1]) childAndName[0].attr('class', childAndName[1]);
+
+      node.append(childAndName[0]);
+    }.bind(this));
+
+    return node;
+  };
+
+  $.makeTokenNode = function(token) {
+    var node = $.makeNode('token');
+    node.attr('type', token.type);
+    node.text(token.value);
+
+    return node;
+  }
+
+  $.fn.each = function( callback, args ) {
+    return jQuery.each( this, callback, args );
+  };
+
+  $.fn.type = function() {
+    return this.prop('tagName').toLowerCase();
+  };
+
   window.$S = function(items, delimeter) {
     items = (typeof items === 'string') ? items.split(delimeter || '') : items;
     var object = {};

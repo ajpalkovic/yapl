@@ -5,7 +5,8 @@
     },
 
     onClassDeclaration: function(classDeclaration, data) {
-
+      var methods = pass.Transformer.extract(classDeclaration, 'Method');
+      var staticMethods = pass.Transformer.extract(classDeclaration, )
     }
   });
 

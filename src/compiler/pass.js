@@ -7,12 +7,12 @@
     },
 
     run: function(tree, data) {
-      if (!tree.children) return tree;
+      if (!tree.children().length) return tree;
 
-      tree.children.map(function(child, i) {
+      tree.children().map(function(i, child) {
         if (!child) return;
 
-        this.handleChild(tree, child, i, data);
+        this.handleChild(tree, $(child), i, data);
       }.bind(this));
 
       return tree;
@@ -27,7 +27,7 @@
     },
 
     handleChild: function(parent, child, index, data) {
-      parent.children[index] = this.run(child, data);
+      parent.children().get(index) = this.run(child, data);
     }
   });
 

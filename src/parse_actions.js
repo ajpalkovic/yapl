@@ -4,11 +4,12 @@
    */
   function list(type) {
     return $.overload(function() {
-      return new Node(type);
+      return $.makeNode(type);
     }, function(firstElement) {
-      return new Node(type, [firstElement]);
+      var node = $.makeNode(type, [firstElement]);
+      return node;
     }, function(element, nodeList) {
-      nodeList.add(element);
+      nodeList.append(element);
       return nodeList;
     });
   }
@@ -20,7 +21,9 @@
   function node(type, childNames) {
     return function() {
       var args = Array.prototype.slice.call(arguments, 0);
-      return new Node(type, args, childNames);
+      var node = $.makeNode(type, args, childNames);
+
+      return node;
     };
   }
 
@@ -67,19 +70,18 @@
     MemberExpression: $.overload(function(primaryExpression) {
       return primaryExpression
     }, function(primaryExpression, memberChain) {
-      memberChain.add(primaryExpression);
+      memberChain.append(primaryExpression);
 
       // Make the hierarchy from the flattened chain.
-      var elements = memberChain.children;
+      var elements = memberChain.children();
       while (elements.length > 1) {
-        var member = elements[0];
-        var compoundExpression = elements[1];
+        var member = $(elements[0]);
+        var compoundExpression = $(elements[1]);
 
-        var newCompoundExpression = new Node(compoundExpression.type,
-          [member, compoundExpression.children[0]],
-          ['member', 'memberPart']);
+        var type = compoundExpression.type();
+        compoundExpression = node(type, ['member', 'memberPart']).call(this, member, $(compoundExpression.children()[0]));
 
-        elements.splice(0, 2, newCompoundExpression);
+        elements.splice(0, 2, compoundExpression);
       }
 
       return elements[0];

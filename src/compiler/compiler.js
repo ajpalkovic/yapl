@@ -15,6 +15,34 @@
       });
     },
 
+    stringify: function(ast) {
+      var emitter = new Emitter();
+
+      function stringifyChildren(parent) {
+        var length = parent.children().length;
+
+        parent.children().each(function(child, i) {
+          stringify($(child));
+
+          if (i < length - 1) emitter.nl();
+        });
+      }
+
+      function stringify(ast) {
+        if (ast.type() === 'token') {
+          emitter.e('(', ast.type(), ' "' + ast.text() + '")');
+          return;
+        }
+
+        emitter.e('(', ast.type()).blk();
+        stringifyChildren(ast);
+        emitter.end().e(')');
+      }
+
+      stringify(ast);
+      return emitter.flush();
+    },
+
     interpolate: function(string) {
       function balanceInterpolation(index) {
         for (var i = index; i < string.length; ++i) {

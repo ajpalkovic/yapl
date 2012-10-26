@@ -27,10 +27,9 @@
         try {
           result = parser.parse($('#code').val());
 
-          //var astText = JSON.stringify(result, undefined, 2);
-          var astText = result + "";
-          var x = new pass.ConditionalLoadTransformer();
-          var tree = x.run(result);
+          var astText = compiler.stringify(result);
+          // var x = new pass.ConditionalLoadTransformer();
+          // var tree = x.run(result);
           //var jsOutputText = compiler.toJs(result);
 
           astElement.text(astText);
