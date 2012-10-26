@@ -2,15 +2,15 @@
   var Compiler = klass({
     initialize: function Compiler() {
       this.emitter = new Emitter();
-      this.passes = [
-        //new pass.SymbolPass()
+      this.transformations = [
+        new pass.ConditionalLoadTransformer()
       ];
     },
 
     compile: function(ast) {
       var data = {};
 
-      this.passes.each(function(i, pass) {
+      this.transformations.each(function(i, pass) {
 
       });
     },

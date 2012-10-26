@@ -35,6 +35,20 @@
       this[childName] = child;
     },
 
+    extract: function(typeToExtract) {
+      var children = parent.children;
+      var numDeleted = 0;
+
+      var extractedChildren = children.filter(function(child, i) {
+        if (child.type !== typeToExtract) return false;
+
+        children.splice(i - numDeleted++, 1);
+        return true;
+      });
+
+      return extractedChildren;
+    },
+
     _toStringChildren: function(emitter) {
       var length = this.children.length;
 

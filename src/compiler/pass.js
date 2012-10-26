@@ -4,7 +4,21 @@
   var Pass = klass(pass, {}, {
     initialize: function Pass(adapter) {
       this.adapter = adapter;
-    }
+    },
+
+    run: function(tree, data) {
+      if (!tree.children) return tree;
+
+      tree.children.map(function(child, i) {
+        if (!child) return;
+
+        this.handleChild(tree, child, i, data);
+      }.bind(this));
+
+      return tree;
+    },
+
+    handleChild: function(parent, child, index, data) {}
   });
 
   var Transformer = klass(pass, Pass, {
@@ -12,20 +26,8 @@
       Pass.prototype.initialize.call(this, adapter);
     },
 
-    run: function(tree) {
-      if (this.adapter.handles(tree)) {
-        return this.adapter.handle(tree);
-      }
-
-      if (!tree.children) return tree;
-
-      tree.children.map(function(child, i) {
-        if (!child) return;
-
-        tree.children[i] = this.run(child);
-      }.bind(this));
-
-      return tree;
+    handleChild: function(parent, child, index, data) {
+      parent.children[index] = this.run(child, data);
     }
   });
 

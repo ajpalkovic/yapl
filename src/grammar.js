@@ -95,7 +95,9 @@ var Grammar = {
     productions: [
       ['EmptyList', 'EmptyStatement'],
       ['OPEN_PAREN', 'EmptyList', 'CLOSE_PAREN'],
-      ['OPEN_PAREN', 'ParameterList', 'CLOSE_PAREN']
+      ['OPEN_PAREN', 'ParameterList', 'CLOSE_PAREN'],
+      ['OPEN_PAREN_NO_EXPR', 'EmptyList', 'CLOSE_PAREN'],
+      ['OPEN_PAREN_NO_EXPR', 'ParameterList', 'CLOSE_PAREN']
     ]
   },
 
@@ -259,43 +261,28 @@ var Grammar = {
     productions: [
       ['PostfixIncrementExpression'],
       ['PrefixIncrementExpression'],
-      ['LeftHandSideExpression']
+      ['MemberExpression']
     ]
   },
 
   PostfixIncrementExpression: {
     productions: [
-      ['LeftHandSideExpression', '(DECREMENT)'],
-      ['LeftHandSideExpression', '(INCREMENT)']
+      ['MemberExpression', '(DECREMENT)'],
+      ['MemberExpression', '(INCREMENT)']
     ]
   },
 
   PrefixIncrementExpression: {
     productions: [
-      ['(INCREMENT)', 'LeftHandSideExpression'],
-      ['(DECREMENT)', 'LeftHandSideExpression']
-    ]
-  },
-
-  LeftHandSideExpression:  {
-    productions: [
-      ['NewExpression'],
-      ['MemberExpression'],
-      ['FunctionExpression'],
-      ['Closure']
-    ]
-  },
-
-  NewExpression:  {
-    productions: [
-      ['NEW', 'LeftHandSideExpression']
+      ['(INCREMENT)', 'MemberExpression'],
+      ['(DECREMENT)', 'MemberExpression']
     ]
   },
 
   MemberExpression:  {
     productions: [
-      ['PrimaryExpression', 'MemberChain'],
-      ['PrimaryExpression']
+      ['LeftHandSideExpression', 'MemberChain'],
+      ['LeftHandSideExpression']
     ]
   },
 
@@ -326,7 +313,7 @@ var Grammar = {
     productions: [
       ['OPEN_PAREN_NO_EXPR', 'EmptyList', 'CLOSE_PAREN'],
       ['OPEN_PAREN_NO_EXPR', 'ArgumentList', 'CLOSE_PAREN'],
-      ['WHITESPACE', 'ArgumentList']
+      ['ParenLessCall']
     ],
 
     // This prevents calling a function with its arguments on the next
@@ -349,6 +336,25 @@ var Grammar = {
     }
   },
 
+  ParenLessCall: {
+    productions: [
+      ['WHITESPACE', 'ArgumentList']
+    ],
+
+    // Prevents strings such as "a - 1" from being parsed as
+    // "a(-1)".
+    redefinitions: {
+      UnaryOperator: [
+        ['(LOGICAL_NOT)'],
+        ['(BITWISE_NOT)'],
+        ['(DELETE)'],
+        ['(TYPEOF)'],
+        ['(UNARY_PLUS)'],
+        ['(UNARY_MINUS)']
+      ]
+    }
+  },
+
   PropertyAccess: {
     productions: [
       ['DOT',  '(IDENTIFIER)']
@@ -364,6 +370,35 @@ var Grammar = {
   ArrayDereference: {
     productions: [
       ['OPEN_BRACKET_NO_EXPR', 'Expression', 'CLOSE_BRACKET']
+    ],
+
+    // strings such as a [- 1] should be allowed
+    redefinitions: {
+      UnaryOperator: [
+        ['(LOGICAL_NOT)'],
+        ['(BITWISE_NOT)'],
+        ['(DELETE)'],
+        ['(TYPEOF)'],
+        ['(PLUS)'],
+        ['(UNARY_PLUS)'],
+        ['(MINUS)'],
+        ['(UNARY_MINUS)']
+      ]
+    }
+  },
+
+  LeftHandSideExpression:  {
+    productions: [
+      ['NewExpression'],
+      ['FunctionExpression'],
+      ['Closure'],
+      ['PrimaryExpression']
+    ]
+  },
+
+  NewExpression:  {
+    productions: [
+      ['NEW', 'LeftHandSideExpression']
     ]
   },
 
@@ -371,18 +406,7 @@ var Grammar = {
     productions: [
       ['Expression', 'COMMA', 'ArgumentList'],
       ['Expression']
-    ],
-
-    redefinitions: {
-      UnaryOperator: [
-        ['(LOGICAL_NOT)'],
-        ['(BITWISE_NOT)'],
-        ['(DELETE)'],
-        ['(TYPEOF)'],
-        ['(UNARY_PLUS)'],
-        ['(UNARY_MINUS)']
-      ]
-    }
+    ]
   },
 
   PrimaryExpression:  {
@@ -432,7 +456,21 @@ var Grammar = {
   NestedExpression: {
     productions: [
       ['OPEN_PAREN', 'Expression', 'CLOSE_PAREN']
-    ]
+    ],
+
+    // strings such as "a (- 1)" should be allowed
+    redefinitions: {
+      UnaryOperator: [
+        ['(LOGICAL_NOT)'],
+        ['(BITWISE_NOT)'],
+        ['(DELETE)'],
+        ['(TYPEOF)'],
+        ['(PLUS)'],
+        ['(UNARY_PLUS)'],
+        ['(MINUS)'],
+        ['(UNARY_MINUS)']
+      ]
+    }
   },
 
   AssignmentOperator: {
