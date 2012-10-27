@@ -2,17 +2,21 @@
   var Compiler = klass({
     initialize: function Compiler() {
       this.emitter = new Emitter();
-      this.transformations = [
-        new pass.ConditionalLoadTransformer()
+      this.passes = [
+        new pass.CheckVarsDefinedPass(),
+        new pass.ConditionalLoadTransformer(),
+        new pass.ClassDeclarationPass(),
+        // new pass.CallOrIdentifierTransformer()
       ];
     },
 
-    compile: function(ast) {
-      var data = {};
-
-      this.transformations.each(function(i, pass) {
-
+    compile: function(tree) {
+      var result = tree;
+      this.passes.each(function(pass) {
+        pass.run(tree);
       });
+
+      return result;
     },
 
     stringify: function(ast) {
@@ -21,8 +25,8 @@
       function stringifyChildren(parent) {
         var length = parent.children().length;
 
-        parent.children().each(function(child, i) {
-          stringify($(child));
+        parent.children().each(function(i) {
+          stringify($(this));
 
           if (i < length - 1) emitter.nl();
         });
@@ -185,63 +189,6 @@
       }
 
       return this;
-    }
-  });
-
-  var Scope = klass({
-    initialize: function Scope(parentScope) {
-      this.parentScope = parentScope;
-      this.fields = $.extend({}, false, parentScope);
-    },
-
-    subscope: function() {
-      return new Scope(this);
-    },
-
-    hasSymbol: function(symbol) {
-      symbol = symbol.value || symbol;
-
-      return !!this.fields[symbol];
-    },
-
-    set: function(symbol, value) {
-      symbol = symbol.value || symbol;
-
-      this.fields[symbol] = value;
-    },
-
-    lookup: function(symbol) {
-      symbol = symbol.value || symbol;
-
-      if (!this.hasSymbol(symbol)) throw new errors.ReferenceError(symbol);
-
-      return this.fields[symbol];
-    },
-
-    update: function(symbol, value) {
-      symbol = symbol.value || symbol;
-      this.lookup(symbol);
-
-      this.fields[symbol] = value;
-    }
-  });
-
-  errors = {};
-
-  var Error = klass(errors, {}, {
-    initialize: function Error(line, message) {
-      this.line = line;
-      this.message = message;
-    },
-
-    toString: function() {
-      return this.constructor.name + '(' + this.line + '): ' + this.message;
-    }
-  });
-
-  var ReferenceError = klass(errors, Error, {
-    initialize: function ReferenceError(line, reference) {
-      Error.prototype.initialize.call(this, line, reference + ' is not defined');
     }
   });
 }(jQuery);

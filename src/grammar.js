@@ -118,7 +118,7 @@ var Grammar = {
     productions: [
       ['DefaultArgument'],
       ['AutoSetParam'],
-      ['(IDENTIFIER)']
+      ['BasicParameter']
     ]
   },
 
@@ -131,6 +131,12 @@ var Grammar = {
   DefaultArgument: {
     productions: [
       ['(IDENTIFIER)', 'ASSIGN', 'Expression']
+    ]
+  },
+
+  BasicParameter: {
+    productions: [
+      ['(IDENTIFIER)']
     ]
   },
 

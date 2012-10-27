@@ -4,12 +4,12 @@
    */
   function list(type) {
     return $.overload(function() {
-      return $.makeNode(type);
+      return $node(type);
     }, function(firstElement) {
-      var node = $.makeNode(type, [firstElement]);
+      var node = $node(type, [firstElement]);
       return node;
     }, function(element, nodeList) {
-      nodeList.append(element);
+      nodeList.prepend(element);
       return nodeList;
     });
   }
@@ -21,7 +21,7 @@
   function node(type, childNames) {
     return function() {
       var args = Array.prototype.slice.call(arguments, 0);
-      var node = $.makeNode(type, args, childNames);
+      var node = $node(type, args, childNames);
 
       return node;
     };
@@ -49,6 +49,7 @@
     ParameterList: list('ParameterList'),
     AutoSetParam: node('AutoSetParam', ['name']),
     DefaultArgument: node('DefaultArgument', ['name', 'value']),
+    BasicParameter: node('BasicParameter', ['name']),
     FunctionBody: list('FunctionBody'),
     MemberIdentifier: node('MemberIdentifier', ['name']),
     ArrayLiteral: node('ArrayLiteral', ['elements']),
@@ -70,21 +71,22 @@
     MemberExpression: $.overload(function(primaryExpression) {
       return primaryExpression
     }, function(primaryExpression, memberChain) {
-      memberChain.append(primaryExpression);
+      memberChain.prepend(primaryExpression);
 
       // Make the hierarchy from the flattened chain.
-      var elements = memberChain.children();
-      while (elements.length > 1) {
-        var member = $(elements[0]);
-        var compoundExpression = $(elements[1]);
+      var tree = memberChain.children().first().remove();
 
-        var type = compoundExpression.type();
-        compoundExpression = node(type, ['member', 'memberPart']).call(this, member, $(compoundExpression.children()[0]));
+      while (memberChain.children().length) {
+        var memberPart = memberChain.children().first().remove();
 
-        elements.splice(0, 2, compoundExpression);
+        var type = memberPart.type();
+
+        tree = $node(type,
+          [tree, memberPart.children().first()],
+          ['member', 'memberPart']);
       }
 
-      return elements[0];
+      return tree;
     }),
 
     MemberChain: list('MemberChain'),
@@ -120,7 +122,7 @@
 
     VariableStatement: node('VariableStatement'),
     VariableDeclarationList: list('VariableDeclarationList'),
-    VariableDeclaration: node('VariableDeclaration'),
+    VariableDeclaration: node('VariableDeclaration', ['name', 'value']),
     IfStatement: node('IfStatement'),
     OneLineIfStatement: node('OneLineIfStatement'),
     UnlessStatement: node('UnlessStatement'),

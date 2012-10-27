@@ -10,8 +10,14 @@
     <script type="text/javascript" src="parse_tree.js"></script>
     <script type="text/javascript" src="parse_actions.js"></script>
     <script type="text/javascript" src="parser.js"></script>
+
+    <script type="text/javascript" src="compiler/errors.js"></script>
+    <script type="text/javascript" src="compiler/scope.js"></script>
     <script type="text/javascript" src="compiler/pass.js"></script>
+    <script type="text/javascript" src="compiler/check_vars_defined_pass.js"></script>
     <script type="text/javascript" src="compiler/conditional_load_pass.js"></script>
+    <script type="text/javascript" src="compiler/class_declaration_pass.js"></script>
+    <script type="text/javascript" src="compiler/call_or_identifier_pass.js"></script>
     <script type="text/javascript" src="compiler/compiler.js"></script>
 
     <script type="text/javascript">
@@ -28,14 +34,13 @@
           result = parser.parse($('#code').val());
 
           var astText = compiler.stringify(result);
-          // var x = new pass.ConditionalLoadTransformer();
-          // var tree = x.run(result);
-          //var jsOutputText = compiler.toJs(result);
+          var output = compiler.compile(result);
 
           astElement.text(astText);
-          // jsOutputElement.text(tree);
+          jsOutputElement.text(compiler.stringify(output));
         } catch (e) {
           astElement.text(e);
+          jsOutputElement.text('');
           throw e;
         }
       }

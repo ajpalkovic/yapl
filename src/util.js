@@ -30,49 +30,9 @@
     };
   };
 
-  $.each = function( obj, callback, args ) {
-    var name,
-      i = 0,
-      length = obj.length,
-      isObj = length === undefined || jQuery.isFunction( obj );
+  var NULL_NODE = $('<null></null>');
 
-    if ( args ) {
-      if ( isObj ) {
-        for ( name in obj ) {
-          if ( callback.apply( obj[ name ], args ) === false ) {
-            break;
-          }
-        }
-      } else {
-        for ( ; i < length; ) {
-          if ( callback.apply( obj[ i++ ], args ) === false ) {
-            break;
-          }
-        }
-      }
-
-    // A special, fast, case for the most common use of each
-    } else {
-      if ( isObj ) {
-        for ( name in obj ) {
-          if ( callback.call( obj[ name ], name, obj[ name ] ) === false ) {
-            break;
-          }
-        }
-      } else {
-        for ( ; i < length; ) {
-          // CONSISTENT W/ PROTOTYPE!!!!
-          if ( callback.call( obj[i], obj[i] , i++) === false ) {
-            break;
-          }
-        }
-      }
-    }
-
-    return obj;
-  };
-
-  $.makeNode = function(type, children, childNames) {
+  $node = function(type, children, childNames) {
     type = type[0].toLowerCase() + type.substring(1).gsub(/([A-Z])/, function(match) {
       return '_' + match[0].toLowerCase();
     })
@@ -84,23 +44,31 @@
     var merged = children.zip(childNames);
 
     merged.each(function(childAndName, i) {
-      childAndName[0] = childAndName[0] instanceof Token ? $.makeTokenNode(childAndName[0]) : childAndName[0];
+      if (childAndName[0] instanceof Token) {
+        childAndName[0] = $token(childAndName[0]);
+      }
 
-      if (childAndName[0] && childAndName[1]) childAndName[0].attr('class', childAndName[1]);
+      childAndName[0] = childAndName[0] || NULL_NODE;
 
-      node.append(childAndName[0]);
+      if (childAndName[1]) {
+        childAndName[0].attr('class', childAndName[1]);
+      }
+
+      childAndName[0].clone().appendTo(node);
+
     }.bind(this));
 
     return node;
   };
 
-  $.makeTokenNode = function(token) {
-    var node = $.makeNode('token');
+  $token = function(token) {
+    var node = $node('token');
     node.attr('type', token.type);
+    node.attr('line', token.line);
     node.text(token.value);
 
     return node;
-  }
+  };
 
   $.fn.each = function( callback, args ) {
     return jQuery.each( this, callback, args );

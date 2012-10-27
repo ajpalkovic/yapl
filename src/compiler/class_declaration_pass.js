@@ -1,18 +1,28 @@
 !function($) {
-  var ClassDeclarationAdapter = klass(pass, pass.Adapter, {
-    initialize: function ClassDeclarationAdapter() {
-      pass.Adapter.prototype.initialize.call(this);
+  var ClassDeclarationPass = klass(pass, pass.Pass, {
+    initialize: function ClassDeclarationPass() {
+      pass.Pass.prototype.initialize.call(this, {
+        'class_declaration': this.onClassDeclaration
+      });
     },
 
     onClassDeclaration: function(classDeclaration, data) {
-      var methods = pass.Transformer.extract(classDeclaration, 'Method');
-      var staticMethods = pass.Transformer.extract(classDeclaration, )
-    }
-  });
+      var className = classDeclaration.children('.name').text();
+      var constructorMethod = classDeclaration.children('.body').children('method').filter(function(i) {
+        if ($(this).children('.name').text() === className) return true;
+      });
 
-  var ClassDeclarationTransformer = klass(pass, pass.Transformer, {
-    initialize: function ClassDeclarationTransformer() {
-      pass.Transformer.prototype.initialize.call(this, new ClassDeclarationAdapter());
+      if (!constructorMethod.size()) {
+        var parameters = $node('node_list');
+        var body = $node('function_body');
+
+        constructorMethod = $node('method',
+          [classDeclaration.children('.name'), parameters, body],
+          ['name', 'parameters', 'body']);
+      }
+
+      constructorMethod.attr('class', 'constructor');
+      classDeclaration.append(constructorMethod);
     }
   });
 }(jQuery);
