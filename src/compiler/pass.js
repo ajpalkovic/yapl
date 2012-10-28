@@ -83,13 +83,13 @@
       node.children().each(function(i) {
         var child = $(this);
 
+        $.each(_this.selectorMappings, function(selector, fn) {
+          if (child.is(selector)) _this.handleMatch(child, fn, scope);
+        });
+
         if (child.is(_this.scopeSelector)) {
           _this.runWithScopeNode(child, scope, data);
         } else {
-          $.each(_this.selectorMappings, function(selector, fn) {
-            if (child.is(selector)) _this.handleMatch(child, fn, scope);
-          });
-
           _this.traverseChildren(child, scope, data);
         }
       });

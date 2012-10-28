@@ -61,6 +61,13 @@
     return node;
   };
 
+  $statement = function(node) {
+    var statement = $node('terminated_statement');
+    node.wrap(statement);
+
+    return statement;
+  };
+
   $token = function(token) {
     var node = $node('token');
     node.attr('type', token.type);

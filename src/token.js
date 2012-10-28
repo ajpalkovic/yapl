@@ -410,10 +410,10 @@
               token: new Token({
                 type: 'MULTI_LINE_COMMENT',
                 ignore: true,
-                value: string.substring(0, commentEnd + 1)
+                value: string.substring(0, commentEnd)
               }),
 
-              position: commentEnd + 1
+              position: commentEnd
             };
 
           // A regular expression literal cannot begin with a whitespace character.
@@ -428,6 +428,7 @@
           default:
             if (!invalidWhitespace) {
               var regexToken = matchRegex();
+              if (!regexToken) throw 'Syntax Error: Invalid regular expression'
 
               if (regexToken.position <= string.length && string[regexToken.position] === ' ') {
                 regexToken = undefined;

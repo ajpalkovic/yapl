@@ -4,9 +4,11 @@
       this.emitter = new Emitter();
       this.passes = [
         new pass.CheckVarsDefinedPass(),
+        new pass.ExpandClosuresTransformer(),
         new pass.ConditionalLoadTransformer(),
         new pass.ClassDeclarationPass(),
-        // new pass.CallOrIdentifierTransformer()
+        new pass.SyntaxAugmentationTransformer(),
+        new pass.CallOrIdentifierTransformer()
       ];
     },
 

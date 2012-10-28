@@ -17,4 +17,11 @@
       CompileError.prototype.initialize.call(this, line, reference + ' is not defined');
     }
   });
+
+  var AutoSetParamError = klass(error, CompileError, {
+    initialize: function AutoSetParamError(line, parameterName) {
+      CompileError.prototype.initialize.call(this, line,
+          'Auto-setting parameter "' + parameterName + '" used outside class context');
+    }
+  });
 }(jQuery);

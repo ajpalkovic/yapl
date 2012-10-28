@@ -1,5 +1,17 @@
 !function($) {
-  klass({
+  var SyntaxError = klass({
+    initialize: function SyntaxError(line, col, token) {
+      this.line = line;
+      this.col = col;
+      this.token = token;
+    },
+
+    toString: function() {
+      return 'SyntaxError(' + this.line + ':' + this.col + '): Unexpected token ' + this.token;
+    }
+  });
+
+  var Lexer = klass({
     /**
      * Lexer implementation for Yapl.
      */
@@ -54,6 +66,7 @@
     _lex: function(string) {
       var tokens = [];
       var line = 1;
+      var col = 0;
 
       while (string.length > 0) {
         var match = string.match(Token.regex);
@@ -70,14 +83,16 @@
             token = result.token;
             endOfMatch = result.position;
           } else {
-            throw 'Syntax Error: Illegal token: ' + string;
+            throw new SyntaxError(line, col, string[0]);
           }
         }
 
         if (token.type === 'NEWLINE') {
           token.line = line++;
+          col = 0;
         } else {
           token.line = line;
+          col += endOfMatch;
         }
 
         if (!token.ignore) tokens.push(token);
