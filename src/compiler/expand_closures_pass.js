@@ -16,22 +16,25 @@
       parameters.children().each(function(i) {
         var parameter = $(this).clone();
 
-        if (parameter.is('basic_parameter')) {
-          var nameToken = parameter.children('token');
-          var name = nameToken.text();
+        var nameToken = parameter.children('.name');
+        var name = nameToken.text();
 
-          // The closure construct does not allow parameter names that don't already shadow
-          // the same symbol in some parent scope.
-          if (!scope.hasSymbol(name)) {
-            throw new error.ReferenceError(nameToken.attr('line'), name);
-          }
+        var valueToken = parameter.children('.value');
+        var value = valueToken.text();
 
-          newParameters.append(parameter);
-          callArguments.append(parameter.clone());
-        } else if (parameter.is('default_argument')) {
-          newParameters.append(parameter.children('.name'));
-          callArguments.append(parameter.children('.value'));
+        var referencedNameToken = value ? valueToken : nameToken;
+        var referencedName = referencedNameToken.text();
+
+        // The closure construct does not allow parameter names that don't already shadow
+        // the same symbol in some parent scope.
+        if (!scope.hasSymbol(referencedName)) {
+          throw new error.ReferenceError(referencedNameToken.attr('line'), referencedName);
         }
+
+        var newParameter = $node('variable_declaration', [nameToken], ['name']);
+
+        newParameters.append(newParameter);
+        callArguments.append(value ? valueToken : nameToken.clone());
       });
 
       var nestedExpression = $node('nested_expression');

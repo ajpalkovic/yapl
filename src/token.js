@@ -64,7 +64,8 @@
     FORWARD_SLASH: '\\/',
     WHITESPACE: '((?:[^\\S\\n]+))', // Does not match newlines
     PLUS_OR_MINUS: '(\\+|-)',
-    OPEN_PAREN_OR_BRACKET: '(\\(|\\[)',
+    OPEN_PAREN: '(\\()',
+    OPEN_BRACKET: '(\\[)'
   };
 
   // Language reserved words
@@ -72,6 +73,7 @@
     ['function', 'FUNCTION'],
     ['def', 'DEF'],
     ['var', 'VAR'],
+    ['@var', 'INS_VAR'],
     ['if', 'IF'],
     ['instanceof', 'INSTANCEOF'],
     ['in', 'IN'],
@@ -88,7 +90,6 @@
     ['finally', 'FINALLY'],
     ['void', 'VOID'],
     ['null', 'NULL'],
-    ['new', 'NEW'],
     ['delete', 'DELETE'],
     ['switch', 'SWITCH'],
     ['case', 'CASE'],
@@ -147,6 +148,7 @@
     ['>>', 'RSHIFT'],
     ['**', 'EXPONENTIATION'],
     ['..', 'DOT_DOT'],
+    ['::', 'DOUBLE_COLON'],
     // ['(', 'OPEN_PAREN'],
     [')', 'CLOSE_PAREN'],
     // ['[', 'OPEN_BRACKET'],
@@ -176,15 +178,6 @@
     ['\n', 'NEWLINE', true]
   ];
 
-  // These are the types of the tokens that cannot preceed a regular expression
-  // literal in the source.  This tries to solve the inherent ambiguity between
-  // the division operator and the regular expression literal in ECMA Script.
-  var nonPreRegexTokens = {
-    'REGEX_LITERAL': true,
-    'NUMERIC_LITERAL': true,
-    'STRING_LITERAL': true
-  };
-
   // These are tokens types that can be followed by an OPEN_PAREN
   // that would signal a function call, and not an expression.
   var preceedingCallTokenTypes = [
@@ -193,6 +186,78 @@
     'CLOSE_PAREN',
     'BIND'
   ];
+
+  var preceedingDerefTokenTypes = [
+    'IDENTIFIER',
+    'CLOSE_BRACKET',
+    'CLOSE_PAREN',
+    'CLOSE_BRACE',
+    'STRING_LITERAL',
+    'SYMBOL'
+  ];
+
+  // These are the tokens that can follow a regular expression literal.
+  var regexFollowTokens = [
+    ['>>>='],
+    ['>>>'],
+    ['<=>'],
+    ['...'],
+    ['||='],
+    ['<<='],
+    ['>>='],
+    ['**='],
+    ['++'],
+    ['--'],
+    ['=='],
+    ['*='],
+    ['/='],
+    ['%='],
+    ['+='],
+    ['-='],
+    ['&='],
+    ['|='],
+    ['^='],
+    ['!='],
+    ['<='],
+    ['>='],
+    ['&&'],
+    ['||'],
+    ['<<'],
+    ['>>'],
+    ['**'],
+    ['..'],
+    ['::'],
+    ['['],
+    [')'],
+    [']'],
+    ['{'],
+    ['}'],
+    ['.'],
+    ['-'],
+    ['+'],
+    ['*'],
+    ['%'],
+    ['?'],
+    [','],
+    [';'],
+    [':'],
+    ['='],
+    ['<'],
+    ['>'],
+    ['!'],
+    ['&'],
+    ['|'],
+    ['~'],
+    ['^'],
+    ['@'],
+    ['#'],
+    ['\\'],
+    ['\n']
+  ];
+
+  // We want to throw away any non-newline whitespace that may come before the next
+  // token that can follow the regex.
+  var followRegexLiteralRegex = '^[^\\S\\n]*' + compileRegex(regexFollowTokens, true);
 
   var advanced = [
 
@@ -322,20 +387,6 @@
         }
 
         /**
-         *  Will determine if the regular expression literal trying to be lexed should
-         *  be tokenized as such, or as a division operator.  There is an inherent ambiguity
-         *  in the language between these two tokens and how they should be scanned.
-         *
-         *  This will return true iff there is no preceeding token or the preceeding token
-         *  is not a token that would lexically preceed a division operator.
-         */
-        function canBeRegex() {
-          var previous = tokens[tokens.length - 1];
-
-          return !(previous && nonPreRegexTokens[previous.type]);
-        }
-
-        /**
          *  Tries to match a regex literal from the start of the current string.
          *  Regexes in Yapl can span multiple lines and contain whitespace, so anything
          *  goes for their content.
@@ -344,8 +395,6 @@
          *  lexed from the string.
          */
         function matchRegex() {
-          if (!canBeRegex()) return undefined;
-
           for (var i = 1, len = string.length; i < len; ++i) {
             if (string[i] === '\\') {
               ++i;
@@ -377,6 +426,27 @@
           }
 
           return undefined;
+        }
+
+
+        /**
+         *  Will determine if the regular expression literal trying to be lexed should
+         *  be tokenized as such, or as a division operator.  There is an inherent ambiguity
+         *  in the language between these two tokens and how they should be scanned.
+         */
+        function regexIsAmbiguous(regexToken) {
+          // If there are no preceeding tokens, we assume it's a regex.  Even if there
+          // are invalid tokens after, we still lex it as a regex literal.
+          //
+          // eg. "/a/ 1"
+          if (!tokens.length || regexToken.position === string.length) return false;
+
+          // The string after the regex literal in the source.
+          var afterRegexLiteral = string.substring(regexToken.position);
+
+          // If the token after the regex isn't some non-operator or reserved word,
+          // then the regex is ambiguous.
+          return !afterRegexLiteral.match(followRegexLiteralRegex);
         }
 
         switch (string[1]) {
@@ -416,24 +486,15 @@
               position: commentEnd
             };
 
-          // A regular expression literal cannot begin with a whitespace character.
-          // This prevents weird ambiguities between chained divisions separated by
-          // whitespace.
-          case ' ':
-            var invalidWhitespace = true;
-
           // Well if the character following the first '/' wasn't another '/' or a '*',
           // it can be a valid ECMA 262 regex literal (see http://bclary.com/2004/11/07/#a-7.8.5),
           // or it can simply be the division operator.  Let's find out...
           default:
-            if (!invalidWhitespace) {
-              var regexToken = matchRegex();
-              if (!regexToken) throw 'Syntax Error: Invalid regular expression'
+            var regexToken = matchRegex();
+            // if (!regexToken) throw 'Syntax Error: Invalid regular expression';
 
-              if (regexToken.position <= string.length && string[regexToken.position] === ' ') {
-                regexToken = undefined;
-              }
-            }
+            // If the regex is ambiguous, we don't lex it as such.
+            if (regexToken && regexIsAmbiguous(regexToken)) regexToken = undefined;
 
             return regexToken || {
               token: new Token({
@@ -454,6 +515,7 @@
         return {
           token: new Token({
             type: 'WHITESPACE',
+            value: matches[0],
             optional: true
           }),
           position: matches[0].length
@@ -483,30 +545,56 @@
       }
     ],
 
-    // OPEN_PAREN or OPEN_PAREN_NO_EXPR / OPEN_BRACKET or OPEN_BRACKET_NO_EXPR
+    // OPEN_PAREN or OPEN_PAREN_NO_EXPR
     [
-      regexes.OPEN_PAREN_OR_BRACKET,
+      regexes.OPEN_PAREN,
       function(matches, string, tokens) {
-        var types = {
-          '(': 'OPEN_PAREN',
-          '[': 'OPEN_BRACKET'
+        function isCall() {
+          return tokens.length > 0 && preceedingCallTokenTypes.include(tokens.last().type);
+        }
+
+        var token = new Token({
+          type: 'OPEN_PAREN',
+          value: matches[1]
+        });
+
+        if (isCall()) token.type += '_NO_EXPR';
+
+        return {
+          token: token,
+          position: 1
         };
+      }
+    ],
 
-        function isStartOfExpression() {
-          return tokens.length === 0 || !preceedingCallTokenTypes.include(tokens.last().type);
+    // OPEN_BRACKET or OPEN_BRACKET_NO_EXPR
+    [
+      regexes.OPEN_BRACKET,
+      function(matches, string, tokens) {
+        function isDereference() {
+          switch (tokens.length) {
+            case 0:
+              return false;
+            case 1:
+              if (tokens.last().type === 'WHITESPACE') return false;
+            default:
+              if (tokens.last().type === 'WHITESPACE') {
+                var previous = tokens[tokens.length - 2];
+                if (preceedingCallTokenTypes.include(previous.type)) return false;
+              } else {
+                var previous = tokens.last();
+              }
+
+              return preceedingDerefTokenTypes.include(previous.type);
+          }
         }
 
-        if (isStartOfExpression()) {
-          var token = new Token({
-            type: types[matches[1]],
-            value: matches[1]
-          });
-        } else {
-          var token = new Token({
-            type: types[matches[1]] + '_NO_EXPR',
-            value: matches[1]
-          });
-        }
+        var token = new Token({
+          type: 'OPEN_BRACKET',
+          value: matches[1]
+        });
+
+        if (isDereference()) token.type += '_NO_EXPR';
 
         return {
           token: token,

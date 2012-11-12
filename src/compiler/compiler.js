@@ -4,18 +4,20 @@
       this.emitter = new Emitter();
       this.passes = [
         new pass.CheckVarsDefinedPass(),
+        // new pass.ClassDeclarationTransformer(),
         new pass.ExpandClosuresTransformer(),
         new pass.ConditionalLoadTransformer(),
-        new pass.ClassDeclarationPass(),
         new pass.SyntaxAugmentationTransformer(),
-        new pass.CallOrIdentifierTransformer()
+        new pass.SpecialParametersTransformer(),
+        new pass.ClassBodyTransformer()
+        // new pass.CallOrIdentifierTransformer()
       ];
     },
 
     compile: function(tree) {
       var result = tree;
       this.passes.each(function(pass) {
-        pass.run(tree);
+        var result = pass.run(tree);
       });
 
       return result;

@@ -48,13 +48,13 @@
         childAndName[0] = $token(childAndName[0]);
       }
 
-      childAndName[0] = childAndName[0] || NULL_NODE;
+      childAndName[0] = (childAndName[0] || NULL_NODE).clone();
 
       if (childAndName[1]) {
         childAndName[0].attr('class', childAndName[1]);
       }
 
-      childAndName[0].clone().appendTo(node);
+      childAndName[0].appendTo(node);
 
     }.bind(this));
 
@@ -62,10 +62,30 @@
   };
 
   $statement = function(node) {
-    var statement = $node('terminated_statement');
-    node.wrap(statement);
+    return $node('terminated_statement', [node]);
+  };
 
-    return statement;
+  $variable = function(name, value) {
+    return $statement(
+      $node('variable_statement', [
+        $node('variable_declaration',
+          [name, value],
+          ['name', 'value']
+        )
+      ])
+    );
+  };
+
+  $assignment = function(left, right) {
+    return $node('assignment_expression', [
+      left,
+      $node('operator', [Token.ASSIGN]),
+      right
+    ], [
+      'left',
+      'operator',
+      'right'
+    ]);
   };
 
   $token = function(token) {

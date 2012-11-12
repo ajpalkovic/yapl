@@ -33,12 +33,12 @@
     }
   });
 
-  var ScopedTransformer = klass(pass, Transformer, {
-    initialize: function ScopedTransformer(selectorMappings) {
-      pass.Transformer.prototype.initialize.call(this, selectorMappings);
+  var ScopedPass = klass(pass, Pass, {
+    initialize: function ScopedPass(selectorMappings) {
+      pass.Pass.prototype.initialize.call(this, selectorMappings);
 
       this.scopes = [
-        'class',
+        'class_declaration',
         'function_declaration',
         'function_expression',
         'method',
@@ -46,12 +46,13 @@
       ];
 
       this.declarations = [
-        'class',
+        'class_declaration',
+        'instance_var_declaration',
         'variable_declaration',
+        'closure_parameter',
         'function_declaration',
         'function_expression',
-        'method',
-        'basic_parameter'
+        'method'
       ];
 
       this.scopeSelector = this.scopes.join(', ');
@@ -63,8 +64,6 @@
     },
 
     runWithScopeNode: function(scopeNode, scope, data) {
-      var _this = this;
-
       // If the current node creates a new lexical scope,
       // create a new scope and add it to its own scope.
       scope = scope.subscope();
@@ -80,12 +79,12 @@
     traverseChildren: function(node, scope, data) {
       var _this = this;
 
+      $.each(_this.selectorMappings, function(selector, fn) {
+        if (node.is(selector)) _this.handleMatch(node, fn, scope);
+      });
+
       node.children().each(function(i) {
         var child = $(this);
-
-        $.each(_this.selectorMappings, function(selector, fn) {
-          if (child.is(selector)) _this.handleMatch(child, fn, scope);
-        });
 
         if (child.is(_this.scopeSelector)) {
           _this.runWithScopeNode(child, scope, data);
@@ -104,6 +103,8 @@
         // If the child is a declaration, add it to the symbol table.
         if (child.is(_this.declarationSelector)) {
           var symbolName = _this.getSymbolName(child);
+          if (_this.onDeclaration) _this.onDeclaration(symbolName, child, scope);
+
           scope.set(symbolName, child);
         }
 
@@ -115,6 +116,31 @@
 
     run: function(ast, data) {
       this.runWithScopeNode(ast, new Scope(), data);
+    }
+  });
+
+  var OutputPass = klass(pass, Pass, {
+    initialize: function OutputPass(selectorMappings) {
+      pass.ScopedPass.prototype.initialize.call(this, selectorMappings);
+
+      this.emitter = new Emitter();
+    },
+
+    handleMatch: function(match, fn, scope) {
+      fn.call(this, match, scope, this.emitter);
+    }
+  });
+
+  var ScopedTransformer = klass(pass, ScopedPass, {
+    initialize: function ScopedTransformer(selectorMappings) {
+      pass.ScopedPass.prototype.initialize.call(this, selectorMappings);
+    },
+
+    handleMatch: function(match, fn, scope) {
+      var replacement = fn.call(this, match, scope);
+      if (replacement === undefined) return;
+
+      if (replacement !== match) match.replaceWith(replacement);
     }
   });
 }(jQuery);

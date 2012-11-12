@@ -11,6 +11,9 @@
     }, function(element, nodeList) {
       nodeList.prepend(element);
       return nodeList;
+    }, function(element, delimiter, nodeList) {
+      nodeList.prepend(element);
+      return nodeList;
     });
   }
 
@@ -41,21 +44,22 @@
     ClassBody: list('ClassBody'),
     Method: node('Method', ['name', 'parameters', 'body']),
     StaticMethod: node('StaticMethod'),
+    InstanceVarDeclaration: node('InstanceVarDeclaration'),
+    StaticVarDeclaration: node('StaticVarDeclaration'),
     Accessor: node('Accessor'),
     FunctionDeclaration: node('FunctionDeclaration', ['name', 'parameters', 'body']),
     Closure: node('Closure', ['parameters', 'body']),
+    ClosureParameter: node('ClosureParameter', ['name', 'value']),
     FunctionExpression: node('FunctionExpression', ['name', 'parameters', 'body']),
     EmptyList: list('NodeList'),
     ParameterList: list('ParameterList'),
-    AutoSetParam: node('AutoSetParam', ['name']),
-    DefaultArgument: node('DefaultArgument', ['name', 'value']),
-    BasicParameter: node('BasicParameter', ['name']),
+    AutoSetParam: node('AutoSetParam'),
     FunctionBody: list('FunctionBody'),
     MemberIdentifier: node('MemberIdentifier', ['name']),
     ArrayLiteral: node('ArrayLiteral', ['elements']),
     ArrayElementList: list('CommaNodeList'),
     ObjectLiteral: node('ObjectLiteral'),
-    PropertyList: node('PropertyList'),
+    PropertyList: list('PropertyList'),
     Property: node('Property', ['name', 'value']),
     AssignmentExpression: node('AssignmentExpression', ['left', 'operator', 'right']),
     ConditionalExpression: node('ConditionalExpression'),
@@ -96,7 +100,11 @@
     ConditionalLoad: node('ConditionalLoad', ['property']),
     Call: node('Call'),
     ArgumentList: list('ArgumentList'),
-    Reference: node('Reference'),
+    This: node('this'),
+    Super: node('super'),
+    Symbol: node('symbol'),
+    RegexLiteral: node('regex_literal'),
+    StringLiteral: node('string_literal'),
     IdentifierReference: node('IdentifierReference'),
     FunctionReference: node('FunctionReference'),
     PrimitiveLiteralExpression: node('PrimitiveLiteralExpression'),

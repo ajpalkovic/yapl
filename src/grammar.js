@@ -1,3 +1,6 @@
+// To avoid disgusting left-factoring of many of these rules, the longer
+// rules that are ambiguous are before those that are smaller, so it solves
+// the problem.  This means ORDER OF THE PRODUCTIONS MATTERS!
 var Grammar = {
   Program: {
     productions: [
@@ -23,8 +26,8 @@ var Grammar = {
 
   ParentClass: {
     productions: [
-      ['Reference', 'DOT', 'ParentClass'],
-      ['Reference']
+      ['IdentifierReference', 'DOT', 'ParentClass'],
+      ['IdentifierReference']
     ]
   },
 
@@ -41,6 +44,7 @@ var Grammar = {
       ['Statement'],
       ['Method'],
       ['StaticMethod'],
+      ['InstanceVarDeclaration'],
       ['StaticVarDeclaration'],
       ['ClassDeclaration']
     ]
@@ -58,9 +62,15 @@ var Grammar = {
     ]
   },
 
+  InstanceVarDeclaration: {
+    productions: [
+      ['INS_VAR', 'VariableDeclarationList', 'EndSt']
+    ]
+  },
+
   StaticVarDeclaration: {
     productions: [
-      ['STATIC', 'VariableStatement', 'EndSt']
+      ['STATIC', 'InstanceVarDeclaration']
     ]
   },
 
@@ -81,6 +91,19 @@ var Grammar = {
   Closure: {
     productions: [
       ['CLOSURE', 'Parameters', 'FunctionBody', 'END']
+    ],
+
+    redefinitions: {
+      Parameter: [
+        ['ClosureParameter']
+      ]
+    }
+  },
+
+  ClosureParameter: {
+    productions: [
+      ['(IDENTIFIER)', 'ASSIGN', 'IdentifierReference'],
+      ['IdentifierReference']
     ]
   },
 
@@ -116,27 +139,14 @@ var Grammar = {
 
   Parameter: {
     productions: [
-      ['DefaultArgument'],
       ['AutoSetParam'],
-      ['BasicParameter']
+      ['VariableDeclaration']
     ]
   },
 
   AutoSetParam: {
     productions: [
-      ['MEMBER', '(IDENTIFIER)']
-    ]
-  },
-
-  DefaultArgument: {
-    productions: [
-      ['(IDENTIFIER)', 'ASSIGN', 'Expression']
-    ]
-  },
-
-  BasicParameter: {
-    productions: [
-      ['(IDENTIFIER)']
+      ['MEMBER', 'VariableDeclaration']
     ]
   },
 
@@ -196,14 +206,15 @@ var Grammar = {
   Property: {
     productions: [
       ['PropertyName', 'COLON', 'Expression'],
-      ['PropertyName']
+      ['PropertyName'],
+      ['Symbol']
     ]
   },
 
   PropertyName: {
     productions: [
+      ['StringLiteral'],
       ['(IDENTIFIER)'],
-      ['(STRING_LITERAL)'],
       ['(NUMERIC_LITERAL)']
     ]
   },
@@ -218,7 +229,7 @@ var Grammar = {
 
   AssignmentExpression: {
     productions: [
-      ['LeftHandSideExpression', 'AssignmentOperator', 'Expression']
+      ['MemberExpression', 'AssignmentOperator', 'Expression']
     ]
   },
 
@@ -378,7 +389,7 @@ var Grammar = {
       ['OPEN_BRACKET_NO_EXPR', 'Expression', 'CLOSE_BRACKET']
     ],
 
-    // strings such as a [- 1] should be allowed
+    // strings such as "a [- 1]" should be allowed
     redefinitions: {
       UnaryOperator: [
         ['(LOGICAL_NOT)'],
@@ -395,16 +406,9 @@ var Grammar = {
 
   LeftHandSideExpression:  {
     productions: [
-      ['NewExpression'],
       ['FunctionExpression'],
       ['Closure'],
       ['PrimaryExpression']
-    ]
-  },
-
-  NewExpression:  {
-    productions: [
-      ['NEW', 'LeftHandSideExpression']
     ]
   },
 
@@ -417,14 +421,12 @@ var Grammar = {
 
   PrimaryExpression:  {
     productions: [
-      ['(THIS)'],
-      ['(SUPER)'],
-      ['(STRING_LITERAL)'],
-      ['(REGEX_LITERAL)'],
-      ['(SYMBOL)'],
-      ['(REGEX)'],
+      ['This'],
+      ['Super'],
+      ['RegexLiteral'],
+      ['StringLiteral'],
+      ['Symbol'],
       ['IdentifierReference'],
-      ['FunctionReference'],
       ['PrimitiveLiteralExpression'],
       ['MemberIdentifier'],
       ['ObjectLiteral'],
@@ -433,21 +435,40 @@ var Grammar = {
     ]
   },
 
-  Reference: {
+  This: {
     productions: [
-      ['(IDENTIFIER)']
+      ['(THIS)']
+    ]
+  },
+
+  Super: {
+    productions: [
+      ['(SUPER)']
+    ]
+  },
+
+  Symbol: {
+    productions: [
+      ['COLON', 'StringLiteral'],
+      ['COLON', '(IDENTIFIER)']
+    ]
+  },
+
+  RegexLiteral: {
+    productions: [
+      ['(REGEX_LITERAL)']
+    ]
+  },
+
+  StringLiteral: {
+    productions: [
+      ['(STRING_LITERAL)']
     ]
   },
 
   IdentifierReference: {
     productions: [
       ['(IDENTIFIER)']
-    ]
-  },
-
-  FunctionReference: {
-    productions: [
-      ['BITWISE_AND', '(IDENTIFIER)']
     ]
   },
 
@@ -798,7 +819,8 @@ var Grammar = {
 
   InflectedForStructure: {
     productions: [
-      ['Expression', 'AT', 'VariableDeclaration']
+      ['Expression', 'AT', 'VariableDeclaration'],
+      ['Expression']
     ]
   },
 
