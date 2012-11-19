@@ -262,7 +262,21 @@ var Grammar = {
 
   AssignmentExpression: {
     productions: [
-      ['MemberExpression', 'AssignmentOperator', 'Expression']
+      ['MemberExpressionList', 'AssignmentOperator', 'ExpressionList']
+    ]
+  },
+
+  MemberExpressionList: {
+    productions: [
+      ['MemberExpression', 'COMMA', 'MemberExpressionList'],
+      ['MemberExpression']
+    ]
+  },
+
+  ExpressionList: {
+    productions: [
+      ['Expression', 'COMMA', 'ExpressionList'],
+      ['Expression']
     ]
   },
 
@@ -852,8 +866,8 @@ var Grammar = {
 
   InflectedForStructure: {
     productions: [
-      ['Expression', 'AT', 'VariableDeclaration'],
-      ['Expression']
+      ['IdentifierReference', 'AT', 'VariableDeclaration'],
+      ['IdentifierReference']
     ]
   },
 
@@ -905,14 +919,7 @@ var Grammar = {
 
   Case: {
     productions: [
-      ['CASE', 'CaseExpressionList', 'COLON', 'BlockBody']
-    ]
-  },
-
-  CaseExpressionList: {
-    productions: [
-      ['Expression', 'COMMA', 'CaseExpressionList'],
-      ['Expression']
+      ['CASE', 'ExpressionList', 'COLON', 'BlockBody']
     ]
   },
 

@@ -5,7 +5,8 @@
         'identifier_reference': this.onIdentifier,
         'member_identifier': this.onMemberIdentifier,
         'accessor_variable': this.onAccessorVariable,
-        'property_access': this.onPropertyAccess
+        'property_access': this.onPropertyAccess,
+        'assignment_expression': this.onAssignmentExpression
       });
     },
 
@@ -74,7 +75,44 @@
     },
 
     onPropertyAccess: function(propertyAccess, scope) {
+      if (propertyAccess.children('.memberPart').is('property_access')) {
+        this.onPropertyAccess(propertyAccess.children('.memberPart'), scope);
+      }
 
+      if (propertyAccess.children('.memberPart').is('identifier_reference')) {
+        var name = propertyAccess.children('.memberPart').children('token').text();
+
+        // If the symbol wasn't in scope, then one of the other handlers will handle
+        // the error.
+        if (scope.hasSymbol(scope)) {
+          var declaration = scope.lookup(name);
+
+          if (declaration.is('class_declaration')) {
+            // TODO: need to be able to check accessor methods.
+          }
+        }
+      }
+    },
+
+    // We need to do this as early as possible because later stages will want to create
+    // assignments without parallel assignment, and this method doesn't handle that.
+    //
+    // I opted not to change the $assignment function because it is used during later
+    // stages to assign one variable.
+    onAssignmentExpression: function(assignmentExpression, scope) {
+      var leftHandSides = assignmentExpression.children('.left').children();
+      var rightHandSides = assignmentExpression.children('.right').children();
+
+      var assignments = $();
+
+      leftHandSides.each(function(i) {
+        var leftHandSide = $(this);
+        var rightHandSide = rightHandSides[i] ? $(rightHandSides[i]) : $token(Token.UNDEFINED);
+
+        assignments = assignments.add($assignment(leftHandSide, rightHandSide));
+      });
+
+      return assignments;
     }
   });
 }(jQuery);

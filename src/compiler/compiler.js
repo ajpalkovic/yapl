@@ -3,11 +3,13 @@
     initialize: function Compiler() {
       this.emitter = new Emitter();
       this.passes = [
+        // Might need to declare some variables that are implicitly defined
+        // before the compiler checks for them.
+        new pass.SyntaxAugmentationTransformer(),
         new pass.CheckVarsDefinedPass(),
         // new pass.ClassDeclarationTransformer(),
         new pass.ExpandClosuresTransformer(),
         new pass.ConditionalLoadTransformer(),
-        new pass.SyntaxAugmentationTransformer(),
         new pass.ClassBodyTransformer(),
         new pass.SpecialParametersTransformer(),
         // new pass.CallOrIdentifierTransformer()

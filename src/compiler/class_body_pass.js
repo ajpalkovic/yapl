@@ -13,14 +13,14 @@
       // We use the child operator (>) because we don't want these methods
       // to match nested classes.
       pass.ScopedTransformer.prototype.initialize.call(this, {
-        'class_declaration > class_body': this.onClassBody,
-        'class_declaration > class_body > method > .body member_identifier': this.onMemberIdentifier,
-        'class_declaration > class_body identifier_reference': this.onIdentifier,
-        'class_declaration > class_body > static_method > method > .body identifier_reference': this.onIdentifier,
-        'class_declaration > class_body > method > .body identifier_reference': this.onIdentifier,
-        'class_declaration > class_body > accessor': this.onAccessor,
-        'class_declaration > class_body > instance_var_declaration_statement instance_var_declaration': this.onInstanceVarDeclaration,
-        'class_declaration > class_body > method > .parameters auto_set_param': this.onAutoSetParam
+        'class_declaration > .body': this.onClassBody,
+        'class_declaration > .body > method > .body member_identifier': this.onMemberIdentifier,
+        'class_declaration > .body identifier_reference': this.onIdentifier,
+        'class_declaration > .body > static_method > method > .body identifier_reference': this.onIdentifier,
+        'class_declaration > .body > method > .body identifier_reference': this.onIdentifier,
+        'class_declaration > .body > accessor': this.onAccessor,
+        'class_declaration > .body > instance_var_declaration_statement instance_var_declaration': this.onInstanceVarDeclaration,
+        'class_declaration > .body > method > .parameters auto_set_param': this.onAutoSetParam
       });
     },
 

@@ -30,6 +30,46 @@
     };
   };
 
+  // Found the dictionary here: http://lotsacode.wordpress.com/2010/03/05/singularization-pluralization-in-c/
+  var singularizationRules = [
+    [/people/, 'person'],
+    [/oxen/, 'ox'],
+    [/children/, 'child'],
+    [/feet/, 'foot'],
+    [/teeth/, 'tooth'],
+    [/geese/, 'goose'],
+    // And now the more standard rules.
+    [/(.*)ives?/, '$1ife'],
+    [/(.*)ves?/, '$1f'],
+    // ie, wolf, wife
+    [/(.*)men$/, '$1man'],
+    [/(.+[aeiou])ys$/, '$1y'],
+    [/(.+[^aeiou])ies$/, '$1y'],
+    [/(.+)zes$/, '$1'],
+    [/([m|l])ice$/, '$1ouse'],
+    [/matrices/, 'matrix'],
+    [/indices/, 'index'],
+    [/(.+[^aeiou])ices$/,'$1ice'],
+    [/(.*)ices/, '$1ex'],
+    // ie, Matrix, Index
+    [/(octop|vir)i$/, '$1us'],
+    [/(.+(s|x|sh|ch))es$/, '$1'],
+    [/(.+)s/, '$1']
+  ];
+
+  $.singularize = function(word) {
+    for (var i = 0; i < singularizationRules.length; ++i) {
+      var singularizationRule = singularizationRules[i];
+
+      var matches = word.match(singularizationRule[0]);
+      if (!matches) continue;
+
+      return word.replace(singularizationRule[0], singularizationRule[1]);
+    }
+
+    return word;
+  };
+
   var NULL_NODE = $('<null></null>');
 
   $node = function(type, children, childNames) {
@@ -70,7 +110,7 @@
       $node('variable_statement', [
         $node('variable_declaration',
           [name, value],
-          ['name', 'value']
+          [/name/, 'value']
         )
       ])
     );

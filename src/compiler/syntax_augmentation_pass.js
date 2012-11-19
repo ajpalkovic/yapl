@@ -1,6 +1,31 @@
 !function($) {
   var NEW_METHOD_NAME = 'new';
 
+  function wrapWithVariableStatement(variableDeclaration, className) {
+    variableDeclaration = variableDeclaration.clone();
+
+    variableDeclaration.removeClass(className);
+
+    var variableStatement = $node('variable_statement');
+    variableStatement.addClass(className);
+
+    var declarationList = $node('variable_declaration_list');
+    variableDeclaration.wrap(variableStatement).wrap(declarationList);
+
+    return variableDeclaration.parent().parent();
+  }
+
+  function setDefaultValue(variableDeclaration, value) {
+    if (variableDeclaration.children('.value').size()) return;
+
+    var valueToken = new Token({value: value});
+
+    var valueNode = $node('primitive_literal_expression', [$token(valueToken)]);
+    valueNode.addClass('value');
+
+    variableDeclaration.append(valueNode);
+  }
+
   var SyntaxAugmentationTransformer = klass(pass, pass.ScopedTransformer, {
     initialize: function SyntaxAugmentationTransformer() {
       pass.ScopedTransformer.prototype.initialize.call(this, {
@@ -9,109 +34,131 @@
         'multiple_for_in_structure': this.onMultipleForInStructure,
         'inflected_for_structure': this.onInflectedForStructure,
         'symbol': this.onSymbol,
-        'property_access': this.onPropertyAccess
+        'property_access': this.onPropertyAccess,
       });
-    },
-
-    wrapWithVariableStatement: function(variableDeclaration, className) {
-      variableDeclaration = variableDeclaration.clone();
-
-      variableDeclaration.removeClass(className);
-
-      var variableStatement = $node('variable_statement');
-      variableStatement.addClass(className);
-
-      var declarationList = $node('variable_declaration_list');
-      variableDeclaration.wrap(variableStatement).wrap(declarationList);
-
-      return variableDeclaration.parent().parent();
-    },
-
-    setDefaultValue: function(variableDeclaration, value) {
-      if (variableDeclaration.children('.value').size()) return;
-
-        var valueToken = new Token({value: value});
-
-        var valueNode = $node('primitive_literal_expression', [$token(valueToken)]);
-        valueNode.addClass('value');
-
-        variableDeclaration.append(valueNode);
-    },
-
-    addLoopParameters: function(forLoop, collectionToken, index) {
-      var indexStatement = this.wrapWithVariableStatement(index, 'variable');
-      forLoop.prepend(indexStatement);
-
-      var lengthToken = $token(new Token({value: 'length'}));
-      var lengthPropertyAccess = $node('property_access',
-          [collectionToken, lengthToken],
-          ['member', 'memberPart']);
-
-      var indexName = index.children('.name');
-      var lessThanOperator = $node('operator', [Token.LESS_THAN]);
-      var comparison = $node('simple_expression',
-          [indexName, lessThanOperator, lengthPropertyAccess]);
-
-      comparison.addClass('condition');
-      forLoop.prepend(comparison);
-
-      var increment = $node('prefix_increment_expression',
-          [Token.INCREMENT, indexName]);
-
-      increment.addClass('increment');
-      forLoop.prepend(increment);
     },
 
     onForInStructure: function(forInStructure, scope) {
       var forLoop = forInStructure.parent();
-      var variable = forInStructure.children('.variable');
+      var variable = forInStructure.children('.value');
       var collection = forInStructure.children('.collection').remove();
       var index = forInStructure.children('.index').remove();
       var body = forLoop.children('.body');
 
       // First wrap the loop variable with a statement and declare it before
       // the loop.
-      this.wrapWithVariableStatement(variable, 'variable').insertBefore(forLoop);
+      wrapWithVariableStatement(variable, 'variable').insertBefore(forLoop);
 
       // Then we assign whatever the collection was to a variable so we can access it.
-      var collectionToken = $token(new Token({value: '__collection'}));
+      var collectionToken = $token(Token.identify('__collection').token);
       var collectionDeclaration = $node('variable_declaration',
           [collectionToken, collection],
           ['name', 'value']);
 
-      this.wrapWithVariableStatement(collectionDeclaration, 'collection').insertBefore(forLoop);
-
+      wrapWithVariableStatement(collectionDeclaration, 'collection').insertBefore(forLoop);
 
       if (!index.size()) {
-        var tokenNode = $token(new Token({value: '__i'}));
+        var tokenNode = $token(Token.identify('__i').token);
         index = $node('variable_declaration', [tokenNode], ['name']);
         index.addClass('index');
       }
 
-      this.setDefaultValue(index, 0);
+      setDefaultValue(index, 0);
 
-      variable = variable.clone();
-
+      var indexName = index.children('.name');
       var variableToken = variable.children('.name');
       var variableValue = $node('array_dereference',
         [collectionToken, index.children('.name')]);
 
-      var variableAssignment = $node('assignment_expression',
-        [variableToken, $token(Token.ASSIGN), variableValue],
-        ['left', 'operator', 'right']);
+      var variableAssignment = $assignment(variableToken, variableValue);
 
       body.prepend(variableAssignment);
 
-      this.addLoopParameters(forLoop, collectionToken, index);
-      forInStructure.remove();
+      return $node('standard_for_structure', [
+        wrapWithVariableStatement(index, 'variable'),
+
+        $node('simple_expression', [
+          indexName,
+          Token.LESS_THAN,
+          $node('property_access', [
+            collectionToken,
+            Token.identify('length').token
+          ], [
+            'member',
+            'memberPart'
+          ])
+        ], [
+          'left',
+          'operator',
+          'right'
+        ]),
+
+        $node('prefix_increment_expression', [Token.INCREMENT, indexName])
+      ], [
+        'variable',
+        'condition',
+        'increment'
+      ]);
     },
 
     onMultipleForInStructure: function(multipleForInStructure, scope) {
+      var forLoop = multipleForInStructure.parent();
+      var key = multipleForInStructure.children('.key');
+      var value = multipleForInStructure.children('.value');
+      var collection = multipleForInStructure.children('.collection').remove();
+      var index = multipleForInStructure.children('.index').remove();
+      var body = forLoop.children('.body');
 
+      // Wrap the key variable.
+      wrapWithVariableStatement(key, 'key').insertBefore(forLoop);
+      wrapWithVariableStatement(value, 'value').insertBefore(forLoop);
+
+      var collectionToken = $token(Token.identify('__collection').token);
+      var collectionDeclaration = $node('variable_declaration',
+          [collectionToken, collection],
+          ['name', 'value']);
+
+      wrapWithVariableStatement(collectionDeclaration, 'collection').insertBefore(forLoop);
+
+      if (!index.size()) {
+        var tokenNode = $token(Token.identify('__i').token);
+        index = $node('variable_declaration', [tokenNode], ['name']);
+        index.addClass('index');
+      }
+
+      setDefaultValue(index, 0);
+      wrapWithVariableStatement(index, 'index').insertBefore(forLoop);
+
+      var indexName = index.children('.name');
+      var keyName = key.children('.name');
+      var valueName = value.children('.name');
+
+      var valueAtKey = $node('array_dereference', [collectionToken, keyName], ['member', 'memberPart']);
+      var valueAssignment = $assignment(valueName, valueAtKey);
+
+      body.prepend(valueAssignment);
+
+      var indexIncrement = $node('prefix_increment_expression', [Token.INCREMENT, indexName]);
+      body.append(indexIncrement);
+
+      return $node('for_in_structure', [
+        keyName,
+        collectionToken
+      ], [
+        'key',
+        'collection'
+      ]);
     },
 
     onInflectedForStructure: function(inflectedForStructure, scope) {
+      var collectionName = inflectedForStructure.children('.collection').text();
+      var singularToken = Token.identify($.singularize(collectionName)).token;
+      var value = $node('variable_declaration', [$token(singularToken)], ['name']);
+      value.addClass('value');
 
+      inflectedForStructure.append(value);
+
+      return this.onForInStructure(inflectedForStructure, scope);
     },
 
     onSymbol: function(symbol, scope) {
