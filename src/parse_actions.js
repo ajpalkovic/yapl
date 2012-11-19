@@ -66,6 +66,7 @@
     PropertyList: list('PropertyList'),
     Property: node('Property', ['name', 'value']),
     AssignmentExpression: node('AssignmentExpression', ['left', 'operator', 'right']),
+    ParallelAssignmentExpression: node('ParallelAssignmentExpression', ['left', 'operator', 'right']),
     MemberExpressionList: list('MemberExpressionList'),
     ExpressionList: list('ExpressionList'),
     ConditionalExpression: node('ConditionalExpression'),

@@ -35,7 +35,7 @@
         'inflected_for_structure': this.onInflectedForStructure,
         'symbol': this.onSymbol,
         'property_access': this.onPropertyAccess,
-        'assignment_expression': this.onAssignmentExpression
+        'parallel_assignment_expression': this.onParallelAssignmentExpression
       });
     },
 
@@ -172,13 +172,10 @@
       }
     },
 
-    onAssignmentExpression: function(assignmentExpression, scope) {
-      // We don't want to mutate any assignments that later stages insert into the tree
-      // with the $assignment utility function.
-      if (!assignmentExpression.children('.left').is('member_expression_list')) return;
+    onParallelAssignmentExpression: function(parallelAssignmentExpression, scope) {
 
-      var leftHandSides = assignmentExpression.children('.left').children();
-      var rightHandSides = assignmentExpression.children('.right').children();
+      var leftHandSides = parallelAssignmentExpression.children('.left').children();
+      var rightHandSides = parallelAssignmentExpression.children('.right').children();
 
       var assignments = $();
 

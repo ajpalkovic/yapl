@@ -255,6 +255,7 @@ var Grammar = {
   Expression: {
     productions: [
       ['AssignmentExpression'],
+      ['ParallelAssignmentExpression'],
       ['ConditionalExpression'],
       ['SimpleExpression']
     ]
@@ -262,7 +263,13 @@ var Grammar = {
 
   AssignmentExpression: {
     productions: [
-      ['MemberExpressionList', 'AssignmentOperator', 'ExpressionList']
+      ['MemberExpression', 'AssignmentOperator', 'Expression']
+    ]
+  },
+
+  ParallelAssignmentExpression: {
+    productions: [
+      ['OPEN_PAREN', 'MemberExpressionList', 'CLOSE_PAREN', 'AssignmentOperator', 'OPEN_PAREN', 'ExpressionList', 'CLOSE_PAREN']
     ]
   },
 
