@@ -5,8 +5,7 @@
         'identifier_reference': this.onIdentifier,
         'member_identifier': this.onMemberIdentifier,
         'accessor_variable': this.onAccessorVariable,
-        'property_access': this.onPropertyAccess,
-        'assignment_expression': this.onAssignmentExpression
+        'property_access': this.onPropertyAccess
       });
     },
 
@@ -92,27 +91,6 @@
           }
         }
       }
-    },
-
-    // We need to do this as early as possible because later stages will want to create
-    // assignments without parallel assignment, and this method doesn't handle that.
-    //
-    // I opted not to change the $assignment function because it is used during later
-    // stages to assign one variable.
-    onAssignmentExpression: function(assignmentExpression, scope) {
-      var leftHandSides = assignmentExpression.children('.left').children();
-      var rightHandSides = assignmentExpression.children('.right').children();
-
-      var assignments = $();
-
-      leftHandSides.each(function(i) {
-        var leftHandSide = $(this);
-        var rightHandSide = rightHandSides[i] ? $(rightHandSides[i]) : $token(Token.UNDEFINED);
-
-        assignments = assignments.add($assignment(leftHandSide, rightHandSide));
-      });
-
-      return assignments;
     }
   });
 }(jQuery);

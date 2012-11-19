@@ -35,6 +35,7 @@
         'inflected_for_structure': this.onInflectedForStructure,
         'symbol': this.onSymbol,
         'property_access': this.onPropertyAccess,
+        'assignment_expression': this.onAssignmentExpression
       });
     },
 
@@ -169,6 +170,26 @@
       if (propertyAccess.children('.memberPart').text() === NEW_METHOD_NAME) {
         return $node('new_expression', [propertyAccess.children('.member')]);
       }
+    },
+
+    onAssignmentExpression: function(assignmentExpression, scope) {
+      // We don't want to mutate any assignments that later stages insert into the tree
+      // with the $assignment utility function.
+      if (!assignmentExpression.children('.left').is('member_expression_list')) return;
+
+      var leftHandSides = assignmentExpression.children('.left').children();
+      var rightHandSides = assignmentExpression.children('.right').children();
+
+      var assignments = $();
+
+      leftHandSides.each(function(i) {
+        var leftHandSide = $(this);
+        var rightHandSide = rightHandSides[i] ? $(rightHandSides[i]) : $token(Token.UNDEFINED);
+
+        assignments = assignments.add($assignment(leftHandSide, rightHandSide));
+      });
+
+      return assignments;
     }
   });
 }(jQuery);
