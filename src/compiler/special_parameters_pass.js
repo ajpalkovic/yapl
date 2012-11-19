@@ -52,26 +52,6 @@
         paramPrologue.append(assignment);
       }));
 
-      parameters.children('auto_set_param').each(parameterHandler(function(paramName, value, nextParam) {
-        if (!callable.is('method')) {
-          throw new error.MemberSetParamOnNonMethod(paramName.attr('line'), paramName.text());
-        }
-
-        var thisToken = $token(new Token({value: 'this'}));
-        var propertyAccess = $node('property_access',
-          [thisToken, paramName],
-          ['member', 'memberPart']);
-
-        var assignment = $statement(
-          $assignment(
-            propertyAccess,
-            paramName
-          )
-        );
-
-        paramPrologue.append(assignment);
-      }));
-
       body.append(paramPrologue.children());
     }
   });

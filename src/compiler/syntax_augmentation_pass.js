@@ -1,4 +1,6 @@
 !function($) {
+  var NEW_METHOD_NAME = 'new';
+
   var SyntaxAugmentationTransformer = klass(pass, pass.ScopedTransformer, {
     initialize: function SyntaxAugmentationTransformer() {
       pass.ScopedTransformer.prototype.initialize.call(this, {
@@ -6,7 +8,8 @@
         'for_in_structure': this.onForInStructure,
         'multiple_for_in_structure': this.onMultipleForInStructure,
         'inflected_for_structure': this.onInflectedForStructure,
-        'closure': this.onClosure
+        'symbol': this.onSymbol,
+        'property_access': this.onPropertyAccess
       });
     },
 
@@ -109,6 +112,16 @@
 
     onInflectedForStructure: function(inflectedForStructure, scope) {
 
+    },
+
+    onSymbol: function(symbol, scope) {
+
+    },
+
+    onPropertyAccess: function(propertyAccess, scope) {
+      if (propertyAccess.children('.memberPart').text() === NEW_METHOD_NAME) {
+        return $node('new_expression', [propertyAccess.children('.member')]);
+      }
     }
   });
 }(jQuery);

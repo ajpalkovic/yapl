@@ -33,9 +33,12 @@
 
         var astElement = $('#ast');
         var jsOutputElement = $('#jsoutput');
+        var code = $('#code').val();
+
+        window.localStorage.setItem('code', code);
 
         try {
-          result = parser.parse($('#code').val());
+          result = parser.parse(code);
 
           var astText = compiler.stringify(result);
           var output = compiler.compile(result);
@@ -53,6 +56,7 @@
       var timerId = 0;
 
       jQuery(document).ready(function($) {
+        $('#code').val(window.localStorage.getItem('code'));
         $('#submit').click(parse.bind(this, $));
 
         $('#code').keydown(function() {
@@ -63,6 +67,8 @@
             parse($);
           }, THRESHOLD);
         });
+
+        $('#submit').click();
       });
     </script>
 

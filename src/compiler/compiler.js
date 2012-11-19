@@ -8,8 +8,8 @@
         new pass.ExpandClosuresTransformer(),
         new pass.ConditionalLoadTransformer(),
         new pass.SyntaxAugmentationTransformer(),
+        new pass.ClassBodyTransformer(),
         new pass.SpecialParametersTransformer(),
-        new pass.ClassBodyTransformer()
         // new pass.CallOrIdentifierTransformer()
       ];
     },

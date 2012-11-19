@@ -197,7 +197,7 @@
      */
     error: function() {
       var last = this.lexer.last();
-      throw ['ParseError: Unexpected', last.type, 'at line', last.line].join(' ');
+      throw ['ParseError(', last.line, '): Unexpected ', last.type].join('');
     }
   });
 }(jQuery);

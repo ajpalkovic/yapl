@@ -125,7 +125,9 @@
     },
 
     function(namespace, parent, methods) {
-      var name = methods.initialize ? methods.initialize.name : 'klass';
+      var name = methods.initialize && methods.initialize.name;
+      if (!name) throw 'Class canno be created without a name';
+
       var klass = Function.create(name, [], 'this.initialize.apply(this, arguments);');
 
       namespace[name] = klass;

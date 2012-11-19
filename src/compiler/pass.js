@@ -37,26 +37,31 @@
     initialize: function ScopedPass(selectorMappings) {
       pass.Pass.prototype.initialize.call(this, selectorMappings);
 
-      this.scopes = [
+      this.scopeSelector = [
         'class_declaration',
         'function_declaration',
         'function_expression',
-        'method',
-        'closure'
-      ];
+        'closure',
+        'method'
+      ].join(', ');
 
-      this.declarations = [
+      this.declarationSelector = [
         'class_declaration',
-        'instance_var_declaration',
         'variable_declaration',
+        'method',
+        'instance_var_declaration',
         'closure_parameter',
         'function_declaration',
         'function_expression',
-        'method'
-      ];
+      ].join(', ');
 
-      this.scopeSelector = this.scopes.join(', ');
-      this.declarationSelector = this.declarations.join(', ');
+      // We don't want any static methods or variables.
+      this.instanceDeclarationSelector = [
+        'class_body > method',
+        'class_body > static_method > method',
+        'class_body > instance_var_declaration_statement instance_var_declaration',
+        'class_body > static_var_declaration_statement > variable_statement variable_declaration'
+      ].join(', ')
     },
 
     getSymbolName: function(symbolNode) {
@@ -66,10 +71,12 @@
     runWithScopeNode: function(scopeNode, scope, data) {
       // If the current node creates a new lexical scope,
       // create a new scope and add it to its own scope.
-      scope = scope.subscope();
+      var classContext = scopeNode.is('class_declaration') ? new Context(scopeNode) : undefined;
+      var context = scopeNode.is('class_body > method') ? scope.classContext : undefined;
+
+      scope = scope.subscope(classContext, context);
 
       var symbolName = this.getSymbolName(scopeNode);
-      if (symbolName) scope.set(symbolName, scopeNode);
 
       // Lift all declarations in the current node into scope.
       this.liftDeclarations(scopeNode, scope);
@@ -103,9 +110,14 @@
         // If the child is a declaration, add it to the symbol table.
         if (child.is(_this.declarationSelector)) {
           var symbolName = _this.getSymbolName(child);
+
           if (_this.onDeclaration) _this.onDeclaration(symbolName, child, scope);
 
-          scope.set(symbolName, child);
+          if (!child.is(_this.instanceDeclarationSelector)) {
+            scope.set(symbolName, child);
+          } else {
+            scope.classContext.declare(child);
+          }
         }
 
         // We only traverse down if the child does not signify a new
@@ -115,7 +127,9 @@
     },
 
     run: function(ast, data) {
-      this.runWithScopeNode(ast, new Scope(), data);
+      var context = new Context(ast);
+
+      this.runWithScopeNode(ast, new Scope(undefined, context, context), data);
     }
   });
 

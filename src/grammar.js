@@ -40,12 +40,12 @@ var Grammar = {
 
   ClassElement: {
     productions: [
-      ['Accessor'],
+      ['Accessor', 'EndSt'],
       ['Statement'],
       ['Method'],
       ['StaticMethod'],
-      ['InstanceVarDeclaration'],
-      ['StaticVarDeclaration'],
+      ['InstanceVarDeclarationStatement'],
+      ['StaticVarDeclarationStatement'],
       ['ClassDeclaration']
     ]
   },
@@ -53,7 +53,14 @@ var Grammar = {
   Method: {
     productions: [
       ['DEF', '(IDENTIFIER)', 'Parameters', 'FunctionBody', 'END']
-    ]
+    ],
+
+    redefinitions: {
+      Parameter: [
+        ['AutoSetParam'],
+        ['VariableDeclaration']
+      ]
+    }
   },
 
   StaticMethod: {
@@ -62,23 +69,50 @@ var Grammar = {
     ]
   },
 
-  InstanceVarDeclaration: {
+  InstanceVarDeclarationStatement: {
     productions: [
-      ['INS_VAR', 'VariableDeclarationList', 'EndSt']
+      ['INS_VAR', 'InstanceVarDeclarationList', 'EndSt']
     ]
   },
 
-  StaticVarDeclaration: {
+  InstanceVarDeclarationList: {
     productions: [
-      ['STATIC', 'InstanceVarDeclaration']
+      ['InstanceVarDeclaration', 'COMMA', 'InstanceVarDeclarationList'],
+      ['InstanceVarDeclaration']
+    ]
+  },
+
+  InstanceVarDeclaration: {
+    productions: [
+      ['(IDENTIFIER)', 'ASSIGN', 'Expression'],
+      ['(IDENTIFIER)']
+    ]
+  },
+
+  StaticVarDeclarationStatement: {
+    productions: [
+      ['STATIC', 'VariableStatement', 'EndSt']
     ]
   },
 
   Accessor: {
     productions: [
-      ['(GETS)', 'VariableDeclarationList'],
-      ['(SETS)', 'VariableDeclarationList'],
-      ['(ACCESSES)', 'VariableDeclarationList']
+      ['(GETS)', 'AccessorList'],
+      ['(SETS)', 'AccessorList'],
+      ['(ACCESSES)', 'AccessorList']
+    ]
+  },
+
+  AccessorList: {
+    productions: [
+      ['AccessorVariable', 'COMMA', 'AccessorList'],
+      ['AccessorVariable']
+    ]
+  },
+
+  AccessorVariable: {
+    productions: [
+      ['(IDENTIFIER)']
     ]
   },
 
@@ -139,7 +173,6 @@ var Grammar = {
 
   Parameter: {
     productions: [
-      ['AutoSetParam'],
       ['VariableDeclaration']
     ]
   },
@@ -159,7 +192,7 @@ var Grammar = {
 
   MemberIdentifier: {
     productions: [
-      ['MEMBER', 'IDENTIFIER']
+      ['MEMBER', '(IDENTIFIER)']
     ]
   },
 

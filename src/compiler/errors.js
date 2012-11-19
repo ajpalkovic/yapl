@@ -18,6 +18,13 @@
     }
   });
 
+  var NotInContextError = klass(error, CompileError, {
+    initialize: function NotInContextError(line, reference, contextName) {
+      CompileError.prototype.initialize.call(this, line,
+        '"' + reference + '" is not defined in context "' + contextName + '"');
+    }
+  });
+
   var ShadowedReference = klass(error, CompileError, {
     initialize: function ShadowedReference(line, reference) {
       CompileError.prototype.initialize.call(this, line, '"' + reference + '" cannot shadow other references');
@@ -45,10 +52,24 @@
     }
   });
 
+  var NoMemberToSet = klass(error, CompileError, {
+    initialize: function NoMemberToSet(line, paramName) {
+      CompileError.prototype.initialize.call(this, line,
+          'No instance variable "' + paramName + '" to set');
+    }
+  });
+
   var NonStaticReference = klass(error, CompileError, {
     initialize: function NonStaticReference(line, reference) {
       CompileError.prototype.initialize.call(this, line,
           'Reference to non-static "' + reference + '" in static context');
+    }
+  });
+
+  var InvalidAccessor = klass(error, CompileError, {
+    initialize: function InvalidAccessor(line, reference) {
+      CompileError.prototype.initialize.call(this, line,
+          'Cannot create accessor for non-instance referece "' + reference + '"');
     }
   });
 }(jQuery);
