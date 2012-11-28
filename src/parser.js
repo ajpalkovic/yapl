@@ -12,19 +12,20 @@
      * Parses the input string and returns an AST representing the parsed
      * string.
      */
-    parse: function(input) {
-      var _this = this;
+    parse: $.overload(function(input) {
+      return this.parse(input, 'Program');
+    }, function(input, startSymbol) {
       this.cache = {};
 
       this.lexer = new Lexer(input);
-      var tree = this._parse('Program', 0, {});
+      var tree = this._parse(startSymbol, 0, {});
 
       if (!tree) {
         this.error();
       }
 
       return tree;
-    },
+    }),
 
     /**
      * Parses an individual rule of the grammar.

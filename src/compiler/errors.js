@@ -72,4 +72,11 @@
           'Cannot create accessor for non-instance referece "' + reference + '"');
     }
   });
+
+  var SuperCalledWithoutContext = klass(error, CompileError, {
+    initialize: function InvalidAccessor(line) {
+      CompileError.prototype.initialize.call(this, line,
+          'Super called outside of valid context');
+    }
+  });
 }(jQuery);

@@ -15,6 +15,7 @@
       pass.ScopedTransformer.prototype.initialize.call(this, {
         'class_declaration > .body': this.onClassBody,
         'class_declaration > .body > method > .body member_identifier': this.onMemberIdentifier,
+        'class_declaration > .body > super': this.onInvalidSuper,
         'class_declaration > .body identifier_reference': this.onIdentifier,
         'class_declaration > .body > static_method > method > .body identifier_reference': this.onIdentifier,
         'class_declaration > .body > method > .body identifier_reference': this.onIdentifier,
@@ -48,10 +49,11 @@
     onMemberIdentifier: function(memberIdentifier, scope) {
       var nameToken = memberIdentifier.children('token');
 
-      return $node('property_access',
-        [$token(Token.THIS), nameToken],
-        ['member', 'memberPart']
-      );
+      return makeThisReference(nameToken);
+    },
+
+    onInvalidSuper: function(sooper, scope) {
+      throw new error.SuperCalledWithoutContext(sooper.children('token').attr('line'));
     },
 
     onIdentifier: function(identifierReference, scope) {

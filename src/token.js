@@ -354,7 +354,7 @@
 
         return {
           token: new Token({
-            type: 'STRING_LITERAL',
+            type: quote === '"' ? 'DOUBLE_STRING_LITERAL' : 'SINGLE_STRING_LITERAL',
             value: string.substring(0, endQuotePos + 1)
           }),
 

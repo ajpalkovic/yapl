@@ -1,4 +1,6 @@
 !function($) {
+  var UNDEFINED = $token(Token.identify('undefined').token);
+
   var CheckVarsDefinedPass = klass(pass, pass.ScopedTransformer, {
     initialize: function CheckVarsDefinedPass() {
       pass.ScopedTransformer.prototype.initialize.call(this, {

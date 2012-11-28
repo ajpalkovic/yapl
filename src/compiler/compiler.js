@@ -3,15 +3,16 @@
     initialize: function Compiler() {
       this.emitter = new Emitter();
       this.passes = [
+        new pass.StringInterpolationPass(),
         // Might need to declare some variables that are implicitly defined
         // before the compiler checks for them.
         new pass.SyntaxAugmentationTransformer(),
         new pass.CheckVarsDefinedPass(),
-        // new pass.ClassDeclarationTransformer(),
         new pass.ExpandClosuresTransformer(),
         new pass.ConditionalLoadTransformer(),
         new pass.ClassBodyTransformer(),
         new pass.SpecialParametersTransformer(),
+        new pass.ClassDeclarationTransformer(),
         // new pass.CallOrIdentifierTransformer()
       ];
     },
@@ -51,57 +52,15 @@
 
       stringify(ast);
       return emitter.flush();
-    },
-
-    interpolate: function(string) {
-      function balanceInterpolation(index) {
-        for (var i = index; i < string.length; ++i) {
-          switch (string[i]) {
-            case '{':
-              var end = balanceInterpolation(i + 1);
-              i = end;
-            case '}':
-              return i;
-          }
-        }
-      }
-
-      var interpolatedString = '';
-      var endOfLastInterpolation = 0;
-
-      for (var i = 0; i < string.length; ++i) {
-        if (string[i] === '\\') {
-          i++;
-          continue;
-        }
-
-        if (string[i] === '#' && string[i + 1] === '{') {
-          var end = balanceInterpolation(i + 1);
-
-          var before = string.substring(endOfLastInterpolation, i);
-          var code = string.substring(i + 2, end);
-
-          interpolatedString += before + "', " + code + ", '";
-
-          endOfLastInterpolation = end + 1;
-        }
-      }
-
-      interpolatedString += string.substring(endOfLastInterpolation);
-      return;
     }
   });
 
   var Emitter = klass({
-    initialize: function Emitter(outputBuffer, lines, indentLevel, context) {
+    initialize: function Emitter(nodeHandler, outputBuffer, lines, indentLevel) {
+      this.nodeHandler = nodeHandler;
       this.outputBuffer = outputBuffer || [];
       this.lines = lines || [this.outputBuffer];
       this.indentLevel = indentLevel || [''];
-      this.context = context;
-    },
-
-    fromContext: function(context) {
-      return new Emitter(this.outputBuffer, this.lines, this.indentLevel, context);
     },
 
     e: function() {
@@ -114,19 +73,16 @@
         }
 
         switch (typeof arguments[i]) {
-          case 'object':
           case 'number':
           case 'string':
             this.outputBuffer.push(arguments[i]);
             break;
           case 'function':
             // We always pass the context.
-            arguments[i](this.context);
+            arguments[i]();
             break;
           default:
-            if (arguments[i] instanceof Array) {
-              this.e.apply(this, arguments[i]);
-            }
+            nodeHandler(arguments[i], this);
         }
       }
 

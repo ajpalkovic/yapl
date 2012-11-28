@@ -35,7 +35,8 @@
         'inflected_for_structure': this.onInflectedForStructure,
         'symbol': this.onSymbol,
         'property_access': this.onPropertyAccess,
-        'parallel_assignment_expression': this.onParallelAssignmentExpression
+        'parallel_assignment_expression': this.onParallelAssignmentExpression,
+        'regex_literal': this.onRegexLiteral
       });
     },
 
@@ -187,6 +188,19 @@
       });
 
       return assignments;
+    },
+
+    onRegexLiteral: function(regexLiteral, scope) {
+      var regexToken = regexLiteral.children('token');
+      var regexText = regexToken.text();
+
+      function stripWhitespace() {
+        return regexText.replace(/\s+/g, '');
+      }
+
+      var newRegexToken = $token(new Token({type: 'REGEX_LITERAL', value: stripWhitespace()}));
+
+      return $node('regex_literal', [newRegexToken]);
     }
   });
 }(jQuery);

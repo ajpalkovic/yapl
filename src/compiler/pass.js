@@ -6,17 +6,17 @@
       this.selectorMappings = selectorMappings;
     },
 
-    run: function(ast, data) {
+    run: function(ast) {
       var _this = this;
       $.each(this.selectorMappings, function(selector, fn) {
         ast.find(selector).each(function(i) {
-          _this.handleMatch($(this), fn, data);
+          _this.handleMatch($(this), fn);
         });
       });
     },
 
-    handleMatch: function(match, fn, data) {
-      fn.call(this, match, data);
+    handleMatch: function(match, fn) {
+      fn.call(this, match);
     }
   });
 
@@ -25,11 +25,14 @@
       pass.Pass.prototype.initialize.call(this, selectorMappings);
     },
 
-    handleMatch: function(match, fn, data) {
-      var replacement = fn.call(this, match, data);
+    handleMatch: function(match, fn) {
+      var replacement = fn.call(this, match);
       if (replacement === undefined) return;
 
-      if (replacement !== match) match.replaceWith(replacement);
+      if (replacement !== match) {
+        replacement.attr('class', match.attr('class'));
+        match.replaceWith(replacement);
+      }
     }
   });
 
@@ -68,7 +71,7 @@
       return symbolNode.children('.name').text();
     },
 
-    runWithScopeNode: function(scopeNode, scope, data) {
+    runWithScopeNode: function(scopeNode, scope) {
       // If the current node creates a new lexical scope,
       // create a new scope and add it to its own scope.
       var classContext = scopeNode.is('class_declaration') ? new Context(scopeNode) : undefined;
@@ -80,10 +83,10 @@
 
       // Lift all declarations in the current node into scope.
       this.liftDeclarations(scopeNode, scope);
-      this.traverseChildren(scopeNode, scope, data);
+      this.traverseChildren(scopeNode, scope);
     },
 
-    traverseChildren: function(node, scope, data) {
+    traverseChildren: function(node, scope) {
       var _this = this;
 
       $.each(_this.selectorMappings, function(selector, fn) {
@@ -94,9 +97,9 @@
         var child = $(this);
 
         if (child.is(_this.scopeSelector)) {
-          _this.runWithScopeNode(child, scope, data);
+          _this.runWithScopeNode(child, scope);
         } else {
-          _this.traverseChildren(child, scope, data);
+          _this.traverseChildren(child, scope);
         }
       });
     },
@@ -126,22 +129,10 @@
       });
     },
 
-    run: function(ast, data) {
+    run: function(ast, scope) {
       var context = new Context(ast);
 
-      this.runWithScopeNode(ast, new Scope(undefined, context, context), data);
-    }
-  });
-
-  var OutputPass = klass(pass, Pass, {
-    initialize: function OutputPass(selectorMappings) {
-      pass.ScopedPass.prototype.initialize.call(this, selectorMappings);
-
-      this.emitter = new Emitter();
-    },
-
-    handleMatch: function(match, fn, scope) {
-      fn.call(this, match, scope, this.emitter);
+      this.runWithScopeNode(ast, new Scope(undefined, context, context));
     }
   });
 
@@ -154,7 +145,27 @@
       var replacement = fn.call(this, match, scope);
       if (replacement === undefined) return;
 
-      if (replacement !== match) match.replaceWith(replacement);
+      if (replacement !== match) {
+        replacement.attr('class', match.attr('class'));
+        match.replaceWith(replacement);
+      }
+    }
+  });
+
+  var EmitterPass = klass(pass, Pass, {
+    initialize: function EmitterPass(selectorMappings) {
+      Pass.prototype.initialize.call(this, selectorMappings);
+    },
+
+    run: function(ast) {
+      return this.runWithEmitter(ast, new Emitter(this.runWithEmitter.bind(this)));
+    },
+
+    runWithEmitter: function(node, emitter) {
+      var _this = this;
+      $.each(selectorMappings, function(selector, fn) {
+        if (node.is(selector)) fn.call(_this, selector, emitter);
+      });
     }
   });
 }(jQuery);

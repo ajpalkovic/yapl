@@ -516,7 +516,20 @@ var Grammar = {
 
   StringLiteral: {
     productions: [
-      ['(STRING_LITERAL)']
+      ['DoubleStringLiteral'],
+      ['SingleStringLiteral']
+    ]
+  },
+
+  DoubleStringLiteral: {
+    productions: [
+      ['(DOUBLE_STRING_LITERAL)']
+    ]
+  },
+
+  SingleStringLiteral: {
+    productions: [
+      ['(SINGLE_STRING_LITERAL)']
     ]
   },
 
