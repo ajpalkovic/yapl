@@ -6,17 +6,17 @@
       this.selectorMappings = selectorMappings;
     },
 
-    run: function(ast) {
+    run: function(ast, compiler) {
       var _this = this;
       $.each(this.selectorMappings, function(selector, fn) {
         ast.find(selector).each(function(i) {
-          _this.handleMatch($(this), fn);
+          _this.handleMatch($(this), fn, compiler);
         });
       });
     },
 
-    handleMatch: function(match, fn) {
-      fn.call(this, match);
+    handleMatch: function(match, fn, compiler) {
+      fn.call(this, match, compiler);
     }
   });
 
@@ -25,8 +25,8 @@
       pass.Pass.prototype.initialize.call(this, selectorMappings);
     },
 
-    handleMatch: function(match, fn) {
-      var replacement = fn.call(this, match);
+    handleMatch: function(match, fn, compiler) {
+      var replacement = fn.call(this, match, compiler);
       if (replacement === undefined) return;
 
       if (replacement !== match) {
@@ -71,7 +71,7 @@
       return symbolNode.children('.name').text();
     },
 
-    runWithScopeNode: function(scopeNode, scope) {
+    runWithScopeNode: function(scopeNode, scope, compiler) {
       // If the current node creates a new lexical scope,
       // create a new scope and add it to its own scope.
       var classContext = scopeNode.is('class_declaration') ? new Context(scopeNode) : undefined;
@@ -82,29 +82,29 @@
       var symbolName = this.getSymbolName(scopeNode);
 
       // Lift all declarations in the current node into scope.
-      this.liftDeclarations(scopeNode, scope);
-      this.traverseChildren(scopeNode, scope);
+      this.liftDeclarations(scopeNode, scope, compiler);
+      this.traverseChildren(scopeNode, scope, compiler);
     },
 
-    traverseChildren: function(node, scope) {
+    traverseChildren: function(node, scope, compiler) {
       var _this = this;
 
       $.each(_this.selectorMappings, function(selector, fn) {
-        if (node.is(selector)) _this.handleMatch(node, fn, scope);
+        if (node.is(selector)) _this.handleMatch(node, fn, scope, compiler);
       });
 
       node.children().each(function(i) {
         var child = $(this);
 
         if (child.is(_this.scopeSelector)) {
-          _this.runWithScopeNode(child, scope);
+          _this.runWithScopeNode(child, scope, compiler);
         } else {
-          _this.traverseChildren(child, scope);
+          _this.traverseChildren(child, scope, compiler);
         }
       });
     },
 
-    liftDeclarations: function(currentNode, scope) {
+    liftDeclarations: function(currentNode, scope, compiler) {
       var _this = this;
 
       currentNode.children().each(function(i) {
@@ -114,7 +114,7 @@
         if (child.is(_this.declarationSelector)) {
           var symbolName = _this.getSymbolName(child);
 
-          if (_this.onDeclaration) _this.onDeclaration(symbolName, child, scope);
+          if (_this.onDeclaration) _this.onDeclaration(symbolName, child, scope, compiler);
 
           if (!child.is(_this.instanceDeclarationSelector)) {
             scope.set(symbolName, child);
@@ -125,14 +125,14 @@
 
         // We only traverse down if the child does not signify a new
         // lexical scope.
-        if (!child.is(_this.scopeSelector)) _this.liftDeclarations(child, scope);
+        if (!child.is(_this.scopeSelector)) _this.liftDeclarations(child, scope, compiler);
       });
     },
 
-    run: function(ast, scope) {
+    run: function(ast, compiler) {
       var context = new Context(ast);
 
-      this.runWithScopeNode(ast, new Scope(undefined, context, context));
+      this.runWithScopeNode(ast, new Scope(undefined, context, context), compiler);
     }
   });
 
@@ -141,8 +141,8 @@
       pass.ScopedPass.prototype.initialize.call(this, selectorMappings);
     },
 
-    handleMatch: function(match, fn, scope) {
-      var replacement = fn.call(this, match, scope);
+    handleMatch: function(match, fn, scope, compiler) {
+      var replacement = fn.call(this, match, scope, compiler);
       if (replacement === undefined) return;
 
       if (replacement !== match) {
@@ -157,14 +157,14 @@
       Pass.prototype.initialize.call(this, selectorMappings);
     },
 
-    run: function(ast) {
-      return this.runWithEmitter(ast, new Emitter(this.runWithEmitter.bind(this)));
+    run: function(ast, compiler) {
+      return this.runWithEmitter(ast, new Emitter(this.runWithEmitter.bind(this)), compiler);
     },
 
-    runWithEmitter: function(node, emitter) {
+    runWithEmitter: function(node, emitter, compiler) {
       var _this = this;
       $.each(selectorMappings, function(selector, fn) {
-        if (node.is(selector)) fn.call(_this, selector, emitter);
+        if (node.is(selector)) fn.call(_this, selector, emitter, compiler);
       });
     }
   });

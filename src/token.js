@@ -1,4 +1,11 @@
 !function($) {
+  WHITESPACE_TYPES = {
+    SPACES_ONLY: '((?:[^\\S\\n\\t]+))', // Does not match newlines
+    TABS_ONLY: '((?:[\\t]+))', // Does not match newlines
+  };
+
+  WHITESPACE_TYPE = WHITESPACE_TYPES.SPACES_ONLY;
+
   var Token = klass({
     initialize: function Token(options) {
       this.value = options.value;
@@ -62,7 +69,7 @@
     IDENTIFIER: '((?:[a-zA-Z_\\$][_a-zA-Z0-9\\$]*))',
     STRING_LITERAL: '(\'|")',
     FORWARD_SLASH: '\\/',
-    WHITESPACE: '((?:[^\\S\\n]+))', // Does not match newlines
+    WHITESPACE: WHITESPACE_TYPE,
     PLUS_OR_MINUS: '(\\+|-)',
     OPEN_PAREN: '(\\()',
     OPEN_BRACKET: '(\\[)'

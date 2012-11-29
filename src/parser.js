@@ -1,5 +1,5 @@
 !function($) {
-  klass({
+  var Parser = klass({
     /**
      * Yapl's parser implementation.
      */
@@ -12,20 +12,18 @@
      * Parses the input string and returns an AST representing the parsed
      * string.
      */
-    parse: $.overload(function(input) {
-      return this.parse(input, 'Program');
-    }, function(input, startSymbol) {
+    parse: function(input) {
       this.cache = {};
 
       this.lexer = new Lexer(input);
-      var tree = this._parse(startSymbol, 0, {});
+      var tree = this._parse('Program', 0, {});
 
       if (!tree) {
         this.error();
       }
 
       return tree;
-    }),
+    },
 
     /**
      * Parses an individual rule of the grammar.
@@ -199,6 +197,25 @@
     error: function() {
       var last = this.lexer.last();
       throw ['ParseError(', last.line, '): Unexpected ', last.type].join('');
+    }
+  });
+
+  var InterpolationParser = klass(Parser, {
+    initialize: function InterpolationParser() {
+      Parser.prototype.initialize.call(this);
+    },
+
+    parse: function(input, lineOffset) {
+      this.cache = {};
+
+      this.lexer = new Lexer(input, lineOffset);
+      var tree = this._parse('SourceElement', 0, {});
+
+      if (!tree) {
+        this.error();
+      }
+
+      return tree;
     }
   });
 }(jQuery);

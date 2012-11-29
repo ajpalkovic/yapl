@@ -15,12 +15,20 @@
         new pass.ClassDeclarationTransformer(),
         // new pass.CallOrIdentifierTransformer()
       ];
+
+      this.parser = window.parser = new Parser();
     },
 
-    compile: function(tree) {
+    parse: function(input) {
+      return this.parser.parse(input);
+    },
+
+    compile: function(input) {
+      var tree = this.parse(input);
       var result = tree;
+
       this.passes.each(function(pass) {
-        var result = pass.run(tree);
+        var result = pass.run(tree, compiler);
       });
 
       return result;

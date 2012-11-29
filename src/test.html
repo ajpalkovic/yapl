@@ -30,7 +30,6 @@
       jQuery.noConflict();
 
       function parse($) {
-        window.parser = new Parser();
         window.compiler = new Compiler();
 
         var astElement = $('#ast');
@@ -40,10 +39,10 @@
         window.localStorage.setItem('code', code);
 
         try {
-          result = parser.parse(code);
+          result = compiler.parse(code);
 
           var astText = compiler.stringify(result);
-          var output = compiler.compile(result);
+          var output = compiler.compile(code);
 
           astElement.text(astText);
           jsOutputElement.text(compiler.stringify(output));

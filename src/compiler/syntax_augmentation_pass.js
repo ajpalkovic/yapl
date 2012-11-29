@@ -36,7 +36,11 @@
         'symbol': this.onSymbol,
         'property_access': this.onPropertyAccess,
         'parallel_assignment_expression': this.onParallelAssignmentExpression,
-        'regex_literal': this.onRegexLiteral
+        'regex_literal': this.onRegexLiteral,
+        'double_string_literal, single_string_literal': this.onStringLiteral,
+        'unless_statement': this.onUnlessStatement,
+        'until_loop': this.onUntilLoop,
+        'case': this.onCase
       });
     },
 
@@ -201,6 +205,106 @@
       var newRegexToken = $token(new Token({type: 'REGEX_LITERAL', value: stripWhitespace()}));
 
       return $node('regex_literal', [newRegexToken]);
+    },
+
+    onStringLiteral: function(stringLiteral, scope, compiler) {
+      var stringText = stringLiteral.children('token').text();
+      // Remove the quotes.
+      stringText = stringText.substring(1, stringText.length - 1);
+
+      var startingLineNumber = parseInt(stringLiteral.children('token').attr('line'));
+      var lines = stringText.split('\n');
+
+      var initialIndentation = compiler.parser.lexer.getIndent(startingLineNumber).value;
+
+      var newLines = lines.slice(1).map(function(line, i) {
+        try {
+          var indentationToken = Token.identify(line).token;
+        } catch (e) {
+          // Whatever was at the beginning of the line in the string was not a proper
+          // lexical token, but since we are in a string and not in the source code,
+          // it doesn't matter, so we just say the indentation is empty.
+          //
+          // eg. x = '
+          //     `
+          //     '
+          var indentationToken = new Token({type: 'WHITESPACE', value: ''});
+        }
+
+        var indentation = indentationToken.value;
+
+        if (indentation.length < initialIndentation.length) {
+          // TODO: throw an error, the indentation was off.
+          throw 'wrong indentation';
+        }
+
+        return line.substring(initialIndentation.length);
+      });
+
+      newLines.prepend(lines[0]);
+      var newStringToken = Token.identify("'" + newLines.join('\n') + "'").token;
+
+      return $node('single_string_literal', [$token(newStringToken)]);
+    },
+
+    onUnlessStatement: function(unlessStatement, scope) {
+      var condition = unlessStatement.children('.condition');
+      var body = unlessStatement.children('.body');
+
+      var negation = $node('unary_expression', [
+        $node('operator', [$token(Token.LOGICAL_NOT)]),
+        condition
+      ]);
+
+      return $node('if_statement', [
+        negation,
+        body
+      ], [
+        'condition',
+        'body',
+      ]);
+    },
+
+    onUntilLoop: function(untilLoop, scope) {
+      var condition = untilLoop.children('.condition');
+      var body = untilLoop.children('.body');
+
+      var negation = $node('unary_expression', [
+        $node('operator', [$token(Token.LOGICAL_NOT)]),
+        condition
+      ]);
+
+      return $node('while_loop', [
+        negation,
+        body
+      ], [
+        'condition',
+        'body',
+      ]);
+    },
+
+    onCase: function(caseElement, scope) {
+      var expressions = caseElement.children('.expressions').children();
+      var body = caseElement.children('.body');
+
+      if (expressions.size() === 1) return;
+
+      var newCases = $();
+      var length = expressions.size();
+
+      expressions.each(function(i) {
+        var expression = $(this);
+
+        if (i === length - 1) {
+          var newCase = $node('case', [expression, body], ['expressions', 'body']);
+        } else {
+          var newCase = $node('case', [expression], ['expressions']);
+        }
+
+        newCases = newCases.add(newCase);
+      });
+
+      return newCases;
     }
   });
 }(jQuery);

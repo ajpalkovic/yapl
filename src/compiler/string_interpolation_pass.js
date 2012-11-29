@@ -1,10 +1,10 @@
 !function($) {
 
-  function interpolate(string, scope) {
+  function interpolate(string, line, scope) {
     // Remove the quotes.
     string = string.substring(1, string.length - 1);
 
-    var parser = new Parser();
+    var parser = new InterpolationParser();
 
     function balanceInterpolation(index) {
       for (var i = index; i < string.length; ++i) {
@@ -19,10 +19,10 @@
     }
 
     function parseCode(code) {
-      var tree = parser.parse(code, 'FunctionBody');
+      var tree = parser.parse(code, line);
       return $node('closure', [
         $node('parameter_list'),
-        tree
+        $node('function_body', [tree])
       ], [
         'parameters',
         'body'
@@ -75,7 +75,9 @@
     },
 
     onDoubleStringLiteral: function(stringLiteral, scope) {
-      var interpolations = interpolate(stringLiteral.children('token').text(), scope);
+      var string = stringLiteral.children('token').text();
+      var line = stringLiteral.children('token').attr('line');
+      var interpolations = interpolate(string, line, scope);
 
       if (!interpolations.length) return;
 

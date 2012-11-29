@@ -15,8 +15,15 @@
     /**
      * Lexer implementation for Yapl.
      */
-    initialize: function Lexer(string) {
-      this.tokens = this._lex(string);
+    initialize: function Lexer(string, lineOffset) {
+      this.tokens = this._lex(string, lineOffset || 1);
+      var lines = this.lines = [];
+
+      this.tokens.each(function(token) {
+        lines[token.line] = lines[token.line] || [];
+        lines[token.line].push(token);
+      });
+
       this.currentPos = 0;
       this.lastPos = 0;
     },
@@ -60,12 +67,21 @@
       return token;
     },
 
+    getIndent: function(line) {
+      return this.lines[line][0].type === 'WHITESPACE' ? this.lines[line][0] : new Token({
+        type: 'WHITESPACE',
+        value: '',
+        line: line,
+        optional: true
+      });
+    },
+
     /**
      * Lexes a string into a stream of tokens.
      */
-    _lex: function(string) {
+    _lex: function(string, lineOffset) {
       var tokens = [];
-      var line = 1;
+      var line = lineOffset;
       var col = 0;
 
       while (string.length > 0) {

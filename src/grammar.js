@@ -926,7 +926,7 @@ var Grammar = {
 
   CaseBlock: {
     productions: [
-      ['CaseList', 'OptDefaultCase', 'CaseList']
+      ['CaseList', 'OptDefaultCase']
     ]
   },
 
