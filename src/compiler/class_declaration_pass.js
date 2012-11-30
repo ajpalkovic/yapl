@@ -92,7 +92,7 @@
 
       // Handle nested classes
       var _this = this;
-      classBody.children('class_declaration').each(function(i) {
+      classBody.children('class_declaration').remove().each(function(i) {
         wrapperBody.append(_this.onClassDeclaration($(this), scope));
       });
 
@@ -145,19 +145,24 @@
       }
 
       // Handle the static variables
-      classBody.children('static_var_declaration_statement').find('variable_declaration').each(function(i) {
+      classBody.children('static_var_declaration_statement').remove().find('variable_declaration').each(function(i) {
         wrapperBody.append(createStaticVariable($(this), classNameToken));
       });
 
       // Handle the static methods
-      classBody.children('static_method').children('method').each(function(i) {
+      classBody.children('static_method').remove().children('method').each(function(i) {
         wrapperBody.append(createStaticFunction($(this), classNameToken));
       });
 
       // Handle the methods
-      classBody.children('method').each(function(i) {
+      classBody.children('method').remove().each(function(i) {
         wrapperBody.append(createFunctionOnPrototype($(this), classNameToken));
       });
+
+      // We prepend everything else to the top of the wrapper. This is all the code that will be
+      // executed when the class is created, not instances of that class.
+      var classBodyCode = classBody.children();
+      wrapperBody.prepend(classBodyCode);
 
       var returnStatement = $statement($node('keyword_statement', [
         $token(Token.RETURN),

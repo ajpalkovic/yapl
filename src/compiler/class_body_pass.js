@@ -21,7 +21,7 @@
         'class_declaration > .body > static_method > method > .body identifier_reference': this.onIdentifier,
         'class_declaration > .body > method > .body identifier_reference': this.onIdentifier,
         'class_declaration > .body > accessor': this.onAccessor,
-        'class_declaration > .body > instance_var_declaration_statement instance_var_declaration': this.onInstanceVarDeclaration,
+        'class_declaration > .body > instance_var_declaration_statement': this.onInstanceVarDeclarationStatement,
         'class_declaration > .body > method > .parameters auto_set_param': this.onAutoSetParam
       });
     },
@@ -97,7 +97,9 @@
       }
     },
 
-    onInstanceVarDeclaration: function(instanceVarDeclaration, scope) {
+    onInstanceVarDeclarationStatement: function(instanceVarDeclarationStatement, scope) {
+      var instanceVarDeclaration = instanceVarDeclarationStatement.find('instance_var_declaration');
+
       var nameToken = instanceVarDeclaration.children('.name');
       var value = instanceVarDeclaration.children('.value');
       value = value.size() ? value : $token(Token.UNDEFINED);
@@ -129,6 +131,8 @@
 
         constructorMethod.children('.body').prepend(memberAssign);
       }
+
+      return null;
     },
 
     onAutoSetParam: function(autoSetParam, scope) {
