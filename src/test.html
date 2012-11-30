@@ -42,10 +42,10 @@
           result = compiler.parse(code);
 
           var astText = compiler.stringify(result);
-          var output = compiler.compile(code);
+          // var output = compiler.compile(code);
 
           astElement.text(astText);
-          jsOutputElement.text(output);
+          // jsOutputElement.text(output);
         } catch (e) {
           astElement.text(e);
           jsOutputElement.text('');

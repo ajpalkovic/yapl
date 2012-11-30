@@ -79,4 +79,11 @@
           'Class "' + className + '" has no super class to reference');
     }
   });
+
+  var IncorrectIndentation = klass(error, CompileError, {
+    initialize: function IncorrectIndentation(line) {
+      CompileError.prototype.initialize.call(this, line,
+          'Incorrect indentation for multi-line string');
+    }
+  });
 }(jQuery);

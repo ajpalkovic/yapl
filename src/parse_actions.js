@@ -61,7 +61,7 @@
     FunctionBody: list('FunctionBody'),
     MemberIdentifier: node('MemberIdentifier', ['name']),
     ArrayLiteral: node('ArrayLiteral', ['elements']),
-    ArrayElementList: list('CommaNodeList'),
+    ArrayElementList: list('ArrayElementList'),
     ObjectLiteral: node('ObjectLiteral'),
     PropertyList: list('PropertyList'),
     Property: node('Property', ['name', 'value']),
