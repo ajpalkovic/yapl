@@ -6,7 +6,7 @@
       });
     },
 
-    onClosure: function(closure, scope) {
+    onClosure: function(closure, scope, compiler) {
       var parameters = closure.children('.parameters');
       var body = closure.children('.body');
 
@@ -43,6 +43,11 @@
       var anonymousFn = $node('function_expression',
         [null, newParameters, body],
         ['name', 'parameters', 'body']);
+
+
+      // We have to force the recursion on the newly created function, because the pass will not be run
+      // again over the newly created function expression
+      this.runWithScopeNode(anonymousFn, scope, compiler);
 
       nestedExpression.append(anonymousFn);
 

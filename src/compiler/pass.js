@@ -30,7 +30,7 @@
       if (replacement === undefined) return;
 
       if (replacement !== match) {
-        replacement.attr('class', match.attr('class'));
+        if (replacement) replacement.attr('class', match.attr('class'));
         match.replaceWith(replacement);
       }
     }
@@ -45,12 +45,14 @@
         'function_declaration',
         'function_expression',
         'closure',
-        'method'
+        'method',
+        'catch'
       ].join(', ');
 
       this.declarationSelector = [
         'class_declaration',
         'variable_declaration',
+        'exception_var_declaration',
         'method',
         'instance_var_declaration',
         'closure_parameter',
@@ -61,10 +63,13 @@
       // We don't want any static methods or variables.
       this.instanceDeclarationSelector = [
         'class_body > method',
-        'class_body > static_method > method',
         'class_body > instance_var_declaration_statement instance_var_declaration',
+      ].join(', ');
+
+      this.staticDeclarationSelector = [
+        'class_body > static_method > method',
         'class_body > static_var_declaration_statement > variable_statement variable_declaration'
-      ].join(', ')
+      ].join(', ');
     },
 
     getSymbolName: function(symbolNode) {
@@ -114,12 +119,23 @@
         if (child.is(_this.declarationSelector)) {
           var symbolName = _this.getSymbolName(child);
 
-          if (_this.onDeclaration) _this.onDeclaration(symbolName, child, scope, compiler);
+          if (_this.onDeclaration) {
+            // We treat statics like regular variables
+            if (!child.is(_this.instanceDeclarationSelector) || child.is(_this.staticDeclarationSelector)) {
+              _this.onDeclaration(symbolName, child, scope, compiler);
+            } else {
+              _this.onInstanceDeclaration(symbolName, child, scope, compiler);
+            }
+          }
 
-          if (!child.is(_this.instanceDeclarationSelector)) {
+          // Statics get treated as instance data and regular variables.
+          if (child.is(_this.staticDeclarationSelector)) {
             scope.set(symbolName, child);
-          } else {
             scope.classContext.declare(child);
+          } else if (child.is(_this.instanceDeclarationSelector)) {
+            scope.classContext.declare(child);
+          } else {
+            scope.set(symbolName, child);
           }
         }
 
@@ -146,7 +162,7 @@
       if (replacement === undefined) return;
 
       if (replacement !== match) {
-        replacement.attr('class', match.attr('class'));
+        if (replacement) replacement.attr('class', match.attr('class'));
         match.replaceWith(replacement);
       }
     }
@@ -158,13 +174,16 @@
     },
 
     run: function(ast, compiler) {
-      return this.runWithEmitter(ast, new Emitter(this.runWithEmitter.bind(this)), compiler);
+      var emitter = new Emitter(this.runWithEmitter.bind(this));
+      this.runWithEmitter(ast, emitter, compiler);
+
+      return emitter;
     },
 
     runWithEmitter: function(node, emitter, compiler) {
       var _this = this;
-      $.each(selectorMappings, function(selector, fn) {
-        if (node.is(selector)) fn.call(_this, selector, emitter, compiler);
+      $.each(this.selectorMappings, function(selector, fn) {
+        if (node.is(selector)) fn.call(_this, node, emitter, compiler);
       });
     }
   });

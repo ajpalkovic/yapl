@@ -16,6 +16,10 @@
         // new pass.CallOrIdentifierTransformer()
       ];
 
+      this.outputPasses = {
+        'js': new pass.ToJsEmitter()
+      };
+
       this.parser = window.parser = new Parser();
     },
 
@@ -23,15 +27,20 @@
       return this.parser.parse(input);
     },
 
-    compile: function(input) {
+    compile: function(input, target) {
       var tree = this.parse(input);
-      var result = tree;
+
+      target = target || Compiler.target.js;
 
       this.passes.each(function(pass) {
-        var result = pass.run(tree, compiler);
+        pass.run(tree, compiler);
       });
 
-      return result;
+      if (!this.outputPasses[target]) {
+        throw 'Invalid output target: "' + target + "'";
+      }
+
+      return this.outputPasses[target].run(tree, compiler).flush();
     },
 
     stringify: function(ast) {
@@ -63,6 +72,10 @@
     }
   });
 
+  Compiler.target = {
+    js: 'js'
+  };
+
   var Emitter = klass({
     initialize: function Emitter(nodeHandler, outputBuffer, lines, indentLevel) {
       this.nodeHandler = nodeHandler;
@@ -75,14 +88,14 @@
       for (var i = 0, len = arguments.length; i < len; ++i) {
         if (!arguments[i]) continue;
 
-        if (arguments[i] instanceof Token) {
-          this.outputBuffer.push(arguments[i].value);
-          continue;
-        }
-
         switch (typeof arguments[i]) {
           case 'number':
           case 'string':
+            if (arguments[i] === '\n') {
+              this.nl();
+              break;
+            }
+
             this.outputBuffer.push(arguments[i]);
             break;
           case 'function':
@@ -90,7 +103,12 @@
             arguments[i]();
             break;
           default:
-            nodeHandler(arguments[i], this);
+            if (arguments[i].is('token')) {
+              this.outputBuffer.push(arguments[i].text());
+              continue;
+            }
+
+            this.nodeHandler(arguments[i], this);
         }
       }
 

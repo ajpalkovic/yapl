@@ -30,7 +30,14 @@
     }
 
     function stringLiteral(string) {
-      return $node('string_literal', [$token(new Token({type: 'STRING_LITERAL', value: "'" + string + "'"}))]);
+      var token = new Token({
+        type: 'STRING_LITERAL',
+        value: "'" + string + "'",
+        line: line // Need to have this when the syntax aug. pass tries to figure out
+                   // if this string spans multiple lines.
+      });
+
+      return $node('single_string_literal', [$token(token)]);
     }
 
     var interpolations = [];

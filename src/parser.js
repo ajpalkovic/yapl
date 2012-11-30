@@ -73,6 +73,7 @@
     _parseRule: function(ruleName, rule, startPos, redefinitions) {
       var productions = redefinitions[ruleName] || rule.productions;
 
+      // Extends the productions with the redefinitiosn if there are any.
       if (rule.redefinitions) {
         redefinitions = Object.clone(redefinitions);
         $.extend(redefinitions, rule.redefinitions);
@@ -85,15 +86,23 @@
         var parseResults = [];
 
         for (var j = 0, numElements = production.length; j < numElements; ++j) {
-          var expectedTokenType = production[j];
+          var currentSymbol = production[j];
+          var nonCapture = !!currentSymbol.match(/^\(\?[^\)]+\)$/);
 
-          if (Grammar[expectedTokenType]) {
-            var parseResult = this._parse(expectedTokenType, this.lexer.currentPos, redefinitions);
+          if (nonCapture) currentSymbol = currentSymbol.substring(2, currentSymbol.length - 1);
 
-            if (parseResult !== undefined) parseResults.push(parseResult);
+          if (Grammar[currentSymbol]) {
+            var parseResult = this._parse(currentSymbol, this.lexer.currentPos, redefinitions);
+
+            // We only take the result if the parse didn't fail (was undefined), and the symbol
+            // wasn't specified as a non-capture.
+            if (parseResult !== undefined && !nonCapture) {
+              parseResults.push(parseResult);
+            }
+
             parseFailed = parseResult === undefined;
           } else {
-            var matchResult = this._match(expectedTokenType);
+            var matchResult = this._match(currentSymbol);
             if (matchResult) {
               if (matchResult.value) parseResults.push(matchResult.value);
 
@@ -159,6 +168,7 @@
       // Hit the end of the token stream so we failed.
       if (!lexedToken) return {};
 
+      // We only capture the value of tokens surrounded by parens.
       if (expectedTokenType.match(/^\([^\)]+\)$/)) {
         var capture = true;
         expectedTokenType = expectedTokenType.substring(1, expectedTokenType.length - 1);

@@ -18,10 +18,16 @@
           var parameter = $(this);
           var nextParam = parameter.next();
 
-          var paramName = parameter.find('.name');
-          var value = parameter.find('.value');
+          // We need to get the actual declaration out of the auto-set.
+          if (parameter.is('auto_set_param')) {
+            parameter = parameter.children('variable_declaration');
+          }
+
+          var paramName = parameter.children('.name');
+          var value = parameter.children('.value');
 
           transformFn(paramName, value, nextParam);
+          parameter.replaceWith(paramName);
         }
       }
 
@@ -31,8 +37,6 @@
         if (nextParam.size() && !nextParam.find('.value').size()) {
           throw new error.InvalidDefaultArgumentConfiguration(callableName.attr('line'), callableName.text());
         }
-
-        console.log(paramName);
 
         var assignment = $statement(
           $assignment(
@@ -52,7 +56,7 @@
         paramPrologue.append(assignment);
       }));
 
-      body.append(paramPrologue.children());
+      body.prepend(paramPrologue.children());
     }
   });
 }(jQuery);

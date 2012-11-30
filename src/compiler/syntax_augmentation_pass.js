@@ -1,26 +1,12 @@
 !function($) {
   var NEW_METHOD_NAME = 'new';
 
-  function wrapWithVariableStatement(variableDeclaration, className) {
-    variableDeclaration = variableDeclaration.clone();
-
-    variableDeclaration.removeClass(className);
-
-    var variableStatement = $node('variable_statement');
-    variableStatement.addClass(className);
-
-    var declarationList = $node('variable_declaration_list');
-    variableDeclaration.wrap(variableStatement).wrap(declarationList);
-
-    return variableDeclaration.parent().parent();
-  }
-
   function setDefaultValue(variableDeclaration, value) {
     if (variableDeclaration.children('.value').size()) return;
 
     var valueToken = new Token({value: value});
 
-    var valueNode = $node('primitive_literal_expression', [$token(valueToken)]);
+    var valueNode = $node('primitive_literal_expression', [$token(valueToken)], ['value']);
     valueNode.addClass('value');
 
     variableDeclaration.append(valueNode);
@@ -29,7 +15,6 @@
   var SyntaxAugmentationTransformer = klass(pass, pass.ScopedTransformer, {
     initialize: function SyntaxAugmentationTransformer() {
       pass.ScopedTransformer.prototype.initialize.call(this, {
-        'standard_for_structure': this.onStandardForStructure,
         'for_in_structure': this.onForInStructure,
         'multiple_for_in_structure': this.onMultipleForInStructure,
         'inflected_for_structure': this.onInflectedForStructure,
@@ -40,28 +25,31 @@
         'double_string_literal, single_string_literal': this.onStringLiteral,
         'unless_statement': this.onUnlessStatement,
         'until_loop': this.onUntilLoop,
-        'case': this.onCase
+        'case': this.onCase,
+        'bind_expression': this.onBindExpression,
+        'property': this.onProperty,
+        'assignment_expression': this.onAssignmentExpression,
+        'operator': this.onOperator,
+        'one_line_if_statement': this.onOneLineIfStatement,
+        'one_line_unless_statement': this.onOneLineUnlessStatement,
+        'exponentiation_expression': this.onExponentiationExpression
       });
     },
 
     onForInStructure: function(forInStructure, scope) {
       var forLoop = forInStructure.parent();
-      var variable = forInStructure.children('.value');
+      var value = forInStructure.children('.value');
       var collection = forInStructure.children('.collection').remove();
       var index = forInStructure.children('.index').remove();
       var body = forLoop.children('.body');
 
-      // First wrap the loop variable with a statement and declare it before
-      // the loop.
-      wrapWithVariableStatement(variable, 'variable').insertBefore(forLoop);
+      var collectionToken = $token(Token.identify('__collection').token);
 
       // Then we assign whatever the collection was to a variable so we can access it.
-      var collectionToken = $token(Token.identify('__collection').token);
-      var collectionDeclaration = $node('variable_declaration',
-          [collectionToken, collection],
-          ['name', 'value']);
-
-      wrapWithVariableStatement(collectionDeclaration, 'collection').insertBefore(forLoop);
+      $variable(
+        collectionToken,
+        collection
+      ).insertBefore(forLoop);
 
       if (!index.size()) {
         var tokenNode = $token(Token.identify('__i').token);
@@ -71,21 +59,25 @@
 
       setDefaultValue(index, 0);
 
-      var indexName = index.children('.name');
-      var variableToken = variable.children('.name');
-      var variableValue = $node('array_dereference',
-        [collectionToken, index.children('.name')]);
+      var collectionDeref = $node('array_dereference', [
+        collectionToken,
+        index.children('.name')
+      ], [
+        'member',
+        'memberPart'
+      ]);
 
-      var variableAssignment = $assignment(variableToken, variableValue);
-
-      body.prepend(variableAssignment);
+      var valueVariableAssignment = $variable(value.children('.name'), collectionDeref);
+      body.prepend(valueVariableAssignment);
 
       return $node('standard_for_structure', [
-        wrapWithVariableStatement(index, 'variable'),
+        $variable(index.children('.name'), index.children('.value')),
 
-        $node('simple_expression', [
-          indexName,
-          Token.LESS_THAN,
+        $statement($node('simple_expression', [
+          index.children('.name'),
+
+          $node('operator', [Token.LESS_THAN]),
+
           $node('property_access', [
             collectionToken,
             Token.identify('length').token
@@ -97,9 +89,15 @@
           'left',
           'operator',
           'right'
-        ]),
+        ])),
 
-        $node('prefix_increment_expression', [Token.INCREMENT, indexName])
+        $node('prefix_increment_expression', [
+          Token.INCREMENT,
+          index.children('.name')
+        ], [
+          'operator',
+          'expression'
+        ])
       ], [
         'variable',
         'condition',
@@ -115,16 +113,13 @@
       var index = multipleForInStructure.children('.index').remove();
       var body = forLoop.children('.body');
 
-      // Wrap the key variable.
-      wrapWithVariableStatement(key, 'key').insertBefore(forLoop);
-      wrapWithVariableStatement(value, 'value').insertBefore(forLoop);
-
       var collectionToken = $token(Token.identify('__collection').token);
-      var collectionDeclaration = $node('variable_declaration',
-          [collectionToken, collection],
-          ['name', 'value']);
 
-      wrapWithVariableStatement(collectionDeclaration, 'collection').insertBefore(forLoop);
+      // Then we assign whatever the collection was to a variable so we can access it.
+      $variable(
+        collectionToken,
+        collection
+      ).insertBefore(forLoop);
 
       if (!index.size()) {
         var tokenNode = $token(Token.identify('__i').token);
@@ -133,22 +128,42 @@
       }
 
       setDefaultValue(index, 0);
-      wrapWithVariableStatement(index, 'index').insertBefore(forLoop);
 
       var indexName = index.children('.name');
       var keyName = key.children('.name');
       var valueName = value.children('.name');
 
-      var valueAtKey = $node('array_dereference', [collectionToken, keyName], ['member', 'memberPart']);
-      var valueAssignment = $assignment(valueName, valueAtKey);
+      $variable(
+        indexName,
+        index.children('.value')
+      ).insertBefore(forLoop);
 
-      body.prepend(valueAssignment);
+      var collectionDeref = $node('array_dereference', [collectionToken, keyName], ['member', 'memberPart']);
 
-      var indexIncrement = $node('prefix_increment_expression', [Token.INCREMENT, indexName]);
+      // Declare the value variable
+      var valueVariable = $variable(value.children('.name'), collectionDeref);
+      body.prepend(valueVariable);
+
+      var indexIncrement = $node('prefix_increment_expression', [
+        $node('operator', [Token.INCREMENT]),
+        indexName
+      ], [
+        'operator',
+        'expression'
+      ]);
+
       body.append(indexIncrement);
 
       return $node('for_in_structure', [
-        keyName,
+        $node('variable_statement', [
+          $node('variable_declaration_list', [
+            $node('variable_declaration', [
+              keyName
+            ], [
+              'name'
+            ])
+          ])
+        ]),
         collectionToken
       ], [
         'key',
@@ -254,6 +269,9 @@
       var negation = $node('unary_expression', [
         $node('operator', [$token(Token.LOGICAL_NOT)]),
         condition
+      ], [
+        'operator',
+        'expression'
       ]);
 
       return $node('if_statement', [
@@ -272,6 +290,9 @@
       var negation = $node('unary_expression', [
         $node('operator', [$token(Token.LOGICAL_NOT)]),
         condition
+      ], [
+        'condition',
+        'body'
       ]);
 
       return $node('while_loop', [
@@ -295,6 +316,7 @@
       expressions.each(function(i) {
         var expression = $(this);
 
+        // The last case in the fall-through has the body.
         if (i === length - 1) {
           var newCase = $node('case', [expression, body], ['expressions', 'body']);
         } else {
@@ -305,6 +327,134 @@
       });
 
       return newCases;
+    },
+
+    onBindExpression: function(bindExpression, scope) {
+      var member = bindExpression.children('.member');
+      var parameters = bindExpression.children('.memberPart').children();
+
+      // We don't want an 'EmptyList' because it won't get printed.
+      if (!parameters.size()) parameters = $node('argument_list');
+
+      parameters.prepend($token(Token.THIS));
+
+      var bindFunction = $node('property_access', [
+        member,
+        $token(Token.identify('bind').token)
+      ], [
+        'member',
+        'memberPart'
+      ]);
+
+      return $node('call', [
+        bindFunction,
+        parameters
+      ], [
+        'member',
+        'memberPart'
+      ]);
+    },
+
+    onProperty: function(property, scope) {
+      if (property.children('.value').size()) return;
+
+      var name = property.children('.name');
+
+      return $node('property', [
+        name,
+        $node('primitive_literal_expression', [$token(Token.TRUE)], ['value'])
+      ], [
+        'name',
+        'value'
+      ]);
+    },
+
+    onAssignmentExpression: function(assignmentExpression, scope) {
+      var left = assignmentExpression.children('.left');
+      var operator = assignmentExpression.children('.operator');
+      var right = assignmentExpression.children('.right');
+
+      switch (operator.children('token').attr('type')) {
+        case 'EXPONENTIATION_EQUALS':
+          var exponentiation = $node('exponentiation_expression', [
+            left,
+            right
+          ], [
+            'left',
+            'right'
+          ]);
+
+          exponentiation = this.onExponentiationExpression(exponentiation);
+          return $assignment(left, exponentiation);
+
+        case 'CONDITIONAL_EQUALS':
+          return $assignment(
+            left,
+            $node('simple_expression', [
+              left,
+              $node('operator', [$token(Token.LOGICAL_OR)]),
+              right
+            ], [
+              'left',
+              'operator',
+              'right'
+            ])
+          );
+      }
+    },
+
+    onOperator: function(operator, scope) {
+      switch (operator.children('token').attr('type')) {
+        case 'EQUAL':
+          return $node('operator', [$token(new Token({type: 'TRIPPLE_EQUAL', value: '==='}))]);
+        case 'LIKE':
+          return $node('operator', [$token(Token.EQUAL)])
+        case 'UNLIKE':
+          return $node('operator', [$token(Token.NOT_EQUAL)])
+      }
+    },
+
+    onOneLineIfStatement: function(oneLineIfStatement, scope) {
+      return $node('if_statement', [
+        oneLineIfStatement.children('.condition'),
+        $statement(oneLineIfStatement.children('.body'))
+      ], [
+        'condition',
+        'body'
+      ]);
+    },
+
+    onOneLineUnlessStatement: function(oneLineUnlessStatement, scope) {
+      return this.onUnlessStatement($node('unless_statement', [
+        oneLineUnlessStatement.children('.condition'),
+        $statement(oneLineIfStatement.children('.body'))
+      ], [
+        'condition',
+        'body'
+      ]));
+    },
+
+    onExponentiationExpression: function(exponentiationExpression, scope) {
+      var left = exponentiationExpression.children('.left');
+      var right = exponentiationExpression.children('.right');
+
+      return $node('call', [
+        $node('property_access', [
+          $token(Token.identify('Math').token),
+          $token(Token.identify('pow').token)
+        ], [
+          'member',
+          'memberPart'
+        ]),
+
+        $node('argument_list', [
+          left,
+          right
+        ])
+      ], [
+        'member',
+        'memberPart'
+      ]);
     }
   });
 }(jQuery);

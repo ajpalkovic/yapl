@@ -55,7 +55,7 @@
     Closure: node('Closure', ['parameters', 'body']),
     ClosureParameter: node('ClosureParameter', ['name', 'value']),
     FunctionExpression: node('FunctionExpression', ['name', 'parameters', 'body']),
-    EmptyList: list('NodeList'),
+    EmptyList: list('EmptyList'),
     ParameterList: list('ParameterList'),
     AutoSetParam: node('AutoSetParam'),
     FunctionBody: list('FunctionBody'),
@@ -69,14 +69,14 @@
     ParallelAssignmentExpression: node('ParallelAssignmentExpression', ['left', 'operator', 'right']),
     MemberExpressionList: list('MemberExpressionList'),
     ExpressionList: list('ExpressionList'),
-    ConditionalExpression: node('ConditionalExpression'),
+    ConditionalExpression: node('ConditionalExpression', ['condition', 'truePart', 'falsePart']),
     SimpleExpression: flatteningNode('SimpleExpression', ['left', 'operator', 'right']),
     AdditiveExpression: flatteningNode('AdditiveExpression', ['left', 'operator', 'right']),
     Term: flatteningNode('Term', ['left', 'operator', 'right']),
-    ExponentiationExpression: flatteningNode('ExponentiationExpression'),
-    UnaryExpression: flatteningNode('UnaryExpression'),
-    PostfixIncrementExpression: node('PostfixIncrementExpression'),
-    PrefixIncrementExpression: node('PrefixIncrementExpression'),
+    ExponentiationExpression: flatteningNode('ExponentiationExpression', ['left', 'right']),
+    UnaryExpression: flatteningNode('UnaryExpression', ['operator', 'expression']),
+    PostfixIncrementExpression: node('PostfixIncrementExpression', ['expression', 'operator']),
+    PrefixIncrementExpression: node('PrefixIncrementExpression', ['operator', 'expression']),
     NewExpression: node('NewExpression'),
 
     MemberExpression: $.overload(function(primaryExpression) {
@@ -115,37 +115,21 @@
     SingleStringLiteral: node('SingleStringLiteral'),
     IdentifierReference: node('IdentifierReference'),
     FunctionReference: node('FunctionReference'),
-    PrimitiveLiteralExpression: node('PrimitiveLiteralExpression'),
+    PrimitiveLiteralExpression: node('PrimitiveLiteralExpression', ['value']),
     NestedExpression: node('NestedExpression'),
     Operator: node('Operator'),
-    TerminatedStatement: node('TerminatedStatement'),
-    StatementList: list('NodeList'),
-
-    EmptyStatement: function(type) {
-      if (type.value === '\n') return undefined;
-
-      return node('EmptyStatement').apply(this, [type]);
-    },
-
-    // EndSt: {
-    //   onParse: function(type) {
-    //     return {
-    //       node: 'EndSt',
-    //       type: type
-    //     };
-    //   }
-    // },
-
+    TerminatedStatement: node('TerminatedStatement', ['statement']),
+    StatementList: list('StatementList'),
     VariableStatement: node('VariableStatement'),
     VariableDeclarationList: list('VariableDeclarationList'),
     VariableDeclaration: node('VariableDeclaration', ['name', 'value']),
     IfStatement: node('IfStatement', ['condition', 'body']),
-    OneLineIfStatement: node('IfStatement', ['body', 'condition']),
+    OneLineIfStatement: node('OneLineIfStatement', ['body', 'condition']),
     UnlessStatement: node('UnlessStatement', ['condition', 'body']),
-    OneLineUnlessStatement: node('UnlessStatement', ['body', 'condition']),
-    ElsePart: node('ElsePart'),
-    ElseIfList: list('NodeList'),
-    ElseIf: node('ElseIf'),
+    OneLineUnlessStatement: node('OneLineUnlessStatement', ['body', 'condition']),
+    ElsePart: node('ElsePart', ['body']),
+    ElseIfList: list('ElseIfList'),
+    ElseIf: node('ElseIf', ['condition', 'body']),
     WhileLoop: node('WhileLoop', ['condition', 'body']),
     UntilLoop: node('UntilLoop', ['condition', 'body']),
     // DoWhileLoop: node('DoWhileLoop'),
@@ -155,23 +139,22 @@
     ForInStructure: node('ForInStructure', ['value', 'collection', 'index']),
     MultipleForInStructure: node('MultipleForInStructure', ['key', 'value', 'collection', 'index']),
     InflectedForStructure: node('InflectedForStructure', ['collection']),
-    ContinueStatement: node('KeywordStatement'),
-    BreakStatement: node('KeywordStatement'),
-    ReturnStatement: node('KeywordStatement'),
-    WithStatement: node('WithStatement'),
+    ContinueStatement: node('KeywordStatement', ['keyword']),
+    BreakStatement: node('KeywordStatement', ['keyword']),
+    ReturnStatement: node('KeywordStatement', ['keyword', 'expression']),
+    WithStatement: node('WithStatement', ['scope', 'body']),
     SwitchStatement: node('SwitchStatement', ['condition', 'cases']),
-    CaseBlock: node('CaseBlock'),
+    CaseBlock: node('CaseBlock', ['cases', 'default']),
     Case: node('Case', ['expressions', 'body']),
     CaseList: list('CaseList'),
-    DefaultCase: node('DefaultCase'),
+    DefaultCase: node('DefaultCase', ['body']),
     LabeledStatement: node('LabeledStatement'),
-    ThrowStatement: node('KeywordStatement'),
+    ThrowStatement: node('KeywordStatement', ['keyword', 'expression']),
     TryStatement: node('TryStatement'),
-    OptCatch: node('OptCatch'),
-    OptFinally: node('OptFinally'),
     Catch: node('Catch'),
+    ExceptionVarDeclaration: node('ExceptionVarDeclaration', ['name']),
     Finally: node('Finally'),
-    DebuggerStatement: node('KeywordStatement'),
+    DebuggerStatement: node('KeywordStatement', ['keyword']),
   };
 
   window.ParseActions = ParseActions;

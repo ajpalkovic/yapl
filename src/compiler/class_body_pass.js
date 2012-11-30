@@ -1,4 +1,5 @@
 !function($) {
+  var PROTOTYPE_TOKEN = $token(Token.identify('prototype').token);
   var CONSTRUCTOR_NAME = 'initialize';
 
   function makeThisReference(nameToken) {
@@ -15,7 +16,7 @@
       pass.ScopedTransformer.prototype.initialize.call(this, {
         'class_declaration > .body': this.onClassBody,
         'class_declaration > .body > method > .body member_identifier': this.onMemberIdentifier,
-        'class_declaration > .body > super': this.onInvalidSuper,
+        'class_declaration > .body > method super': this.onSuper,
         'class_declaration > .body identifier_reference': this.onIdentifier,
         'class_declaration > .body > static_method > method > .body identifier_reference': this.onIdentifier,
         'class_declaration > .body > method > .body identifier_reference': this.onIdentifier,
@@ -52,24 +53,47 @@
       return makeThisReference(nameToken);
     },
 
-    onInvalidSuper: function(sooper, scope) {
-      throw new error.SuperCalledWithoutContext(sooper.children('token').attr('line'));
+    onSuper: function(superCall, scope) {
+      var className = scope.context.declaration.children('.name').text();
+      var parentClass = scope.context.declaration.children('.parentClass');
+
+      if (!parentClass.size()) {
+        throw new error.NoSuperClassError(superCall.children('token').attr('line'), className);
+      }
+
+      var methodName = superCall.closest('method').children('.name');
+      var parameters = superCall.parent().is('call') ?
+        superCall.parent().children('.memberPart').children() : $node('parameter_list');
+
+      parameters.prepend($token(Token.THIS));
+
+      // TODO: figure out how super should work. We don't really have access to the
+      // instance of the super class in JS.
     },
 
     onIdentifier: function(identifierReference, scope) {
-      var nameToken = identifierReference.children('token');
-      var name = nameToken.text();
+      var name = identifierReference.children('token').text();
 
-      if (scope.classContext.isInContext(name)) {
-        var className = scope.classContext.declaration.children('.name');
+      // Handle static variables. We need to any parent contexts too, in case a nested
+      // class is using a static variable of a parent class.
+      while (scope && scope.classContext) {
+        if (scope.classContext.isInContext(name)) {
+          var declaration = scope.classContext.lookup(name);
 
-        return $node('property_access', [
-          className,
-          nameToken
-        ], [
-          'member',
-          'memberPart'
-        ]);
+          if (declaration.is('static_method, static_var_declaration_statement > variable_statement variable_declaration')) {
+            return $node('property_access', [
+              scope.classContext.declaration.children('.name'),
+              declaration.children('.name')
+            ], [
+              'member',
+              'memberPart'
+            ]);
+          } else if (declaration.is('method')) {
+            return makeThisReference(declaration.children('.name'));
+          }
+        }
+
+        scope = scope.parentScope;
       }
     },
 
@@ -98,10 +122,10 @@
       });
 
       if (doDeclaration) {
-        var memberAssign = $assignment(
+        var memberAssign = $statement($assignment(
           $node('member_identifier', [nameToken], ['name']),
           value
-        );
+        ));
 
         constructorMethod.children('.body').prepend(memberAssign);
       }
@@ -130,7 +154,12 @@
       var setStatement = $statement($assignment(makeThisReference(nameToken), value));
       body.prepend(setStatement);
 
-      return nameToken;
+      // Needs to be a variable declaration to be consistent
+      return $node('variable_declaration', [
+        nameToken
+      ], [
+        'name'
+      ]);
     },
 
     onAccessor: function(accessor, scope) {
@@ -159,21 +188,24 @@
         if (methodAlreadyExists(getterName.text())) return;
 
         var getter = $node('method', [
-            getterName,
-            $node('parameter_list'),
-            $node('function_body', [
-              $statement(
-                $node('keyword_statement', [
-                  $token(Token.RETURN),
-                  $node('member_identifier', [nameToken], ['name'])
-                ])
-              )
-            ])
-          ], [
-            'name',
-            'parameters',
-            'body'
-          ]);
+          getterName,
+          $node('parameter_list'),
+          $node('function_body', [
+            $statement(
+              $node('keyword_statement', [
+                $token(Token.RETURN),
+                $node('member_identifier', [nameToken], ['name'])
+              ], [
+                'keyword',
+                'expression'
+              ])
+            )
+          ])
+        ], [
+          'name',
+          'parameters',
+          'body'
+        ]);
 
         var memberIdentifier = getter.find('member_identifier');
         this.handleMatch(memberIdentifier, this.onMemberIdentifier, scope);

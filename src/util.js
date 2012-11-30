@@ -72,10 +72,14 @@
 
   var NULL_NODE = $('<null></null>');
 
-  $node = function(type, children, childNames) {
-    type = type[0].toLowerCase() + type.substring(1).gsub(/([A-Z])/, function(match) {
+  $.toTagName = function(type) {
+    return type[0].toLowerCase() + type.substring(1).gsub(/([A-Z])/, function(match) {
       return '_' + match[0].toLowerCase();
-    })
+    });
+  };
+
+  $node = function(type, children, childNames) {
+    type = $.toTagName(type);
 
     children = children || [];
     childNames = childNames || [];
@@ -88,7 +92,9 @@
         childAndName[0] = $token(childAndName[0]);
       }
 
-      childAndName[0] = (childAndName[0] || NULL_NODE).clone();
+      if (!childAndName[0]) return;
+
+      childAndName[0] = childAndName[0].clone();
 
       if (childAndName[1]) {
         childAndName[0].attr('class', childAndName[1]);
@@ -102,16 +108,29 @@
   };
 
   $statement = function(node) {
-    return $node('terminated_statement', [node]);
+    return $node('terminated_statement', [node], ['statement']);
   };
 
   $variable = function(name, value) {
+    var declaration = value ? $node('variable_declaration', [
+      name,
+      value
+    ], [
+      'name',
+      'value'
+    ]) : $node('variable_declaration', [
+      name,
+      value
+    ], [
+      'name',
+      'value'
+    ]);
+
     return $statement(
       $node('variable_statement', [
-        $node('variable_declaration',
-          [name, value],
-          [/name/, 'value']
-        )
+        $node('variable_declaration_list', [
+          declaration
+        ])
       ])
     );
   };

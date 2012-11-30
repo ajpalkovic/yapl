@@ -45,7 +45,7 @@
           var output = compiler.compile(code);
 
           astElement.text(astText);
-          jsOutputElement.text(compiler.stringify(output));
+          jsOutputElement.text(output);
         } catch (e) {
           astElement.text(e);
           jsOutputElement.text('');

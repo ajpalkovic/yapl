@@ -19,8 +19,14 @@ var Grammar = {
 
   ClassDeclaration: {
     productions: [
-      ['CLASS', '(IDENTIFIER)', 'EXTENDS', 'ParentClass', 'EmptyStatement', 'ClassBody', 'END'],
-      ['CLASS', '(IDENTIFIER)', 'EmptyStatement', 'ClassBody', 'END']
+      ['CLASS', '(IDENTIFIER)', 'OptParentClass', '(?EmptyStatement)', 'ClassBody', 'END']
+    ]
+  },
+
+  OptParentClass: {
+    productions: [
+      ['EXTENDS', 'ParentClass'],
+      []
     ]
   },
 
@@ -59,6 +65,20 @@ var Grammar = {
       Parameter: [
         ['AutoSetParam'],
         ['VariableDeclaration']
+      ],
+
+      PrimaryExpression: [
+        ['This'],
+        ['Super'],
+        ['RegexLiteral'],
+        ['StringLiteral'],
+        ['Symbol'],
+        ['IdentifierReference'],
+        ['PrimitiveLiteralExpression'],
+        ['MemberIdentifier'],
+        ['ObjectLiteral'],
+        ['ArrayLiteral'],
+        ['NestedExpression']
       ]
     }
   },
@@ -150,7 +170,7 @@ var Grammar = {
 
   Parameters: {
     productions: [
-      ['EmptyList', 'EmptyStatement'],
+      ['EmptyList', '(?EmptyStatement)'],
       ['OPEN_PAREN', 'EmptyList', 'CLOSE_PAREN'],
       ['OPEN_PAREN', 'ParameterList', 'CLOSE_PAREN'],
       ['OPEN_PAREN_NO_EXPR', 'EmptyList', 'CLOSE_PAREN'],
@@ -434,7 +454,8 @@ var Grammar = {
 
   BindExpression:  {
     productions: [
-      ['BIND', 'Call']
+      ['BIND', 'Call'],
+      ['BIND']
     ]
   },
 
@@ -476,7 +497,6 @@ var Grammar = {
   PrimaryExpression:  {
     productions: [
       ['This'],
-      ['Super'],
       ['RegexLiteral'],
       ['StringLiteral'],
       ['Symbol'],
@@ -652,7 +672,7 @@ var Grammar = {
     productions: [
       ['TerminatedStatement'],
       ['ComplexStatement'],
-      ['EmptyStatement']
+      ['(?EmptyStatement)']
     ]
   },
 
@@ -707,8 +727,8 @@ var Grammar = {
 
   EmptyStatement: {
     productions: [
-      ['(NEWLINE)'],
-      ['(SEMI)']
+      ['NEWLINE'],
+      ['SEMI']
     ]
   },
 
@@ -748,10 +768,10 @@ var Grammar = {
 
   IfStatement:  {
     productions: [
-      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElseIfList', 'ElsePart', 'END'],
-      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElseIfList', 'END'],
-      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'ElsePart', 'END'],
-      ['IF', 'Expression', 'NEWLINE', 'BlockBody', 'END']
+      ['IF', 'Expression', 'BlockBody', 'ElseIfList', 'ElsePart', 'END'],
+      ['IF', 'Expression', 'BlockBody', 'ElseIfList', 'END'],
+      ['IF', 'Expression', 'BlockBody', 'ElsePart', 'END'],
+      ['IF', 'Expression', 'BlockBody', 'END']
     ]
   },
 
@@ -763,7 +783,7 @@ var Grammar = {
 
   UnlessStatement: {
     productions: [
-      ['UNLESS', 'Expression', 'NEWLINE', 'BlockBody', 'END']
+      ['UNLESS', 'Expression', 'BlockBody', 'END']
     ]
   },
 
@@ -794,7 +814,7 @@ var Grammar = {
 
   ElseIf: {
     productions: [
-      ['ELSE', '!NEWLINE', 'IF', 'Expression', 'NEWLINE', 'BlockBody']
+      ['ELSE', '!NEWLINE', 'IF', 'Expression', 'BlockBody']
     ]
   },
 
@@ -810,13 +830,13 @@ var Grammar = {
 
   WhileLoop: {
     productions: [
-      ['WHILE', 'Expression', 'NEWLINE', 'BlockBody', 'END']
+      ['WHILE', 'Expression', 'BlockBody', 'END']
     ]
   },
 
   UntilLoop: {
     productions: [
-      ['UNTIL', 'Expression', 'NEWLINE', 'BlockBody', 'END']
+      ['UNTIL', 'Expression', 'BlockBody', 'END']
     ]
   },
 
@@ -836,7 +856,7 @@ var Grammar = {
 
   ForLoop: {
     productions: [
-      ['FOR', 'ForLoopStructure', 'NEWLINE', 'BlockBody', 'END']
+      ['FOR', 'ForLoopStructure', 'BlockBody', 'END']
     ]
   },
 
@@ -914,13 +934,13 @@ var Grammar = {
 
   WithStatement: {
     productions: [
-      ['WITH', 'Expression', 'NEWLINE', 'BlockBody', 'END']
+      ['WITH', 'Expression', 'BlockBody', 'END']
     ]
   },
 
   SwitchStatement: {
     productions: [
-      ['SWITCH', 'Expression', 'NEWLINE', 'CaseBlock', 'END']
+      ['SWITCH', 'Expression', 'CaseBlock', 'END']
     ]
   },
 
@@ -990,8 +1010,14 @@ var Grammar = {
 
   Catch: {
     productions: [
-      ['CATCH', '(IDENTIFIER)', 'NEWLINE', 'BlockBody'],
+      ['CATCH', 'ExceptionVarDeclaration', 'BlockBody'],
       ['CATCH', 'BlockBody']
+    ]
+  },
+
+  ExceptionVarDeclaration: {
+    productions: [
+      ['(IDENTIFIER)']
     ]
   },
 

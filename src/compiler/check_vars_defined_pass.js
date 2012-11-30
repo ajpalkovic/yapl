@@ -14,11 +14,20 @@
     onDeclaration: function(symbolName, declaration, scope) {
       // We don't allow variable shadowing except for closure params.
       var shadowsVariable = scope.hasSymbol(symbolName) && !declaration.is('closure_parameter');
-      var shadowsInstanceDeclaration = scope.classContext
-          && scope.classContext.isInContext(symbolName)
-          && !declaration.parent().is('auto_set_param');
 
-      if (shadowsVariable || shadowsInstanceDeclaration) {
+      if (shadowsVariable) {
+        var line = declaration.children('.name').attr('line');
+
+        throw new error.ShadowedReference(line, symbolName);
+      }
+    },
+
+    onInstanceDeclaration: function(symbolName, declaration, scope) {
+      var shadowsInstanceDeclaration = scope.classContext
+        && scope.classContext.isInContext(symbolName)
+        && !declaration.parent().is('auto_set_param');
+
+      if (shadowsInstanceDeclaration) {
         var line = declaration.children('.name').attr('line');
 
         throw new error.ShadowedReference(line, symbolName);
@@ -37,17 +46,7 @@
       if (!scope.hasSymbol(name)) {
         // If the symbol is not in scope, it can be either a static method/var or an instance
         // method/var.
-
-        if (scope.classContext.isInContext(name)) {
-          var declaration = scope.classContext.lookup(name);
-
-          // We leave the static references alone for now.
-          if (!(declaration.closest('static_method').size() ||
-            declaration.closest('static_var_declaration_statement').size())) {
-
-            return $node('member_identifier', [token], ['name']);
-          }
-        } else {
+        if (!scope.classContext.isInContext(name)) {
           throw new error.ReferenceError(token.attr('line'), name);
         }
       }

@@ -10,6 +10,7 @@
     initialize: function Token(options) {
       this.value = options.value;
       this.type = options.type;
+      this.line = options.line;
       this.optional = options.optional;
       this.ignore = options.ignore;
     }
@@ -121,7 +122,8 @@
     ['closure', 'CLOSURE'],
     ['at', 'AT'],
     ['like', 'LIKE'],
-    ['unlike', 'UNLIKE']
+    ['unlike', 'UNLIKE'],
+    ['with', 'WITH']
   ];
 
   //  Note: tokens that are substrings of other tokens must be placed below those tokens

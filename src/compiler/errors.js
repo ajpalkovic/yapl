@@ -73,10 +73,10 @@
     }
   });
 
-  var SuperCalledWithoutContext = klass(error, CompileError, {
-    initialize: function InvalidAccessor(line) {
+  var NoSuperClassError = klass(error, CompileError, {
+    initialize: function NoSuperClassError(line, className) {
       CompileError.prototype.initialize.call(this, line,
-          'Super called outside of valid context');
+          'Class "' + className + '" has no super class to reference');
     }
   });
 }(jQuery);
