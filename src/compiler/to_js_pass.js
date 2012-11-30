@@ -60,9 +60,10 @@
         'variable_declaration': this.onVariableDeclaration,
         'if_statement': this.onIfStatement,
         'else_part': this.onElsePart,
-        'else_if_list': this.onNewlineList,
+        'else_if_list': this.onList,
         'else_if': this.onElseIf,
         'while_loop': this.onWhileLoop,
+        'do_while_loop': this.onDoWhileLoop,
         'for_loop': this.onForLoop,
         'standard_for_structure': this.onStandardForStructure,
         'for_in_structure': this.onForInStructure,
@@ -280,6 +281,15 @@
       emitter.e('while (', condition, ') {').blk()
         .e(body)
       .end().e('}');
+    },
+
+    onDoWhileLoop: function(doWhileLoop, emitter) {
+      var body = doWhileLoop.children('.body');
+      var condition = doWhileLoop.children('.condition');
+
+      emitter.e('do {').blk()
+        .e(body)
+      .end().e('} while (', condition, ');');
     },
 
     onForLoop: function(forLoop, emitter) {

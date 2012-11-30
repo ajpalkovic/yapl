@@ -123,7 +123,8 @@
     ['at', 'AT'],
     ['like', 'LIKE'],
     ['unlike', 'UNLIKE'],
-    ['with', 'WITH']
+    ['with', 'WITH'],
+    ['loop', 'LOOP']
   ];
 
   //  Note: tokens that are substrings of other tokens must be placed below those tokens

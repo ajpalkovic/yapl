@@ -814,8 +814,24 @@ var Grammar = {
 
   ElseIf: {
     productions: [
-      ['ELSE', '!NEWLINE', 'IF', 'Expression', 'BlockBody']
+      ['ELSE', '(?NoNewline)', 'IF', 'Expression', 'BlockBody']
     ]
+  },
+
+  NoNewline: {
+    productions: [
+      ['WHITESPACE', 'NoNewLineLookaheadPart']
+    ],
+  },
+
+  NoNewLineLookaheadPart: {
+    productions: [
+      []
+    ],
+
+    lookahead: {
+      'NEWLINE': false
+    }
   },
 
   IterationStatement: {
@@ -842,17 +858,17 @@ var Grammar = {
 
   // TODO(tjclifton): making these work will be a huge pain.
 
-  // DoWhileLoop: {
-  //   productions: [
-  //     ['DO', 'BlockBody', '!NEWLINE', 'WHILE', 'Expression', 'EndSt']
-  //   ]
-  // },
+  DoWhileLoop: {
+    productions: [
+      ['DO', 'BlockBody', 'LOOP', '(?NoNewline)', 'WHILE', 'Expression', 'EndSt']
+    ]
+  },
 
-  // DoUntilLoop: {
-  //   productions: [
-  //     ['DO', 'BlockBody', '!NEWLINE', 'UNTIL', 'Expression', 'EndSt']
-  //   ]
-  // },
+  DoUntilLoop: {
+    productions: [
+      ['DO', 'BlockBody', 'LOOP', '(?NoNewline)', 'UNTIL', 'Expression', 'EndSt']
+    ]
+  },
 
   ForLoop: {
     productions: [

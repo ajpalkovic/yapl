@@ -25,6 +25,7 @@
         'double_string_literal, single_string_literal': this.onStringLiteral,
         'unless_statement': this.onUnlessStatement,
         'until_loop': this.onUntilLoop,
+        'do_until_loop': this.onDoUntilLoop,
         'case': this.onCase,
         'bind_expression': this.onBindExpression,
         'property': this.onProperty,
@@ -291,8 +292,8 @@
         $node('operator', [$token(Token.LOGICAL_NOT)]),
         condition
       ], [
-        'condition',
-        'body'
+        'operator',
+        'expression'
       ]);
 
       return $node('while_loop', [
@@ -301,6 +302,27 @@
       ], [
         'condition',
         'body',
+      ]);
+    },
+
+    onDoUntilLoop: function(doUntilLoop, scope) {
+      var body = doUntilLoop.children('.body');
+      var condition = doUntilLoop.children('.condition');
+
+      var negation = $node('unary_expression', [
+        $node('operator', [$token(Token.LOGICAL_NOT)]),
+        condition
+      ], [
+        'operator',
+        'expression'
+      ]);
+
+      return $node('do_while_loop', [
+        body,
+        negation
+      ], [
+        'body',
+        'condition'
       ]);
     },
 
