@@ -150,10 +150,10 @@
     DefaultCase: node('DefaultCase', ['body']),
     LabeledStatement: node('LabeledStatement'),
     ThrowStatement: node('KeywordStatement', ['keyword', 'expression']),
-    TryStatement: node('TryStatement'),
-    Catch: node('Catch'),
+    TryStatement: node('TryStatement', ['body', 'catch', 'finally']),
+    Catch: node('Catch', ['exception', 'body']),
     ExceptionVarDeclaration: node('ExceptionVarDeclaration', ['name']),
-    Finally: node('Finally'),
+    Finally: node('Finally', ['body']),
     DebuggerStatement: node('KeywordStatement', ['keyword']),
   };
 

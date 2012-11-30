@@ -74,6 +74,7 @@
         'default_case': this.onDefaultCase,
         'try_statement': this.onTryStatement,
         'catch': this.onCatch,
+        'exception_var_declaration': this.onExceptionVarDeclaration,
         'finally': this.onFinally,
         'keyword_statement': this.onKeywordStatement,
       });
@@ -352,15 +353,36 @@
     },
 
     onTryStatement: function(tryStatement, emitter) {
+      var body = tryStatement.children('.body');
+      var catchElement = tryStatement.children('.catch');
+      var finallyElement = tryStatement.children('.finally');
 
+      emitter.e('try {').blk()
+        .e(body)
+      .end().e('}')
+      .e(catchElement)
+      .e(finallyElement)
     },
 
     onCatch: function(catchElement, emitter) {
+      var exception = catchElement.children('.exception');
+      var body = catchElement.children('.body');
 
+      emitter.e(' catch (', exception, ') {').blk()
+        .e(body)
+      .end().e('}');
+    },
+
+    onExceptionVarDeclaration: function(exceptionVarDeclaration, emitter) {
+      emitter.e(exceptionVarDeclaration.children('.name'));
     },
 
     onFinally: function(finallyElement, emitter) {
+      var body = finallyElement.children('.body');
 
+      emitter.e(' finally {').blk()
+        .e(body)
+      .end().e('}');
     },
 
     onKeywordStatement: function(keywordStatement, emitter) {
