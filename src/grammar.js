@@ -708,6 +708,7 @@ var Grammar = {
   SimpleStatementNoFunction: {
     productions: [
       ['VariableStatement'],
+      ['ExternVariableStatement'],
       ['ExpressionStatement'],
       ['BreakStatement'],
       ['ReturnStatement'],
@@ -757,6 +758,12 @@ var Grammar = {
   VariableStatement:  {
     productions: [
       ['VAR', 'VariableDeclarationList']
+    ]
+  },
+
+  ExternVariableStatement:  {
+    productions: [
+      ['EXTERN', 'VAR', 'VariableDeclarationList']
     ]
   },
 

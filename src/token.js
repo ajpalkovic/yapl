@@ -124,7 +124,8 @@
     ['like', 'LIKE'],
     ['unlike', 'UNLIKE'],
     ['with', 'WITH'],
-    ['loop', 'LOOP']
+    ['loop', 'LOOP'],
+    ['extern', 'EXTERN']
   ];
 
   //  Note: tokens that are substrings of other tokens must be placed below those tokens

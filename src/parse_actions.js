@@ -121,6 +121,7 @@
     TerminatedStatement: node('TerminatedStatement', ['statement']),
     StatementList: list('StatementList'),
     VariableStatement: node('VariableStatement'),
+    ExternVariableStatement: node('ExternVariableStatement'),
     VariableDeclarationList: list('VariableDeclarationList'),
     VariableDeclaration: node('VariableDeclaration', ['name', 'value']),
     IfStatement: node('IfStatement', ['condition', 'body']),

@@ -220,7 +220,7 @@
     onTerminatedStatement: function(terminatedStatement, emitter) {
       var statement = terminatedStatement.children('.statement');
 
-      emitter.e(statement, ';');
+      if (statement.children().size()) emitter.e(statement, ';');
     },
 
     onVariableStatement: function(variableStatement, emitter) {
