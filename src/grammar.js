@@ -9,11 +9,19 @@ var Grammar = {
     ]
   },
 
-  SourceElement:  {
+  SourceElement: {
     productions: [
       ['Statement'],
       ['ClassDeclaration'],
       ['Closure']
+    ]
+  },
+
+  // Used for the body of string interpolations (allows us to have blank interpolations)
+  InterpolationBody: {
+    productions: [
+      ['SourceElement'],
+      ['<<EOF>>']
     ]
   },
 

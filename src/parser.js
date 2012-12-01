@@ -18,9 +18,8 @@
       this.lexer = new Lexer(input);
       var tree = this._parse('Program', 0, {});
 
-      if (!tree) {
-        this.error();
-      }
+      // tree can be null, means there was just no value.
+      if (tree === undefined) this.error();
 
       return tree;
     },
@@ -180,7 +179,7 @@
       var advance = tokensMatch || !lexedToken.optional;
 
       return {
-        value: tokensMatch && capture && /*(lexedToken.value || lexedToken.type)*/ lexedToken,
+        value: tokensMatch && capture && lexedToken,
         matched: matched,
         advance: advance
       };
@@ -219,11 +218,10 @@
       this.cache = {};
 
       this.lexer = new Lexer(input, lineOffset);
-      var tree = this._parse('SourceElement', 0, {});
+      var tree = this._parse('InterpolationBody', 0, {});
 
-      if (!tree) {
-        this.error();
-      }
+      // tree can be null, means there was just no value.
+      if (tree === undefined) this.error();
 
       return tree;
     }

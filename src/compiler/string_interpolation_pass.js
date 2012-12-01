@@ -28,8 +28,8 @@
       }
     }
 
-    function parseCode(code) {
-      var tree = parser.parse(code, line);
+    function parseCode(code, lineOffset) {
+      var tree = parser.parse(code, lineOffset);
       return $node('closure', [
         $node('parameter_list'),
         $node('function_body', [tree])
@@ -41,24 +41,28 @@
 
     var interpolations = [];
     var endOfLastInterpolation = 0;
+    var lineOffset = line;
 
     for (var i = 0; i < string.length; ++i) {
-      if (string[i] === '\\') {
-        i++;
-        continue;
-      }
+      switch (string[i]) {
+        case '\\':
+          lineOffset += (string[i + 1] === 'n');
+          ++i;
+          break;
 
-      if (string[i] === '#' && string[i + 1] === '{') {
-        var end = balanceInterpolation(i + 1);
+        case '#':
+          if (string[i + 1] === '{') {
+            var end = balanceInterpolation(i + 1);
 
-        var before = string.substring(endOfLastInterpolation, i);
-        var code = string.substring(i + 2, end);
+            var before = string.substring(endOfLastInterpolation, i);
+            var code = string.substring(i + 2, end);
 
-        if (before.length) interpolations.push(makeStringLiteral(before, line));
+            if (before.length) interpolations.push(makeStringLiteral(before, lineOffset));
 
-        interpolations.push(parseCode(code));
+            interpolations.push(parseCode(code, lineOffset));
 
-        endOfLastInterpolation = end + 1;
+            endOfLastInterpolation = end + 1;
+          }
       }
     }
 
@@ -91,7 +95,9 @@
 
       var initialIndentation = compiler.parser.lexer.getIndent(startingLineNumber).value;
 
-      var newLines = lines.slice(1).map(function(line, i) {
+      var newLines = lines.map(function(line, i) {
+        var lineNumber = startingLineNumber + i;
+
         try {
           var indentationToken = Token.identify(line).token;
         } catch (e) {
@@ -102,21 +108,21 @@
           // eg. x = '
           //     `
           //     '
-          var indentationToken = new Token({type: 'WHITESPACE', value: ''});
+          var indentationToken = new Token({type: 'WHITESPACE', value: '', line: lineNumber});
         }
 
         var indentation = indentationToken.value;
 
         if (indentation.length < initialIndentation.length) {
           // TODO: throw an error, the indentation was off.
-          throw new error.IncorrectIndentation(startingLineNumber + i);
+          throw new error.IncorrectIndentation(lineNumber);
         }
 
         return line.substring(initialIndentation.length);
       });
 
-      if (lines[0].length) newLines.prepend(lines[0]);
       var newStringToken = Token.identify("'" + newLines.join('\\n') + "'").token;
+      newStringToken.line = startingLineNumber;
 
       return $node('single_string_literal', [$token(newStringToken)]);
     },
@@ -126,7 +132,7 @@
       stringLiteral = this.onStringLiteral(stringLiteral, scope, compiler);
 
       var string = stringLiteral.children('token').text();
-      var line = stringLiteral.children('token').attr('line');
+      var line = parseInt(stringLiteral.children('token').attr('line'));
       var interpolations = interpolate(string, line, scope);
 
       if (!interpolations.length) return;
