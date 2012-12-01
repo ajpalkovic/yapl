@@ -27,20 +27,32 @@
       return this.parser.parse(input);
     },
 
-    compile: function(input, target) {
+    compile: function(input, target, onPassCompletedHandler) {
+      var totalStartTime = new Date().getTime();
       var tree = this.parse(input);
 
       target = target || Compiler.target.js;
 
       this.passes.each(function(pass) {
+        var startTime = new Date().getTime();
         pass.run(tree, compiler);
+        var endTime = new Date().getTime();
+
+        if (onPassCompletedHandler) onPassCompletedHandler(pass.constructor.name, endTime - startTime);
       });
 
       if (!this.outputPasses[target]) {
         throw 'Invalid output target: "' + target + "'";
       }
 
-      return this.outputPasses[target].run(tree, compiler).flush();
+      var output = this.outputPasses[target].run(tree, compiler).flush()
+      var totalEndTime = new Date().getTime();
+
+      if (onPassCompletedHandler) {
+        onPassCompletedHandler(this.outputPasses[target].constructor.name, totalEndTime - totalStartTime);
+      }
+
+      return output;
     },
 
     stringify: function(ast) {
@@ -81,7 +93,7 @@
       this.nodeHandler = nodeHandler;
       this.outputBuffer = outputBuffer || [];
       this.lines = lines || [this.outputBuffer];
-      this.indentLevel = indentLevel || [''];
+      this.indentLevel = '';
     },
 
     e: function() {
@@ -118,7 +130,7 @@
     reset: function() {
       this.outputBuffer = [];
       this.lines = [this.outputBuffer];
-      this.indentLevel = [''];
+      this.indentLevel = '';
     },
 
     emitLines: function(lines) {
@@ -155,25 +167,25 @@
     },
 
     nl: function() {
-      this.outputBuffer = [this.indentLevel.peek()];
+      this.outputBuffer = [this.indentLevel];
       this.lines.push(this.outputBuffer);
       return this;
     },
 
     i: function() {
-      this.indentLevel.push(this.indentLevel.peek() + '  ');
-      this.outputBuffer.push(this.indentLevel.peek());
+      this.indentLevel = this.indentLevel + '  ';
+      this.outputBuffer.push(this.indentLevel);
       return this;
     },
 
     u: function() {
-      if (this.outputBuffer.peek() === this.indentLevel.peek()) {
+      if (this.outputBuffer.peek() === this.indentLevel) {
         this.outputBuffer.pop()
-        this.indentLevel.pop();
+        this.indentLevel = this.indentLevel.substring(0, this.indentLevel.length - 2);
 
-        if (this.indentLevel.peek()) this.outputBuffer.push(this.indentLevel.peek());
+        if (this.indentLevel) this.outputBuffer.push(this.indentLevel);
       } else {
-        this.indentLevel.pop();
+        this.indentLevel = this.indentLevel.substring(0, this.indentLevel.length - 2);
       }
 
       return this;

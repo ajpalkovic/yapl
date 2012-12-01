@@ -28,9 +28,36 @@
 
     <script type="text/javascript">
       jQuery.noConflict();
+      window.compiler = new Compiler();
+
+      function setupPassElements($) {
+        var passContainer = $('#passes');
+        passContainer.empty();
+
+        var outputPass = compiler.outputPasses[Compiler.target.js];
+
+        compiler.passes.concat([outputPass]).each(function(pass) {
+          var passElement = $('<div class="pass"></div>');
+          var nameElement = $('<div class="name"></div>');
+
+          var statsElement = $([
+            '<div class="stats">',
+              '<div class="time"></div>',
+            '</div>'
+          ].join(''));
+
+          nameElement.text(pass.constructor.name);
+          passElement.append(nameElement);
+          passElement.append(statsElement);
+
+          passElementLookup[pass.constructor.name] = passElement;
+
+          passContainer.append(passElement);
+        });
+      }
 
       function parse($) {
-        window.compiler = new Compiler();
+        setupPassElements($);
 
         var astElement = $('#ast');
         var jsOutputElement = $('#jsoutput');
@@ -39,13 +66,15 @@
         window.localStorage.setItem('code', code);
 
         try {
-          result = compiler.parse(code);
+          var output = compiler.compile(code, Compiler.target.js, function(pass, time) {
+            var element = passElementLookup[pass];
 
-          var astText = compiler.stringify(result);
-          // var output = compiler.compile(code);
+            element.addClass('done');
+            var timeElement = element.find('.time');
+            timeElement.text('completed in: ' + time / 1000 + 's');
+          });
 
-          astElement.text(astText);
-          // jsOutputElement.text(output);
+          jsOutputElement.text(output);
         } catch (e) {
           astElement.text(e);
           jsOutputElement.text('');
@@ -55,6 +84,7 @@
 
       var THRESHOLD = 200;
       var timerId = 0;
+      var passElementLookup = {};
 
       jQuery(document).ready(function($) {
         $('#code').val(window.localStorage.getItem('code'));
@@ -101,6 +131,33 @@
         width: 30%;
       }
 
+      #passes {
+        background: #888;
+      }
+
+      .pass {
+        background: #555;
+        color: white;
+        display: inline-block;
+        font-family: arial;
+        font-size: 12px;
+        margin: 5px;
+        overflow: hidden;
+        padding: 5px;
+      }
+
+      .pass .time {
+        font-size: 10px;
+      }
+
+      .pass > .name {
+        font-weight: bold;
+      }
+
+      .done {
+        background: #00CC00;
+      }
+
       #code-form {
         margin-bottom: 0em;
       }
@@ -114,6 +171,7 @@
   </head>
   <body>
     <div id="content">
+      <div id="passes"></div>
       <div class="column">
         <h1>Yapl</h1>
         <form id="code-form">
