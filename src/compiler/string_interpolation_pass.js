@@ -131,29 +131,28 @@
 
       if (!interpolations.length) return;
 
-      var arrayElements = $node('array_element_list');
-      interpolations.each(function(interpolation) {
-        arrayElements.append(interpolation);
+      var concatenation = makeStringLiteral('', line);
+      var seenStringLiteral = false;
+
+      interpolations.slice(0).each(function(interpolation, i) {
+        // Disregarding the empty string we added to the front of the interpolations,
+        // we want to see if there were any strings in the interpolation, because if there
+        // aren't we want to make sure we keep the blank string so everything is
+        // coerced into a string
+        seenStringLiteral = seenStringLiteral || (interpolation.is('single_string_literal') && i > 0);
+
+        concatenation = $node('additive_expression', [
+          concatenation,
+          $node('operator', [$token(new Token({type: 'PLUS', value: '+'}))]),
+          interpolation
+        ], [
+          'left',
+          'operator',
+          'right'
+        ]);
       });
 
-      var arrayLiteral = $node('array_literal', [arrayElements], ['elements']);
-
-      return $node('call', [
-        $node('property_access', [
-          arrayLiteral,
-          $token(Token.identify('join').token)
-        ], [
-          'member',
-          'memberPart'
-        ]),
-
-        $node('argument_list', [
-          makeStringLiteral('', line)
-        ])
-      ], [
-        'member',
-        'memberPart'
-      ]);
+      return concatenation;
     }
   });
 }(jQuery);

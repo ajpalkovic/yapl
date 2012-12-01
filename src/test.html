@@ -59,6 +59,7 @@
       function parse($) {
         setupPassElements($);
 
+        var showParseTree = $('#show-parse-tree').is(':checked');
         var astElement = $('#ast');
         var jsOutputElement = $('#jsoutput');
         var code = $('#code').val();
@@ -66,6 +67,8 @@
         window.localStorage.setItem('code', code);
 
         try {
+          var parseTreeText = showParseTree ? compiler.stringify(compiler.parse(code)) : '';
+
           var output = compiler.compile(code, Compiler.target.js, function(pass, time) {
             var element = passElementLookup[pass];
 
@@ -74,6 +77,7 @@
             timeElement.text('completed in: ' + time / 1000 + 's');
           });
 
+          astElement.text(parseTreeText);
           jsOutputElement.text(output);
         } catch (e) {
           astElement.text(e);
@@ -89,6 +93,7 @@
       jQuery(document).ready(function($) {
         $('#code').val(window.localStorage.getItem('code'));
         $('#submit').click(parse.bind(this, $));
+        $('#show-parse-tree').change(parse.bind(this, $));
 
         $('#code').keydown(function() {
           clearTimeout(timerId);
@@ -181,6 +186,8 @@
       </div>
       <div class="column">
         <h1>Parse Tree</h1>
+        <label for="show-parse-tree">Show parse tree</label>
+        <input id="show-parse-tree" name="show-parse-tree" type="checkbox" checked/>
         <pre id="ast"></pre>
       </div>
       <div class="column">

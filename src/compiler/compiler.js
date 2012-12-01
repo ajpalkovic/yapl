@@ -103,8 +103,15 @@
         switch (typeof arguments[i]) {
           case 'number':
           case 'string':
-            if (arguments[i] === '\n') {
+            var newlineIndex = arguments[i].indexOf('\n');
+            if (newlineIndex >= 0) {
+              var before = arguments[i].substring(0, newlineIndex);
+              var after = arguments[i].substring(newlineIndex + 1);
+
+              this.e(before);
               this.nl();
+              this.e(after);
+
               break;
             }
 
