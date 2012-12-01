@@ -74,8 +74,7 @@
 
       // Extends the productions with the redefinitiosn if there are any.
       if (rule.redefinitions) {
-        redefinitions = Object.clone(redefinitions);
-        $.extend(redefinitions, rule.redefinitions);
+        redefinitions = $.extend({}, redefinitions, rule.redefinitions);
       }
 
       for (var i = 0, numProds = productions.length; i < numProds; ++i) {

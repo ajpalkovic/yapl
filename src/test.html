@@ -1,7 +1,6 @@
 <html>
   <head>
     <script type="text/javascript" src="../lib/jquery.min.js"></script>
-    <script type="text/javascript" src="../lib/prototype.js"></script>
 
     <script type="text/javascript" src="util.js"></script>
     <script type="text/javascript" src="token.js"></script>
@@ -66,7 +65,7 @@
 
         window.localStorage.setItem('code', code);
 
-        try {
+        //try {
           var parseTreeText = showParseTree ? compiler.stringify(compiler.parse(code)) : '';
 
           var output = compiler.compile(code, Compiler.target.js, function(pass, time) {
@@ -79,11 +78,11 @@
 
           astElement.text(parseTreeText);
           jsOutputElement.text(output);
-        } catch (e) {
+        /*} catch (e) {
           astElement.text(e);
           jsOutputElement.text('');
           throw e;
-        }
+        }*/
       }
 
       var THRESHOLD = 200;

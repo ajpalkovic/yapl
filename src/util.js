@@ -70,7 +70,56 @@
     return word;
   };
 
-  var NULL_NODE = $('<null></null>');
+  String.prototype.gsub = function(pattern, replacement) {
+    var result = '', source = this, match;
+
+    if (!(pattern.length || pattern.source)) {
+      replacement = replacement('');
+      return replacement + source.split('').join(replacement) + replacement;
+    }
+
+    while (source.length > 0) {
+      if (match = source.match(pattern)) {
+        result += source.slice(0, match.index);
+        result += replacement(match);
+        source  = source.slice(match.index + match[0].length);
+      } else {
+        result += source, source = '';
+      }
+    }
+    return result;
+  };
+
+  Array.prototype.zip = function () {
+    var args = $A(arguments);
+    var collections = [this].concat(args).map($A);
+    return this.map(function(value, index) {
+      return collections.pluck(index);
+    });
+  }
+
+  Array.prototype.pluck = function(property) {
+    var results = [];
+    this.each(function(value) {
+      results.push(value[property]);
+    });
+    return results;
+  };
+
+  Array.prototype.include = function(pattern) {
+    return this.indexOf(pattern) > -1;
+  }
+
+  Array.prototype.last = Array.prototype.peek;
+  Array.prototype.each = Array.prototype.forEach;
+
+  function $A(iterable) {
+    if (!iterable) return [];
+    if ('toArray' in Object(iterable)) return iterable.toArray();
+    var length = iterable.length || 0, results = new Array(length);
+    while (length--) results[length] = iterable[length];
+    return results;
+  }
 
   $.toTagName = function(type) {
     return type[0].toLowerCase() + type.substring(1).gsub(/([A-Z])/, function(match) {
