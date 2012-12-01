@@ -7,8 +7,7 @@
         'identifier_reference': this.onIdentifier,
         'member_identifier': this.onMemberIdentifier,
         'accessor_variable': this.onAccessorVariable,
-        'property_access': this.onPropertyAccess,
-        'extern_variable_statement': this.onExternVariableStatement
+        'property_access': this.onPropertyAccess
       });
     },
 
@@ -93,11 +92,6 @@
           }
         }
       }
-    },
-
-    onExternVariableStatement: function(externVariableStatement, scope) {
-      // Remove the extern'd variables from the source.
-      return null;
     }
   });
 }(jQuery);

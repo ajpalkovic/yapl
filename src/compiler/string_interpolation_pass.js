@@ -95,8 +95,9 @@
 
       var initialIndentation = compiler.parser.lexer.getIndent(startingLineNumber).value;
 
-      var newLines = lines.map(function(line, i) {
-        var lineNumber = startingLineNumber + i;
+      var newLines = lines.splice(1).map(function(line, i) {
+        // We add 1 because we are ignoring the first line.
+        var lineNumber = startingLineNumber + i + 1;
 
         try {
           var indentationToken = Token.identify(line).token;
@@ -121,6 +122,7 @@
         return line.substring(initialIndentation.length);
       });
 
+      newLines.prepend(lines[0]);
       var newStringToken = Token.identify("'" + newLines.join('\\n') + "'").token;
       newStringToken.line = startingLineNumber;
 

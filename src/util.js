@@ -1,10 +1,10 @@
 (function($) {
   Array.prototype.insert = function(index, value) {
-    Array.prototype.splice.call(this, index, 0, value);
+    this.splice(index, 0, value);
   };
 
   Array.prototype.prepend = function(value) {
-    Array.prototype.insert.call(this, 0, value);
+    this.insert(0, value);
   };
 
   Array.prototype.peek = function() {
@@ -185,9 +185,9 @@
 
     function(namespace, parent, methods) {
       var name = methods.initialize && methods.initialize.name;
-      if (!name) throw 'Class canno be created without a name';
+      if (!name) throw 'Class cannot be created without a name';
 
-      var klass = Function.create(name, [], 'this.initialize.apply(this, arguments);');
+      var klass = methods.initialize || function() {};
 
       namespace[name] = klass;
 
@@ -202,9 +202,6 @@
       }
 
       klass.prototype.constructor = klass;
-
-      if (!klass.prototype.initialize)
-        klass.prototype.initialize = function() {};
 
       return klass;
     });
